@@ -1,0 +1,11 @@
+<div class="audio-player">
+  <!-- Your existing play/pause/seek UI if you have it -->
+
+  <div class="countdown">
+    {{ remainingDisplay.toFixed(1) }} s
+  </div>
+
+  <div class="loader">
+    <div class="loader-bar" [style.width.%]="loaderPercent"></div>
+  </div>
+</div>

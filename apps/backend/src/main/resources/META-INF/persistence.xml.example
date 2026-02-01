@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.2" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence           http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
+  <persistence-unit name="com.cevapinxile_cestereg_jar_0.0.1PU" transaction-type="RESOURCE_LOCAL">
+    <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+    <class>com.cevapinxile.cestereg.persistence.entity.AlbumEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.CategoryEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.GameEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.InterruptEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.ScheduleEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.SongEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.TeamEntity</class>
+    <class>com.cevapinxile.cestereg.persistence.entity.TrackEntity</class>
+    <properties>
+      <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/rhytmicriddles"/> <!-- MOCK -->
+      <property name="javax.persistence.jdbc.user" value="rhytmicriddles"/> <!-- MOCK -->
+      <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+      <property name="javax.persistence.jdbc.password" value="change_me"/> <!-- MOCK -->
+    </properties>
+  </persistence-unit>
+</persistence>

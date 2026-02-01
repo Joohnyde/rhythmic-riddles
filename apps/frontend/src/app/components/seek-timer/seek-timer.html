@@ -1,0 +1,8 @@
+@if(showDebug){
+
+    <div>Time: {{ currentTime | number: '1.1-1' }} s</div>
+    @if(duration){
+
+        Progress: {{ progress * 100 | number: '1.0-0' }} %
+    }
+}

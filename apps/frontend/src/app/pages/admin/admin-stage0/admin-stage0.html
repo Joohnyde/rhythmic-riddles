@@ -1,0 +1,57 @@
+<table>
+  <tr>
+    <th>Slika</th>
+    <th>Ime</th>
+    <th>Akcije</th>
+  </tr>
+
+  @if(teams){
+      @for (team of teams; track $index) {
+          <tr>
+              <td>
+                  <img [src]="team.image" width="64" height="64" />
+                </td>
+                <td>{{ team.name }}</td>
+                <td>
+                    <button (click)="kickTeam(team.id)">Kick</button>
+                </td>
+            </tr>
+        }
+    }
+</table>
+
+<br>
+
+<form (ngSubmit)="createTeam()">
+
+  <label>
+    Ime:
+    <input type="text" [(ngModel)]="form.name" name="name" required>
+  </label>
+
+  <br><br>
+
+  <label>
+    Slika:
+    <input type="text" [(ngModel)]="form.image" name="image" required>
+  </label>
+
+  <br><br>
+
+  <label>
+    Dugme:
+    <select [(ngModel)]="form.buttonCode" name="dugme" required>
+      <option value="1671">
+        1671
+      </option>
+    </select>
+  </label>
+
+  <br><br>
+
+  <button type="submit">Create</button>
+
+</form>
+
+<br>
+<button (click)="start()">Start!</button>

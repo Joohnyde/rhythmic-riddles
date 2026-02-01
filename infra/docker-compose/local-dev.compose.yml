@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:18.1
+    container_name: rr-postgres
+    environment:
+      POSTGRES_DB: rhytmicriddles
+      POSTGRES_USER: rhytmicriddles
+      POSTGRES_PASSWORD: rhytmicriddles
+    ports:
+      - "5432:5432"
+    volumes:
+      - rr_pgdata:/var/lib/postgresql/data
+
+  # Optional: add admin tools
+  pgadmin:
+    image: dpage/pgadmin4:9.11
+    container_name: rr-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  rr_pgdata:
