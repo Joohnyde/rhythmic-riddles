@@ -1,0 +1,60 @@
+<div class="scoreboard-card">
+  <h2 class="scoreboard-title">Tabela timova</h2>
+
+  <table class="scoreboard-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Tim</th>
+        <th>Bodovi</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      @for (team of teams; track team.tim; let i = $index) {
+        <tr [class.answered-wrong]="isAnsweredWrong(team)">
+          <!-- Position -->
+          <td class="pos-col">{{ i + 1 }}</td>
+
+          <!-- Avatar + name -->
+          <td class="team-col">
+            <div class="team-info">
+              <div class="avatar-wrapper">
+                <img
+                  [src]="team.slika"
+                  [alt]="team.naziv"
+                  class="team-avatar"
+                />
+                @if (isAnsweredWrong(team)) {
+                  <div class="answered-badge">
+                    ✕
+                  </div>
+                }
+              </div>
+              <span class="team-name">{{ team.naziv }}</span>
+            </div>
+          </td>
+
+          <!-- Points -->
+          <td class="points-col">
+            {{ team.bodovi }}
+          </td>
+
+          <!-- Status text -->
+          <td class="status-col">
+            @if (isAnsweredWrong(team)) {
+              <span class="status-bad">
+                Pogrešan odgovor
+              </span>
+            } @else {
+              <span class="status-ok">
+                Čeka odgovor
+              </span>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

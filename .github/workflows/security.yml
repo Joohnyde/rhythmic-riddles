@@ -1,0 +1,16 @@
+name: Security
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Placeholder
+        run: |
+          echo "TODO: Enable Dependabot in repo settings"
+          echo "TODO: Add CodeQL if desired"

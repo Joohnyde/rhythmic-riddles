@@ -1,0 +1,22 @@
+# Full dev stack (placeholder)
+# In Phase 1 we typically run backend/frontend locally and only DB in docker.
+# Later we can add containers for backend and frontend.
+
+services:
+  db:
+    image: postgres:18.1
+    container_name: rr-postgres
+    environment:
+      POSTGRES_DB: rhytmicriddles
+      POSTGRES_USER: rhytmicriddles
+      POSTGRES_PASSWORD: rhytmicriddles
+    ports:
+      - "5432:5432"
+    volumes:
+      - rr_pgdata:/var/lib/postgresql/data
+
+  # assets:
+  #   (optional) If later using MinIO, add here.
+
+volumes:
+  rr_pgdata:

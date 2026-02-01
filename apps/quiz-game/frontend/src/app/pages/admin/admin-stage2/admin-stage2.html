@@ -1,0 +1,48 @@
+@switch(scenario){
+    @case (0) {
+        <!-- Pusti odgovor -->
+         <button (click)="nextSong()">Dalje</button>
+    }
+    @case (1) {
+        <button (click)="nastavi(true)">Refresh</button>
+        <br>
+        <button (click)="nastavi(false)">Reveal</button>
+    }
+    @case (2) {
+        Sad odgovara tim:
+        <br>
+        @if(tim){
+            <img [src]="tim.slika" wideth="64" height="64" />{{ tim.ime }}
+        }
+        <br>
+        <button (click)="answer(true)">Tacno</button>
+        <br>
+        <button (click)="answer(false)">Netacno</button>
+    }
+    @case (3) {
+        TV se iskljucio!<br>
+        <button (click)="resolve_error()">Nastavi</button>
+    }
+    @case (4) {
+        <!-- Pusti pesmu -->
+         <app-seek-timer
+    [duration]="seek+remaining"
+    [seek]="seek"
+    [showDebug]="true"
+    (timeChange)="onTimeChange($event)"
+    (completed)="onTrackFinished()"
+    (stateOut)="onStateSave($event)"
+  ></app-seek-timer>
+    }
+    @default {
+        Pesma se ucitava...
+    }
+}
+
+@if (teams && zadnja_numera) {
+    <br>
+    <app-team-scoreboard
+    [teams]="teams"
+    [current_redoslijed_id]="zadnja_numera"
+    ></app-team-scoreboard>
+}

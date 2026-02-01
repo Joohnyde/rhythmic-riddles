@@ -1,0 +1,18 @@
+<table>
+  <tr>
+    <th>Slika</th>
+    <th>Ime</th>
+    <th>Akcije</th>
+  </tr>
+
+  @if(teams){
+      @for (team of teams; track $index) {
+          <tr>
+              <td>
+                  <img [src]="team.slika" width="64" height="64" />
+                </td>
+                <td>{{ team.ime }}</td>
+            </tr>
+        }
+    }
+</table>

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # Placeholder CI pipeline.
+  # Once code is placed into this repo structure, replace the echo steps with real commands.
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Backend (placeholder)
+        run: |
+          echo "TODO: cd apps/quiz-game/backend && mvn -B test"
+          echo "TODO: add spotless/checkstyle step"
+
+      - name: Frontend (placeholder)
+        run: |
+          echo "TODO: cd apps/quiz-game/frontend && npm ci && npm run lint && npm test && npm run build"
