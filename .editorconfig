@@ -1,0 +1,52 @@
+root = true
+
+# -----------------------------
+# Base
+# -----------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# 4 spaces by default
+indent_style = space
+indent_size = 4
+
+# -----------------------------
+# Markdown
+# -----------------------------
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 120
+
+# -----------------------------
+# YAML / JSON
+# -----------------------------
+[*.yml]
+indent_size = 2
+
+[*.yaml]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+
+# -----------------------------
+# Frontend (TypeScript / HTML / CSS)
+# -----------------------------
+[*.{ts,tsx,js,jsx,html,css,scss}]
+indent_size = 2
+
+# -----------------------------
+# Java
+# -----------------------------
+[*.java]
+indent_size = 4
+
+# -----------------------------
+# Shell scripts
+# -----------------------------
+[*.sh]
+indent_style = space
+indent_size = 2

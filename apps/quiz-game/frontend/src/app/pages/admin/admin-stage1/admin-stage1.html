@@ -1,0 +1,47 @@
+@if (loaded) {
+     @if(show_buttons){
+        <button (click)="start()">Dalje</button>
+    }
+    @else {
+        <b>
+            Currently choosing:
+        </b>
+        <br>
+        @if(birac){
+            <img [src]="birac.slika" wideth="64" height="64" />{{ birac.ime }}
+        }@else {
+            Admin
+        }
+        <br>
+        Albumi:
+        <table>
+  <tr>
+    <th>Slika</th>
+    <th>Ime</th>
+    <th>Izabran od</th>
+    <th>Akcije</th>
+  </tr>
+
+      @for (album of albums; track $index) {
+
+          <tr>
+              <td>
+                  <img [src]="album.slike" width="64" height="64" />
+                </td>
+                <td>{{ album.ime }}</td>
+                <td>
+                    @if(album.rbr){
+                        <img [src]="album.picked??'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdh3lcWb9Ekyy3079-oUv36flCNenXWAEfyw&s'" width="64" height="64" />
+                    }
+                </td>
+                <td>
+                    @if(!album.rbr){
+                        <button (click)="pick(album.id)">Choose</button>
+                    }
+                </td>
+            </tr>
+        }
+</table>
+        
+    }
+}

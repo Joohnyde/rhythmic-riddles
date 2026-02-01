@@ -1,0 +1,112 @@
+.scoreboard-card {
+  background: #121212;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  color: #f5f5f5;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.scoreboard-title {
+  margin: 0 0 12px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.scoreboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.scoreboard-table th,
+.scoreboard-table td {
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.scoreboard-table thead tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.scoreboard-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pos-col {
+  width: 40px;
+  text-align: center;
+  color: #aaaaaa;
+}
+
+.team-col {
+  min-width: 220px;
+}
+
+.points-col {
+  width: 80px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.status-col {
+  width: 140px;
+}
+
+.team-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.team-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.answered-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ff1744;
+  color: #fff;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+}
+
+.team-name {
+  font-weight: 500;
+}
+
+/* Dim row if answered wrong */
+.answered-wrong {
+  opacity: 0.5;
+}
+
+.status-bad {
+  color: #ff5252;
+  font-weight: 500;
+}
+
+.status-ok {
+  color: #81c784;
+  font-weight: 400;
+}

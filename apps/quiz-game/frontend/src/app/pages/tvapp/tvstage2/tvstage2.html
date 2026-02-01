@@ -1,0 +1,58 @@
+@if(pitanje){
+    {{pitanje}}
+    <br>
+}
+@switch(scenario){
+    @case (0) {
+        <!-- Pusti odgovor -->
+        <app-audio-player
+            [src]="'http://localhost:8080/pjesma/reveal?id='+pesma_id"
+            [seek]="0"
+            [remaining]="answer_duration"
+            (completed)="onTrackFinished()"
+            ></app-audio-player>
+            <br>
+            {{odgovor}}
+        @if(bravo){
+            <br>
+            Bravo
+            <br>
+            <img [src]="bravo.slika" wideth="64" height="64" />{{ bravo.naziv }}
+            <s>{{bravo.bodovi - 30}}</s> -> {{bravo.bodovi}}
+        }
+    }
+    @case (1) {
+        0
+    }
+    @case (2) {
+        Sad odgovara tim:
+        <br>
+        @if(tim){
+            <img [src]="tim.slika" wideth="64" height="64" />{{ tim.ime }}
+        }
+    }
+    @case (3) {
+        Tehnicki problemi!<br>
+    }
+    @case (4) {
+        <!-- Pusti pesmu -->
+            <app-audio-player
+            [src]="'http://localhost:8080/pjesma/play?id='+pesma_id"
+            [seek]="seek"
+            [remaining]="remaining"
+            (completed)="onTrackFinished()"
+            (stateOut)="onStateSave($event)"
+            ></app-audio-player>
+    }
+    @default {
+        Pesma se ucitava...
+    }
+}
+
+@if (teams && current_redoslijed_id && scenario != 0) {
+    <br>
+    <app-team-scoreboard
+    [teams]="teams"
+    [current_redoslijed_id]="current_redoslijed_id"
+    ></app-team-scoreboard>
+}

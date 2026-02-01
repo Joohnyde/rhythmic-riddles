@@ -1,0 +1,23 @@
+{
+  "name": "RhytmicRiddles Dev",
+  "dockerComposeFile": [
+    "../infra/docker-compose/dev.compose.yml"
+  ],
+  "service": "db",
+  "workspaceFolder": "/workspaces/rhytmicriddles",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  },
+  "postCreateCommand": "chmod +x ./scripts/dev/*.sh || true",
+  "remoteUser": "root"
+}
