@@ -1,0 +1,58 @@
+@if(question){
+    {{question}}
+    <br>
+}
+@switch(scenario){
+    @case (0) {
+        <!-- Pusti odgovor -->
+        <app-audio-player
+            [src]="'http://localhost:8080/assets/v1/audio/answers/'+songId"
+            [seek]="0"
+            [remaining]="answerDuration"
+            (completed)="onTrackFinished()"
+            ></app-audio-player>
+            <br>
+            {{answer}}
+        @if(bravo){
+            <br>
+            Bravo
+            <br>
+            <img [src]="bravo.image" wideth="64" height="64" />{{ bravo.name }}
+            <s>{{bravo.score - 30}}</s> -> {{bravo.score}}
+        }
+    }
+    @case (1) {
+        0
+    }
+    @case (2) {
+        Sad odgovara tim:
+        <br>
+        @if(answeringTeam){
+            <img [src]="answeringTeam.image" wideth="64" height="64" />{{ answeringTeam.name }}
+        }
+    }
+    @case (3) {
+        Tehnicki problemi!<br>
+    }
+    @case (4) {
+        <!-- Pusti pesmu -->
+            <app-audio-player
+            [src]="'http://localhost:8080/assets/v1/audio/snippets/'+songId"
+            [seek]="seek"
+            [remaining]="remaining"
+            (completed)="onTrackFinished()"
+            (stateOut)="onStateSave($event)"
+            ></app-audio-player>
+    }
+    @default {
+        Pesma se ucitava...
+    }
+}
+
+@if (teams && lastPlayedSong && scenario != 0) {
+    <br>
+    <app-team-scoreboard
+    [teams]="teams"
+    [currentScheduleId]="lastPlayedSong"
+    ></app-team-scoreboard>
+}

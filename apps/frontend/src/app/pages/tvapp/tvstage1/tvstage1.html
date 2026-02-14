@@ -1,0 +1,50 @@
+@if (loaded) {
+     @if(showButtons){
+        Kategorija:
+        <img [src]="selectedAlbum.chosenCategoryPreview.image" wideth="64" height="64" />
+        {{ selectedAlbum.chosenCategoryPreview.name }}
+        <br>
+        Izabrao:
+        @if(pickedByTeam){
+            <img [src]="pickedByTeam.image" wideth="64" height="64" />{{ pickedByTeam.name }}
+        }@else {
+            Admin
+        }
+    }
+    @else {
+        <b>
+            Currently choosing:
+        </b>
+        <br>
+        @if(pickedByTeam){
+            <img [src]="pickedByTeam.name" wideth="64" height="64" />{{ pickedByTeam.name }}
+        }@else {
+            Admin
+        }
+        <br>
+        Albumi:
+        <table>
+  <tr>
+    <th>Slika</th>
+    <th>Ime</th>
+    <th>Izabran od</th>
+  </tr>
+
+      @for (album of albums; track $index) {
+
+          <tr>
+              <td>
+                  <img [src]="album.image" width="64" height="64" />
+                </td>
+                <td>{{ album.name }}</td>
+                <td>
+                    @if(album.ordinalNumber){
+                        <img [src]="album.pickedByTeam??'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdh3lcWb9Ekyy3079-oUv36flCNenXWAEfyw&s'" width="64" height="64" />
+                    }
+                </td>
+            </tr>
+        }
+</table>
+        
+    }
+}

@@ -49,6 +49,8 @@ target/
 *.war
 *.ear
 *.log
+*persistence.xml
+*application.yml
 
 # Maven
 pom.xml.tag
@@ -87,6 +89,7 @@ coverage/
 .env
 .env.*
 !.env.example
+db/db_00_create_db.sql
 
 ############################################
 # Runtime / Local data (NEVER commit)

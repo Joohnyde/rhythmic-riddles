@@ -1,0 +1,20 @@
+# Backend environment variables (example)
+
+app:
+  assets:
+    base-dir: ../../../data
+    
+spring:
+    datasource:
+        url: jdbc:postgresql://localhost:5432/rhytmicriddles #MOCK
+        username: rhytmicriddles #MOCK
+        password: change_me #MOCK
+    
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+  api-docs:
+    path: /openapi
+    resolve-schema-properties: true
+  default-produces-media-type: application/json
