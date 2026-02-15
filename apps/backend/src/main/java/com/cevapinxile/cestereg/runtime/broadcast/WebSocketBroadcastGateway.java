@@ -7,8 +7,8 @@ package com.cevapinxile.cestereg.runtime.broadcast;
 import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
 import com.cevapinxile.cestereg.runtime.websocket.SessionRegistry;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -20,6 +20,8 @@ import org.springframework.web.socket.WebSocketSession;
 @Component
 public class WebSocketBroadcastGateway implements BroadcastGateway {
 
+    private static final Logger log = LoggerFactory.getLogger(WebSocketBroadcastGateway.class);
+    
     private final SessionRegistry registry;
 
     public WebSocketBroadcastGateway(SessionRegistry registry) {
@@ -36,13 +38,13 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
     public void toTv(String code, String payload) {
         WebSocketSession tvSession = registry.getTvSession(code);
         if(tvSession == null){
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.WARNING, "Tried sending this {0} to non-existing TV", payload);
+            log.warn("Tried sending this {} to non-existing TV", payload);
             return;
         }
         try {
             tvSession.sendMessage(new TextMessage(payload));
         } catch (IOException ex) {
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.WARNING, null, payload);
+            log.warn("An IO exception occured", payload);
         }
     }
 
@@ -50,26 +52,26 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
     public void toAdmin(String code, String payload) {
         WebSocketSession adminSession = registry.getAdminSession(code);
         if(adminSession == null){
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.WARNING, "Tried sending this {0} to non-existing Admin", payload);
+            log.warn("Tried sending this {} to non-existing Admin", payload);
             return;
         }
         try {
             adminSession.sendMessage(new TextMessage(payload));
         } catch (IOException ex) {
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.WARNING, null, payload);
+            log.warn("An IO exception occured", payload);
         }
     }
     
     public void sendToSomeone(WebSocketSession socket, String payload){
         if(socket == null || !socket.isOpen()){
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.WARNING, "Tried sending this {0} to non-existing socket", payload);
+            log.warn("Tried sending this {} to non-existing socket", payload);
             return;
         }
         try {
             socket.sendMessage(new TextMessage(payload));
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.INFO, "Sent {0} to {1}", new String[]{payload,socket.getUri().toString()});
+            log.info("Sent {} to {}", payload, socket.getUri());
         } catch (IOException ex) {
-            Logger.getLogger(WebSocketBroadcastGateway.class.getName()).log(Level.SEVERE, null, ex);
+            log.error(null, ex);
         }
     }
 }

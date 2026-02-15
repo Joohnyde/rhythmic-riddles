@@ -16,7 +16,12 @@ import java.util.UUID;
 /**
  *
  * @author denijal
+ * Team-related operations for the quiz runtime (lookup, scoring, and turn/rotation support).
+ *
+ * <p>Any in-memory caching of scores assumes a single backend instance unless explicitly coordinated.
+ * The database remains the source of truth.</p>
  */
+
 public interface TeamService {
     
     public CreateTeamResponse createTeam(CreateTeamRequest ctr, String roomCode) throws DerivedException;

@@ -32,6 +32,8 @@ import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -40,6 +42,8 @@ import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 @Service
 public class InterruptServiceImpl implements InterruptService {
 
+    private static final Logger log = LoggerFactory.getLogger(InterruptServiceImpl.class);
+    
     @Autowired
     private TeamService teamService;
 
@@ -227,6 +231,7 @@ public class InterruptServiceImpl implements InterruptService {
         }
 
         teamService.saveTeamAnswer(answer.getTeamId().getId(), answer.getScheduleId().getId(), newScore, roomCode);
+        log.info("Team {} answered correct={} new points={}", answer.getTeamId().getId(), correct, newScore);
         broadcastGateway.broadcast(roomCode, "{\"type\":\"answer\",\"teamId\":\"" + answer.getTeamId().getId() + "\",\"scheduleId\":\"" + answer.getScheduleId().getId() + "\",\"correct\":" + correct + "}");
     }
 
@@ -253,6 +258,7 @@ public class InterruptServiceImpl implements InterruptService {
                    - for TEAM interrupts it stores the awarded score (+30 / -10)
                    - for SYSTEM/PAUSE interrupts it stores the admin UI "previousScenarioId"
                    This keeps schema small but requires callers to interpret it by interrupt type. */
+                log.info("System paused. Previous scenario: {}", scenarioId);
                 pause.setScoreOrScenarioId(scenarioId);
                 interruptRepository.saveAndFlush(pause);
             }

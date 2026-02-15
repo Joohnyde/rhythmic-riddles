@@ -7,9 +7,21 @@ package com.cevapinxile.cestereg.common.exception;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- *
  * @author denijal
+ * Base domain exception for errors that should be propagated to clients as a structured error payload.
+ *
+ * <p>This exception carries:</p>
+ * <ul>
+ *   <li>{@link #HTTP_CODE} - HTTP status that best matches the failure</li>
+ *   <li>{@code ERROR_CODE} - short stable code used by the frontend (e.g., "E007")</li>
+ *   <li>{@code TITLE} - human-friendly category (e.g., "Asset Not Found")</li>
+ *   <li>{@code message} - specific details for debugging or user feedback</li>
+ * </ul>
+ *
+ * <p>All concrete error types in the project extend this class and define their own
+ * status/code/title combination.</p>
  */
+
 @Schema(name = "ErrorResponse", description = "Standard error payload returned by the API.")
 public class DerivedException extends Exception{
     

@@ -3,5 +3,5 @@ export class TeamScore{
     image !: string;
     name !: string;
     score !: number;
-    scheduleId !: string; //When did the team last answer (scheduleId)
+    scheduleId !: string; // When did the team last answer (scheduleId)
 }

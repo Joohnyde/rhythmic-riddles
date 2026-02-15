@@ -16,8 +16,6 @@ import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.RoomCodeResponse;
 import com.cevapinxile.cestereg.api.quiz.dto.request.StageIdRequest;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -27,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.cevapinxile.cestereg.core.service.GameService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -40,6 +40,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 @CrossOrigin(origins = "*")
 public class GameController {
 
+    private static final Logger log = LoggerFactory.getLogger(GameController.class);
+    
     @Autowired
     private GameService gameService;
 
@@ -80,10 +82,10 @@ Workflow:
         try {
             return ResponseEntity.ok(new RoomCodeResponse(gameService.createGame(cgr)));
         } catch (DerivedException ex) {
-            Logger.getLogger(GameController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(GameController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }
@@ -137,10 +139,10 @@ Workflow:
         try {gameService.changeStage(stageId.stageId(), roomCode);
             return ResponseEntity.ok().build();
         } catch (DerivedException ex) {
-            Logger.getLogger(GameController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(GameController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }

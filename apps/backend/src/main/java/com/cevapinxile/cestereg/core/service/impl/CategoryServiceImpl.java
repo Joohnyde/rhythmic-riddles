@@ -34,6 +34,8 @@ import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -42,6 +44,9 @@ import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 @Service
 public class CategoryServiceImpl implements CategoryService {
 
+    private static final Logger log = LoggerFactory.getLogger(CategoryServiceImpl.class);
+
+    
     @Autowired
     private GameService gameService;
 
@@ -142,7 +147,8 @@ public class CategoryServiceImpl implements CategoryService {
         List<ScheduleEntity> schedule = trackList.subList(0, Math.min(maxSongs, trackList.size())).stream().map(elem -> new ScheduleEntity(category, elem, index.incrementAndGet())).toList();
         schedule.getFirst().setStartedAt(LocalDateTime.now());
         scheduleRepository.saveAllAndFlush(schedule);
-
+        
+        log.info("Starting category {}",categoryId);
         gameService.changeStage(2, roomCode); // Not-optimal. TODO: Broadcast only what you need.
     }
 
@@ -160,10 +166,9 @@ public class CategoryServiceImpl implements CategoryService {
         CategoryEntity lastCategory = maybeKategorija.get();
         lastCategory.setDone(true);
         categoryRepository.saveAndFlush(lastCategory);
-        if (lastCategory.getOrdinalNumber() == game.getMaxAlbums()) {
-            return 3;
-        }
-        return 1;
+        int newState = lastCategory.getOrdinalNumber() == game.getMaxAlbums() ? 3 : 1;
+        log.info("Finished category {}. Now transitioning to {}",lastCategory.getId(), newState);
+        return newState;
     }
 
 }

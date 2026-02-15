@@ -24,6 +24,8 @@ import com.cevapinxile.cestereg.core.service.CategoryService;
 import com.cevapinxile.cestereg.core.service.ScheduleService;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -31,6 +33,8 @@ import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
  */
 @Service
 public class ScheduleServiceImpl implements ScheduleService {
+    
+    private static final Logger log = LoggerFactory.getLogger(ScheduleServiceImpl.class);
 
     @Autowired
     private GameService gameService;
@@ -71,6 +75,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         /* Replay has no direct response, so we broadcast the event instead of targeting the TV only.
            This ensures a refreshed admin client can recover the song duration. */
+        log.info("Replaying schedule {}", lastPlayedScheduleId);
         broadcastGateway.broadcast(roomCode, "{\"type\":\"song_repeat\",\"remaining\":" + lastPlayedSong.getTrackId().getSongId().getSnippetDuration() + "}");
     }
 
@@ -95,6 +100,8 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         /* Should you broadcast or simply send to TV?
            Admin will get response code 200 and can use that to change view */
+        
+        log.info("Revealing schedule {}", lastPlayedScheduleId);
         broadcastGateway.broadcast(roomCode, "{\"type\":\"song_reveal\"}");
     }
 

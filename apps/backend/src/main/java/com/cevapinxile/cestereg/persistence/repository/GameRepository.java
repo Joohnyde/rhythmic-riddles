@@ -20,6 +20,25 @@ public interface GameRepository extends JpaRepository<GameEntity, UUID> {
     
     public Optional<GameEntity> findByCode(String roomCode);
     
+    /**
+    * Loads a game by its room code and validates that it is currently in the expected stage.
+    *
+    * <p>Standard workflow:</p>
+    * <ol>
+    *   <li>Fetch the game by {@code roomCode}</li>
+    *   <li>Throw a {@link DerivedException} if the game does not exist</li>
+    *   <li>Verify that the game is in the specified {@code stage}</li>
+    *   <li>Throw a {@link DerivedException} if the stage does not match</li>
+    * </ol>
+    *
+    * <p>This method centralizes existence and state validation to prevent
+    * duplicated checks across services.</p>
+    *
+    * @param roomCode unique room identifier
+    * @param stageId expected current stage of the game
+    * @return the loaded {@code GameEntity} if it exists and matches the expected stage
+    * @throws DerivedException if the game does not exist or is not in the expected stage
+    */
     default GameEntity findByCode(String roomCode, Integer stageId) throws DerivedException{
         Optional<GameEntity> maybeGame = findByCode(roomCode);
         if(maybeGame.isEmpty()) 

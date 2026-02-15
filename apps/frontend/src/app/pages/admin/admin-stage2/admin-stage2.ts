@@ -73,14 +73,18 @@ export class AdminStage2 {
           const item = this.teams.find(x => x.teamId === mes.teamId);
           if (item) {
             item.scheduleId = mes.scheduleId
+            // Mirror backend scoring locally for instant UI feedback (backend is still source of truth).
             item.score += mes.correct ? 30 : -10;
           }
           this.scenario = mes.correct ? 0 : 4
         }
         else if (mes.type == "error_solved" && this.scenario == 3) {
-          /* If we weren't loaded when the crash happened, backend tells us what we were doing before error-mode,
-             so we can restore the correct UI state after "error_solved". */ 
-          //Nisam bio ucitan kad je crko. Posto se ovo desi samo ako sam kliknuo dugme, a da se na spawnu desi to dugme znaci da sam bio u po pjesme
+          /* If this component was not loaded when the crash occurred (e.g., TV disconnect),
+             the backend provides the previous scenario so we can restore the correct UI state
+             after receiving "error_solved".
+
+             This situation only happens if the admin had already clicked a control button.
+             If the button is visible on initial load, it implies we were mid-song when the crash happened. */
           this.scenario = (mes.previousScenario == null) ? 4 : mes.previousScenario 
         }
         else if (mes.type == "pause" && this.scenario != 2) {
@@ -101,6 +105,9 @@ export class AdminStage2 {
             }
           }
 
+          /* pause frame: answeringTeamId === "null" means system pause/error (scenario 3),
+             otherwise it's a team answering pause (scenario 2).
+             We turn a boolean into a number (false -> 0, true -> 1)*/
           this.scenario = 2 + Number(mes.answeringTeamId === "null")
         }
         else if (mes.type == 'welcome') {
@@ -108,7 +115,8 @@ export class AdminStage2 {
             subs.unsubscribe();
             this.router.navigate(['admin', mes.stage])
           } else {
-            //Defaultna polja: pjesma_id, pitanje, odgovor, timovi, bodovi
+            /* Default fields: songId, question,
+               answer, scheduleId, answerDuration, scores */
             this.songId = mes.songId;
             this.question = mes.question;
             this.answer = mes.answer;
@@ -116,24 +124,24 @@ export class AdminStage2 {
             this.teams = mes.scores;
             this.answerDuration = mes.answerDuration;
             if (mes.revealed != null) {
-              //Kraj pjesme
+              // The song has finished
               if (mes.revealed == true) {
-                this.scenario = 0 //Pusti odgovor
-                this.bravo = mes.bravo
+                this.scenario = 0 // The song was revealed so we should show the guesser
+                this.bravo = this.teams.find(x => x.teamId === mes.bravo);
               }
               else
-                this.scenario = 1 //Prikazi refresh ili dalje dugmad
+                this.scenario = 1 // The song was NOT revealed so show "replay" and "reveal" buttons
             } else {
               this.seek = mes.seek;
               this.remaining = mes.remaining;
               if (mes.answeringTeam != null) {
                 this.answeringTeam = mes.answeringTeam
                 this.interruptId = mes.interruptId;
-                this.scenario = 2 //Prikazi tim koji odgovara i podakle
+                this.scenario = 2 // A team is currently answering. Show team data
               } else if (mes.error != null) {
-                this.scenario = 3 //Prikazi error
+                this.scenario = 3 // An error occured
               } else {
-                this.scenario = 4 //Pusti pesmu
+                this.scenario = 4 // The song is playing
               }
             }
           }

@@ -17,8 +17,6 @@ import com.cevapinxile.cestereg.api.quiz.dto.request.ScheduleIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.TeamIdRequest;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,6 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 
 /**
@@ -42,6 +42,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RequestMapping("/api/v1/games/{roomCode}")
 @CrossOrigin(origins = "*")
 public class InterruptController {
+    
+    private static final Logger log = LoggerFactory.getLogger(InterruptController.class);
 
     @Autowired
     private InterruptService interruptService;
@@ -99,10 +101,10 @@ Workflow:
             interruptService.interrupt(roomCode, tir.teamId());
             return ResponseEntity.ok().build();
         } catch (DerivedException ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }
@@ -158,10 +160,10 @@ Workflow:
             interruptService.resolveErrors(sir.scheduleId(), roomCode);
             return ResponseEntity.ok().build();
         } catch (DerivedException ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }
@@ -239,10 +241,10 @@ Workflow:
             interruptService.answer(answerId, ar, roomCode);
             return ResponseEntity.ok().build();
         } catch (DerivedException ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }
@@ -297,10 +299,10 @@ Workflow:
             interruptService.savePreviousScenario(sr.scenario(), roomCode);
             return ResponseEntity.ok().build();
         } catch (DerivedException ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(InterruptController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }

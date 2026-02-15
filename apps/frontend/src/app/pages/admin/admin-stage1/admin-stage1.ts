@@ -75,7 +75,7 @@ export class AdminStage1 implements OnInit{
       this.inTransit = true;
       try{
         await firstValueFrom(this.categoryService.start(this.selectedAlbum.categoryId))
-        //Idemo u stage 2
+        // Transition to stage 2
         this.router.navigate(['admin','songs'])
       }catch(err){
 

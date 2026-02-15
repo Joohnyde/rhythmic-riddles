@@ -74,11 +74,19 @@ public class GameServiceImpl implements GameService {
             existingGame = new GameEntity(cgr);
         }
         gameRepository.saveAndFlush(existingGame);
+        //Log here
         return existingGame.getCode();
     }
 
-    /* Core payload fields expected by the frontend in all scenarios.
-       Keeping them always present avoids conditional checks on the client side.*/
+    /**
+    * Populates fields required by the frontend in all scenarios.
+    *
+    * <p>These fields form a stable payload contract so the client can render without
+    * scenario-specific null checks. The method should be called for any stage 2 response.</p>
+    *
+    * @param json target JSON object to populate
+    * @param lastPlayedSong schedule entry representing the current/last played song
+    */
     public static void putDefaultFields(ScheduleEntity lastPlayedSong, HashMap<String, Object> json) {
         String question = lastPlayedSong.getTrackId().getAlbumId().getCustomQuestion();
         String answer = lastPlayedSong.getTrackId().getCustomAnswer();
@@ -231,6 +239,8 @@ public class GameServiceImpl implements GameService {
         
         GameEntity game = maybeGame.get();
         int currentStage = game.getStage();
+        
+        //Log here
 
         if (newStage < 1 || newStage > 4) {
             throw new InvalidArgumentException("Stage id has to be a number between 1 and 3");

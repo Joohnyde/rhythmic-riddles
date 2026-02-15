@@ -15,8 +15,6 @@ import com.cevapinxile.cestereg.common.exception.DerivedException;
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateTeamRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -28,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cevapinxile.cestereg.core.service.TeamService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 
 /**
@@ -41,6 +41,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 @CrossOrigin(origins = "*")
 public class TeamController {
 
+    private static final Logger log = LoggerFactory.getLogger(TeamController.class);
+    
     @Autowired
     private TeamService teamService;
 
@@ -111,10 +113,10 @@ Notes:
         try {
             return ResponseEntity.ok(teamService.createTeam(ctr, roomCode));
         } catch (DerivedException ex) {
-            Logger.getLogger(TeamController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(TeamController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }
@@ -169,10 +171,10 @@ Workflow:
             teamService.kickTeam(teamId, roomCode);
             return ResponseEntity.ok().build();
         } catch (DerivedException ex) {
-            Logger.getLogger(TeamController.class.getName()).log(Level.INFO, ex.toString());
+            log.info(ex.toString());
             return ResponseEntity.status(ex.HTTP_CODE).body(ex.toString());
         } catch (Exception ex) {
-            Logger.getLogger(TeamController.class.getName()).log(Level.WARNING, "Unforseen error", ex);
+            log.warn("Unforseen error", ex);
             return ResponseEntity.status(500).build();
         }
     }

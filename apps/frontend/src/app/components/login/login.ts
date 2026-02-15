@@ -51,6 +51,7 @@ export class Login implements OnInit {
     this.socket = this.createServiceWithParam(this.socket_position+code)
     this.storage.messageObservable = this.socket.getMessages();
     try{
+      console.log(this.storage.messageObservable);
       const fwf = await firstValueFrom(this.storage.messageObservable);
       if(fwf.type == "welcome"){
         this.storage.code = code;

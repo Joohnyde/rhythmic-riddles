@@ -8,23 +8,29 @@ import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
 /**
- *
  * @author denijal
+ * Thread-safe registry of active WebSocket sessions keyed by {@code <KEY_TYPE>}.
  *
- * Thread-safe session store. compute(...) keeps "check + update" atomic per
- * key, and identity checks prevent stale close events from removing a freshly
- * reconnected session.
+ * <p>This registry is concurrency-safe without {@code synchronized} blocks.
+ * It relies on {@link java.util.concurrent.ConcurrentHashMap#compute(Object, java.util.function.BiFunction)}
+ * so "check + update" happens atomically <em>per key</em>.</p>
+ *
+ * <p>Removal is identity-based to guard against stale close events:
+ * if a client reconnects and replaces a session, a delayed close of the old session must not remove the new one.</p>
+ *
+ * <p><b>Replacement policy:</b> reject collisions.</p>
  */
+
 @Component
 public class SessionRegistry implements PresenceGateway {
 
-    private static final Logger log = Logger.getLogger(SessionRegistry.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(SessionRegistry.class);
 
     private final ConcurrentHashMap<String, RoomSessions> sessionsByRoom = new ConcurrentHashMap<>();
 
@@ -46,6 +52,16 @@ public class SessionRegistry implements PresenceGateway {
         return rs != null && rs.isPresent(ClientType.ADMIN) && rs.isPresent(ClientType.TV);
     }
 
+    /**
+    * Registers a session under the given registry key.
+    *
+    * <p>The accept/reject decision is made inside {@code compute(...)} to keep "check + update" atomic.
+    * Implementations often allow replacing an existing session for the same key (refresh/reconnect),
+    * while rejecting conflicting sessions that would hijack an occupied slot.</p>
+    *
+    * @param session session to register
+    * @return {@code true} if accepted and stored; {@code false} if rejected by the replacement policy
+ */
     public boolean setSession(WebSocketSession session) {
         SessionKey key = extractSessionKey(session);
         if (key == null) {
@@ -58,21 +74,20 @@ public class SessionRegistry implements PresenceGateway {
         /* We update the registry ATOMICALLY via ConcurrentHashMap.compute(...).
            Because lambdas can only capture effectively-final vars, we use an AtomicBoolean
            as a mutable "out param" to return whether the new session was accepted.*/
-        AtomicBoolean accepted = new AtomicBoolean(false);
+        AtomicBoolean accepted = new AtomicBoolean(true);
 
         sessionsByRoom.compute(roomCode, (code, existing) -> {
             RoomSessions current = (existing == null) ? new RoomSessions(null, null) : existing;
-
             WebSocketSession already = current.get(type);
             /* The decision below is the single source of truth for session replacement rules.
                It must be made *inside* compute(...) so "check + update" is atomic under concurrency.*/
             if (already != null && already.isOpen()) {
-                accepted.set(true);
-                log.log(Level.INFO, "Socket {0} for room {1} already exists; rejecting new session.", new Object[]{type, roomCode});
+                accepted.set(false);
+                log.info("Socket {} for room {} already exists; rejecting new session.", new Object[]{type, roomCode});
                 return current; // keep old one
             }
 
-            log.log(Level.INFO, "Connected socket {0} for room {1}.", new Object[]{type, roomCode});
+            log.info("Connected socket {} for room {}.", new Object[]{type, roomCode});
             return current.with(type, session);
         });
 
@@ -93,6 +108,15 @@ public class SessionRegistry implements PresenceGateway {
         return rs == null ? null : rs.tv();
     }
 
+    /**
+    * Removes a session if (and only if) it is still the session currently stored for its key.
+    *
+    * <p>This protects against stale close events: if the client reconnected, the registry may already hold
+    * a newer session instance, and we must not remove it.</p>
+    *
+    * @param session session instance being closed
+    * @return {@code true} if removal happened; {@code false} if the stored session differed or no entry existed
+    */
     public boolean removeSession(WebSocketSession session) {
         SessionKey key = extractSessionKey(session);
         if (key == null) {
@@ -111,7 +135,7 @@ public class SessionRegistry implements PresenceGateway {
                 return existing;
             }
             removed.set(true);
-            log.log(Level.INFO, "Removed socket {0} for room {1}.", new Object[]{type, roomCode});
+            log.info("Removed socket {} for room {}.", new Object[]{type, roomCode});
             return existing.with(type, null);
         });
 
@@ -140,7 +164,7 @@ public class SessionRegistry implements PresenceGateway {
         Object codeObj = session.getAttributes().get("ROOM_CODE");
 
         if (!(posObj instanceof Integer) || codeObj == null) {
-            log.log(Level.WARNING, "Missing or invalid SOCKET_POSITION / ROOM_CODE. Closing session.");
+            log.warn("Missing or invalid SOCKET_POSITION / ROOM_CODE. Closing session.");
             closeQuietly(session);
             return null;
         }
@@ -149,7 +173,7 @@ public class SessionRegistry implements PresenceGateway {
         try {
             type = ClientType.fromSocketPosition((Integer) posObj);
         } catch (IllegalArgumentException e) {
-            log.log(Level.WARNING, "Invalid SOCKET_POSITION {0}. Closing session.", posObj);
+            log.warn("Invalid SOCKET_POSITION {}. Closing session.", posObj);
             closeQuietly(session);
             return null;
         }

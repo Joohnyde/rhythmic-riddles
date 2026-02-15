@@ -41,13 +41,13 @@ export class TVStage2 {
         switch (mes.type) {
           case "song_next":
             this.songId = mes.songId;
-          this.question = mes.question;
-          this.answer = mes.answer;
-          this.seek = 0;
-          this.remaining = mes.remaining;
-          this.answerDuration = mes.answerDuration;
-          
-          this.lastPlayedSong = mes.scheduleId;
+            this.question = mes.question;
+            this.answer = mes.answer;
+            this.seek = 0;
+            this.remaining = mes.remaining;
+            this.answerDuration = mes.answerDuration;
+
+            this.lastPlayedSong = mes.scheduleId;
             this.bravo = null;
             this.scenario = 4;
             this.answeringTeam = null;
@@ -62,15 +62,15 @@ export class TVStage2 {
             break;
           case "answer":
             const item = this.teams.find(x => x.teamId === mes.teamId);
-          if (item) {
-            item.scheduleId = mes.scheduleId
-            item.score += mes.correct ? 30 : -10;
-          }
+            if (item) {
+              item.scheduleId = mes.scheduleId
+              item.score += mes.correct ? 30 : -10;
+            }
             if (mes.correct) this.bravo = item;
             this.scenario = mes.correct ? 0 : 4;
             break;
           case "error_solved":
-          this.scenario = (mes.previousScenario == null) ? 4 : mes.previousScenario //Nisam bio ucitan kad je crko. Posto se ovo desi samo ako sam kliknuo dugme, a da se na spawnu desi to dugme znaci da sam bio u po pjesme
+            this.scenario = (mes.previousScenario == null) ? 4 : mes.previousScenario //Nisam bio ucitan kad je crko. Posto se ovo desi samo ako sam kliknuo dugme, a da se na spawnu desi to dugme znaci da sam bio u po pjesme
             break;
           case "pause":
             if (this.scenario == 2) break;
@@ -91,33 +91,32 @@ export class TVStage2 {
             break;
           case "welcome":
             if (mes.stage == "songs") {
-              //Defaultna polja: pjesma_id, pitanje, odgovor, timovi, bodovi
-
+              /* Default fields: songId, question,
+               answer, scheduleId, answerDuration, scores */
               this.songId = mes.songId;
-            this.question = mes.question;
-            this.answer = mes.answer;
-            this.teams = mes.scores;
-            this.lastPlayedSong = mes.scheduleId;
-            this.answerDuration = mes.answerDuration;
-            
+              this.question = mes.question;
+              this.answer = mes.answer;
+              this.teams = mes.scores;
+              this.lastPlayedSong = mes.scheduleId;
+              this.answerDuration = mes.answerDuration;
 
               if (mes.revealed != null) {
-                //Kraj pjesme
+                // The song has finished
                 if (mes.revealed == true) {
                   this.bravo = this.teams.find(x => x.teamId === mes.bravo);
-                  this.scenario = 0 //Pusti odgovor
+                  this.scenario = 0 // The song was revealed so we should show the guesser
                 } else
-                  this.scenario = 1 //Prikazi refresh ili dalje dugmad
+                  this.scenario = 1 // The song was NOT revealed so show "replay" and "reveal" buttons
               } else {
                 this.seek = mes.seek;
                 this.remaining = mes.remaining;
                 if (mes.team != null) {
                   this.answeringTeam = mes.answeringTeam
-                  this.scenario = 2 //Prikazi tim koji odgovara i podakle
+                  this.scenario = 2 // A team is currently answering. Show team data
                 } else if (mes.error != null) {
-                  this.scenario = 3 //Prikazi error
+                  this.scenario = 3 // An error occured
                 } else {
-                  this.scenario = 4 //Pusti pesmu
+                  this.scenario = 4 // The song is playing
                 }
               }
             } else {
@@ -136,7 +135,7 @@ export class TVStage2 {
     if (this.scenario == 4) {
       this.scenario = 1;
     } else if (this.scenario == 0) {
-      //Napravi animaciju loadanja sledece runde
+      // TODO: Play loading animation for the next round
     }
   }
 

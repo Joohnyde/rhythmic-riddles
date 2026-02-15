@@ -8,15 +8,15 @@ import { TeamScore } from '../../entities/team.scores';
   styleUrl: './team-scoreboard.scss',
 })
 export class TeamScoreboard {
-  @Input() bravo: string | undefined;
+  @Input() bravo: TeamScore | undefined;
   @Input() teams: TeamScore[] = [];
   @Input() currentScheduleId: string | null = null;
 
   isAnsweredWrong(team: TeamScore): boolean {
-    return this.bravo !== team.teamId && team.scheduleId === this.currentScheduleId;
+    return this.bravo !== team && team.scheduleId === this.currentScheduleId;
   }
 
   isAnsweredCorrect(team: TeamScore): boolean {
-    return this.bravo === team.teamId && team.scheduleId === this.currentScheduleId;
+    return this.bravo === team && team.scheduleId === this.currentScheduleId;
   }
 }
