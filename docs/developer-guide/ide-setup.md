@@ -17,8 +17,13 @@ This repo includes a root `.editorconfig`. It defines:
 - Frontend: VS Code (recommended), WebStorm
 
 ### Make EditorConfig active
-- VS Code: built-in (if not, install EditorConfig extension)
-- IntelliJ: built-in
+- VS Code:
+    - Install EditorConfig extension (editorconfig.editorconfig)
+    - Set as default formatter ( e.g. by setting ``` "editor.defaultFormatter": "EditorConfig.EditorConfig" ``` in settings.json)
+- IntelliJ:
+    - EditorConfig extension should come bundled, install if not
+    - Make sure Settings -> Editor -> Code Style -> Enable EditorConfig support is checked
+    - **Note:** comment language recognition from .editorconfig is not supported. To ensure consistency, make sure Settings -> Editor -> Natural Languages is set to English (US)
 - NetBeans: ensure EditorConfig support is enabled (plugin may be required depending on version)
 
 ## Java formatting
