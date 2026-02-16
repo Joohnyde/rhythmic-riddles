@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:18.2
+    container_name: cestereg-db
+    environment:
+      POSTGRES_DB: rhytmicriddles    # MOCK
+      POSTGRES_USER: rhytmicriddles  # MOCK
+      POSTGRES_PASSWORD: change_me   # MOCK
+    ports:
+      - "2345:5432"
+    volumes:
+      - cestereg_pgdata:/var/lib/postgresql
+      - ./db/:/docker-entrypoint-initdb.d:ro
+
+
+  dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    container_name: cestereg-dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:cached
+    depends_on:
+      - db
+    # keep it alive so any IDE/terminal can "attach" to it
+    command: sleep infinity
+    # optional: forward ports if you run ng serve / spring boot inside this container
+    ports:
+      - "4200:4200"
+      - "8080:8080"
+
+volumes:
+  cestereg_pgdata:
+

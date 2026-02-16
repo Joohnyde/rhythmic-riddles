@@ -28,8 +28,8 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
-nbactions.xml
-nb-configuration.xml
+nbactions*.xml
+nb-configuration*.xml
 
 # Visual Studio
 .vs/
@@ -117,6 +117,7 @@ tmp/
 ############################################
 **/docker/.env
 docker-compose.override.yml
+docker-compose.yml
 
 ############################################
 # Logs

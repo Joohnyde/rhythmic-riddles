@@ -3,9 +3,6 @@
 \set db_user rhytmicriddles
 \set db_pass change_me
 
--- Drop database (must be outside transaction)
-DROP DATABASE IF EXISTS :db_name;
-
 -- Create user (role)
 DO
 $$

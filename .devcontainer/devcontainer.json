@@ -1,23 +1,29 @@
 {
   "name": "RhytmicRiddles Dev",
   "dockerComposeFile": [
-    "../infra/docker-compose/dev.compose.yml"
+    "../docker-compose.yml"
   ],
-  "service": "db",
-  "workspaceFolder": "/workspaces/rhytmicriddles",
+  "service": "dev",
+  "runServices": ["db", "dev"],
+  "workspaceFolder": "/workspace",
   "customizations": {
     "vscode": {
       "extensions": [
         "EditorConfig.EditorConfig",
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-spring-boot",
+        "angular.ng-template"
       ],
       "settings": {
         "editor.formatOnSave": true
       }
     }
   },
-  "postCreateCommand": "chmod +x ./scripts/dev/*.sh || true",
-  "remoteUser": "root"
+  "postCreateCommand": "chmod +x ../scripts/dev/*.sh || true",
+  "remoteUser": "vscode",
+  "forwardPorts": [4200, 8080]
 }
+
