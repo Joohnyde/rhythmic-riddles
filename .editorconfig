@@ -8,6 +8,7 @@ charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
+spelling_language = en_US
 
 # 4 spaces by default
 indent_style = space
@@ -43,10 +44,21 @@ indent_size = 2
 # -----------------------------
 [*.java]
 indent_size = 4
+max_line_length = 120
 
 # -----------------------------
 # Shell scripts
 # -----------------------------
 [*.sh]
-indent_style = space
+indent_size = 2
+
+# -----------------------------
+# Database files (SQL)
+# -----------------------------
+[*.sql]
+
+# -----------------------------
+# Hardware interaction code (.ino)
+# -----------------------------
+[*.ino]
 indent_size = 2
