@@ -6,7 +6,7 @@
     @case (0) {
         <!-- Pusti odgovor -->
         <app-audio-player
-            [src]="'http://localhost:8080/assets/v1/audio/answers/'+songId"
+            [src]="environment.apiUrl + '/assets/v1/audio/answers/' + songId"
             [seek]="0"
             [remaining]="answerDuration"
             (completed)="onTrackFinished()"
@@ -37,7 +37,7 @@
     @case (4) {
         <!-- Pusti pesmu -->
             <app-audio-player
-            [src]="'http://localhost:8080/assets/v1/audio/snippets/'+songId"
+            [src]="environment.apiUrl + '/assets/v1/audio/snippets/' + songId"
             [seek]="seek"
             [remaining]="remaining"
             (completed)="onTrackFinished()"

@@ -7,7 +7,6 @@ package com.cevapinxile.cestereg.config;
 import com.cevapinxile.cestereg.runtime.websocket.GameCodeExtractor;
 import com.cevapinxile.cestereg.runtime.websocket.SessionRegistry;
 import com.cevapinxile.cestereg.runtime.websocket.WebSocketHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;

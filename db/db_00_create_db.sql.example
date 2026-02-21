@@ -1,42 +1,53 @@
--- Define variable
-\set db_name rhytmicriddles
-\set db_user rhytmicriddles
+-- =========================
+-- Idempotent bootstrap script (psql)
+-- =========================
+
+\set db_name rhytmic_riddles
+\set db_user rhytmic_riddles
 \set db_pass change_me
 
--- Create user (role)
-DO
-$$
-BEGIN
-   IF NOT EXISTS (
-      SELECT FROM pg_catalog.pg_roles WHERE rolname = :'db_user'
-   ) THEN
-      EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'db_user', :'db_pass');
-   END IF;
-END
-$$;
+-- 1) Create role if missing (idempotent)
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'db_user', :'db_pass')
+WHERE NOT EXISTS (
+  SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = :'db_user'
+)\gexec
 
--- Create database owned by the user
-CREATE DATABASE :db_name OWNER :db_user;
+-- Optional: ensure role can create DB (safe if already has it)
+-- (If you don't want this permission, remove it.)
+ALTER ROLE :db_user CREATEDB;
+-- Force old password
+ALTER ROLE :db_user PASSWORD :'db_pass';
 
--- Connect to the new database
+-- 2) Create database if missing (idempotent)
+SELECT format('CREATE DATABASE %I OWNER %I', :'db_name', :'db_user')
+WHERE NOT EXISTS (
+  SELECT 1 FROM pg_database WHERE datname = :'db_name'
+)\gexec
+
+-- 3) Connect to the target database
 \connect :db_name
 
--- Make sure user owns public schema
+-- 4) Ensure correct ownership & privileges (safe to repeat)
+
+-- public schema ownership
 ALTER SCHEMA public OWNER TO :db_user;
 
--- Grant full privileges on database
+-- DB privileges
 GRANT ALL PRIVILEGES ON DATABASE :db_name TO :db_user;
 
--- Allow user to create in public schema
+-- Schema privileges
 GRANT ALL ON SCHEMA public TO :db_user;
 
--- Ensure future tables/sequences/functions are accessible
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT ALL ON TABLES TO :db_user;
+-- Default privileges for objects created by *this script's current user*.
+-- Important nuance:
+-- ALTER DEFAULT PRIVILEGES affects future objects created by the role that runs this command.
+-- If you run this as postgres/superuser, it sets defaults for that superuser, not for :db_user.
+-- To set defaults for :db_user, run as that role or use "FOR ROLE".
+ALTER DEFAULT PRIVILEGES FOR ROLE :db_user IN SCHEMA public
+  GRANT ALL ON TABLES TO :db_user;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT ALL ON SEQUENCES TO :db_user;
+ALTER DEFAULT PRIVILEGES FOR ROLE :db_user IN SCHEMA public
+  GRANT ALL ON SEQUENCES TO :db_user;
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-GRANT ALL ON FUNCTIONS TO :db_user;
-
+ALTER DEFAULT PRIVILEGES FOR ROLE :db_user IN SCHEMA public
+  GRANT ALL ON FUNCTIONS TO :db_user;

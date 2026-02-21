@@ -50,7 +50,8 @@ target/
 *.ear
 *.log
 *persistence.xml
-*application.yml
+*application*.yml
+pg-client/
 
 # Maven
 pom.xml.tag
@@ -74,6 +75,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+node/
 
 # Angular
 .angular/

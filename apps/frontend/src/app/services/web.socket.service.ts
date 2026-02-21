@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@angular/core';
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,8 @@ export class WebSocketService {
   @Inject('room_code') private code: string
  ) {
    // 'code' is actually "{socketPosition}{roomCode}" (e.g., "0AKKU") to match backend handshake parsing.
-    this.socket$ = webSocket('ws://localhost:8080/ws/'+code);
+    
+   this.socket$ = webSocket(`${environment.wsUrl}/ws/${code}`);
   }
 
   // Send a message to the server

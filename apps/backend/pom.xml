@@ -1,59 +1,225 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<!--
+  Maven POM for "cestereg" backend.
+  Key ideas:
+  - Uses Spring Boot parent (version 4.0.0) and Java 25.
+  - Builds a Spring Boot WebMVC + WebSocket + JPA application.
+  - Optionally bundles an embedded Postgres + psql client (controlled by properties/profiles).
+  - "production" profile also builds Angular frontend and packages it into the Spring Boot jar under /static.
+  - Platform selection for embedded Postgres binaries is done via -Dplatform=linux|windows|macos.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!-- Maven model version -->
     <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Spring Boot parent:
+      - Manages versions for Spring Boot starters and many common dependencies/plugins.
+      - Provides sensible defaults (plugin versions, dependency management, etc).
+    -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.0.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <!-- No relativePath: parent is resolved from repositories, not local multi-module -->
+        <relativePath/>
     </parent>
+
+    <!-- Project coordinates -->
     <groupId>com.cevapinxile</groupId>
     <artifactId>cestereg</artifactId>
     <version>0.0.1</version>
+
+    <!-- Human-readable project name -->
     <name>RhytmicRiddles</name>
-    <description>
-        RhytmicRiddles is a Spring Boot backend for a real-time music quiz game, coordinating TV and Admin clients via REST and WebSockets, handling game flow, scoring, buzzer interrupts, and crash-safe state recovery using PostgreSQL.
-    </description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
+
     <properties>
+        <!--
+          Java language level used to compile/run.
+          (Boot 4 is expected to support very recent Java versions; ensure your toolchain matches.)
+        -->
         <java.version>25</java.version>
+
+        <!-- =========================
+        Build switches
+        ========================= -->
+
+        <!--
+          embeddb:
+          - true  => ship embedded DB + psql client in the artifact (or at least prepare to).
+          - false => ship neither (external DB usage).
+          Note: The "external-db" profile is activated when embeddb=false.
+        -->
+        <embeddb>true</embeddb>
+
+        <!--
+          platform:
+          Controls which embedded Postgres *binaries* dependency is included (runtime).
+          Possible values in this POM:
+            - linux
+            - windows
+            - macos
+          Default here is linux.
+        -->
+        <platform>linux</platform>
+
+        <!--
+          Skip flags for pg-client packaging steps:
+          - Default true: do not run any packer scripts unless a platform profile flips one to false.
+          - Each platform profile sets exactly one skip.* to false so only its packer runs.
+        -->
+        <skip.pg.linux>true</skip.pg.linux>
+        <skip.pg.windows>true</skip.pg.windows>
+        <skip.pg.macos>true</skip.pg.macos>
+
+        <!--
+          Script paths to pack a "psql client" (platform specific).
+          These scripts live outside this module:
+            apps/backend/ (this module)
+            ../../scripts/prod/... (repo-level scripts)
+        -->
+        <script.pg.packer.linux>${project.basedir}/../../scripts/prod/postgres_packer.sh</script.pg.packer.linux>
+        <script.pg.packer.windows>${project.basedir}/../../scripts/prod/postgres_packer.bat</script.pg.packer.windows>
+        <script.pg.packer.macos>${project.basedir}/../../scripts/prod/postgres_packer_macos.sh</script.pg.packer.macos>
+
+        <!-- =========================
+        Versions for embedded Postgres
+        ========================= -->
+
+        <!-- Library API used from code (EmbeddedPostgres) -->
+        <embedded.postgres.version>2.2.0</embedded.postgres.version>
+
+        <!-- Version of bundled Postgres binaries artifacts (one selected per platform profile) -->
+        <embedded.postgres.binaries.version>18.2.0</embedded.postgres.binaries.version>
     </properties>
+
     <dependencies>
+
+        <!-- =========================
+        Spring Boot starters
+        ========================= -->
+
+        <!-- Spring Data JPA (Hibernate, transaction mgmt, etc) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <!-- Plain JDBC support (JdbcTemplate, DataSource helpers) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
+
+        <!-- Spring MVC (servlet stack). Provides DispatcherServlet, controllers, etc. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
+
+        <!-- WebSocket support -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+        <!--
+          Actuator: exposes /actuator endpoints (health/info/metrics/shutdown etc),
+          can also run on separate management port if configured.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- =========================
+        DB driver
+        ========================= -->
+
+        <!-- PostgreSQL JDBC driver (runtime scope since you don't compile against it directly) -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- =========================
+        Embedded Postgres (optional runtime behavior, but compile-time API)
+        ========================= -->
+
+        <!--
+          Embedded Postgres library:
+          - You import EmbeddedPostgres in your code, so this must be compile scope.
+          - This dependency *can pull in platform binaries transitively*.
+            You explicitly exclude all platform-specific binaries here so the POM remains clean,
+            then you add exactly one binaries jar via platform profiles (below).
+        -->
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <version>${embedded.postgres.version}</version>
+            <exclusions>
+                <!-- Exclude Linux (glibc) -->
+                <exclusion>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-linux-amd64</artifactId>
+                </exclusion>
+
+                <!-- Exclude Linux Alpine (musl) -->
+                <exclusion>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-linux-amd64-alpine</artifactId>
+                </exclusion>
+
+                <!-- Exclude Windows -->
+                <exclusion>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-windows-amd64</artifactId>
+                </exclusion>
+
+                <!-- Exclude macOS Intel -->
+                <exclusion>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-darwin-amd64</artifactId>
+                </exclusion>
+
+                <!-- Exclude macOS Apple Silicon -->
+                <exclusion>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-darwin-arm64</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- =========================
+        OpenAPI / Swagger UI
+        ========================= -->
+
+        <!-- springdoc OpenAPI UI for Spring WebMVC -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
+        <!-- Utility library -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <!-- =========================
+        Test-only starters
+        ========================= -->
+
+        <!--
+          Boot provides *-test starters for convenient testing dependencies.
+          (Note: These artifacts are unusual names compared to the common spring-boot-starter-test;
+           you apparently chose module-specific test starters.)
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa-test</artifactId>
@@ -74,64 +240,411 @@
             <artifactId>spring-boot-starter-websocket-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.core</artifactId>
-            <version>2.7.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.asm</artifactId>
-            <version>9.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.antlr</artifactId>
-            <version>2.7.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.jpa</artifactId>
-            <version>2.7.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.jpa.jpql</artifactId>
-            <version>2.7.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.moxy</artifactId>
-            <version>2.7.12</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>jakarta.persistence</artifactId>
-            <version>2.2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.1</version>
-        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+
+            <!--
+              exec-maven-plugin:
+              Used later in profiles (notably "production") to run scripts, like packing pg client.
+              Declared here so version is fixed and can be referenced by profile executions.
+            -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
             </plugin>
+
+            <!--
+              spring-boot-maven-plugin:
+              Builds an executable Boot jar (repackage goal).
+              You keep it unconfigured here; some profile might add extra config later.
+            -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- no special config here; external-db profile adds excludes when embeddb=false -->
             </plugin>
         </plugins>
     </build>
 
+    <profiles>
+
+        <!-- ========================================================= -->
+        <!-- External DB build profile (activated when embeddb=false)   -->
+        <!-- ========================================================= -->
+        <!--
+          Purpose:
+          If you build with -Dembeddb=false, this profile activates automatically and
+          removes pg-client resources from the build output so they cannot end up in the jar.
+          Usage example (as your comment says):
+            mvn -Pproduction -Dembeddb=false clean package
+        -->
+        <profile>
+            <id>external-db</id>
+            <activation>
+                <property>
+                    <name>embeddb</name>
+                    <value>false</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+
+                    <!--
+                      maven-antrun-plugin:
+                      Runs a small Ant task during process-resources.
+                      Here it deletes ${outputDirectory}/pg-client.
+                      This is a hard "strip" so that even if some earlier step generated it,
+                      it won't be packaged into the jar.
+                    -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>strip-pg-client</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <delete dir="${project.build.outputDirectory}/pg-client" quiet="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- ========================================================= -->
+        <!-- Platform profiles: select embedded Postgres binaries jar   -->
+        <!-- ========================================================= -->
+
+        <!--
+          platform-linux:
+          - Activated by -Dplatform=linux (default set in properties).
+          - Flips skip.pg.linux to false so the linux pg-client packer runs in production profile.
+          - Adds embedded Postgres linux binaries as RUNTIME dependency.
+        -->
+        <profile>
+            <id>platform-linux</id>
+            <activation>
+                <property>
+                    <name>platform</name>
+                    <value>linux</value>
+                </property>
+            </activation>
+            <properties>
+                <skip.pg.linux>false</skip.pg.linux>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-linux-amd64</artifactId>
+                    <version>${embedded.postgres.binaries.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!--
+          platform-windows:
+          - Activated by -Dplatform=windows
+          - Flips skip.pg.windows to false so the windows pg-client packer runs in production profile.
+          - Adds embedded Postgres windows binaries as RUNTIME dependency.
+        -->
+        <profile>
+            <id>platform-windows</id>
+            <activation>
+                <property>
+                    <name>platform</name>
+                    <value>windows</value>
+                </property>
+            </activation>
+            <properties>
+                <skip.pg.windows>false</skip.pg.windows>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-windows-amd64</artifactId>
+                    <version>${embedded.postgres.binaries.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!--
+          platform-macos:
+          - Activated by -Dplatform=macos
+          - Flips skip.pg.macos to false so the macos pg-client packer runs in production profile.
+          - Adds embedded Postgres macOS binaries as RUNTIME dependency.
+        -->
+        <profile>
+            <id>platform-macos</id>
+            <activation>
+                <property>
+                    <name>platform</name>
+                    <value>macos</value>
+                </property>
+            </activation>
+            <properties>
+                <skip.pg.macos>false</skip.pg.macos>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>io.zonky.test.postgres</groupId>
+                    <artifactId>embedded-postgres-binaries-darwin-amd64</artifactId>
+                    <version>${embedded.postgres.binaries.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- ========================================================= -->
+        <!-- Production profile: build frontend + package resources     -->
+        <!-- ========================================================= -->
+        <!--
+          production profile adds build steps:
+          0) Pack pg-client (platform-specific scripts via exec-maven-plugin)
+          1) Install Node/npm and build Angular (frontend-maven-plugin)
+          2) Copy Angular dist into Spring Boot jar's /static
+          3) Replace packaged db/*.sql with repo-level ../../db/*.sql
+        -->
+        <profile>
+            <id>production</id>
+
+            <build>
+                <plugins>
+
+                    <!--
+                      0) Pack bundled psql client (platform-specific)
+                      Controlled by ${skip.pg.*}.
+                      - The platform profiles set one skip flag to false.
+                      - If the skip flag is true, that execution does nothing.
+                      Runs in generate-resources phase.
+                    -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+
+                            <!-- Linux packer -->
+                            <execution>
+                                <id>pack-pg-client-linux</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.pg.linux}</skip>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${script.pg.packer.linux}</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <!-- Postgres major version -->
+                                        <VER>18</VER>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+
+                            <!-- Windows packer -->
+                            <execution>
+                                <id>pack-pg-client-windows</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.pg.windows}</skip>
+                                    <executable>cmd</executable>
+                                    <arguments>
+                                        <argument>/c</argument>
+                                        <argument>${script.pg.packer.windows}</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <VER>18</VER>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+
+                            <!-- macOS packer -->
+                            <execution>
+                                <id>pack-pg-client-macos</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.pg.macos}</skip>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${script.pg.packer.macos}</argument>
+                                    </arguments>
+                                    <environmentVariables>
+                                        <VER>18</VER>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+
+                        </executions>
+                    </plugin>
+
+                    <!--
+                      1) frontend-maven-plugin:
+                      - Downloads Node + npm versions (so builds are reproducible)
+                      - Runs npm ci
+                      - Runs Angular build (production configuration)
+                      workingDirectory points to ../frontend relative to backend module.
+                    -->
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>1.15.0</version>
+                        <configuration>
+                            <workingDirectory>${project.basedir}/../frontend</workingDirectory>
+                        </configuration>
+                        <executions>
+
+                            <!-- Install Node & npm locally for the build -->
+                            <execution>
+                                <id>install-node-and-npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>v24.11.1</nodeVersion>
+                                    <npmVersion>11.6.2</npmVersion>
+                                </configuration>
+                            </execution>
+
+                            <!-- npm ci ensures clean, lockfile-based install -->
+                            <execution>
+                                <id>npm-ci</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>ci</arguments>
+                                </configuration>
+                            </execution>
+
+                            <!-- Angular production build -->
+                            <execution>
+                                <id>npm-build</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build -- --configuration production</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!--
+                      2) maven-resources-plugin:
+                      Copies Angular build output into Spring Boot static resources location.
+                      Output directory: target/classes/static
+                      So Boot will serve the frontend directly from the jar.
+                    -->
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>copy-frontend-to-static</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/../frontend/dist/cestereg/browser</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!--
+                      3) maven-antrun-plugin:
+                      Replaces db/*.sql that might be packaged by default with a different set:
+                      - Creates target/classes/db
+                      - Deletes any existing *.sql there
+                      - Copies *.sql from ../../db into target/classes/db
+                      - Deletes leftover frontend/node folder
+                      - Deletes pg-client folder if existing
+                      This only happens when "production" profile is enabled.
+                    -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>replace-db-scripts</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${project.build.outputDirectory}/db"/>
+                                        <delete>
+                                            <fileset dir="${project.build.outputDirectory}/db" includes="*.sql"/>
+                                        </delete>
+                                        <copy todir="${project.build.outputDirectory}/db" overwrite="true" failonerror="true">
+                                            <fileset dir="${project.basedir}/../../db" includes="*.sql"/>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>remove-node-folder</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <delete dir="${project.basedir}/../frontend/node" quiet="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                            
+                            <execution>
+                                <id>remove-pg-client</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <delete dir="${project.basedir}/src/main/resources/pg-client" quiet="true"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

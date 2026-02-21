@@ -2,7 +2,7 @@
 <configuration>
 
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="rhythmic-riddles"/>
-    <property name="LOG_DIR" value="logs"/>
+    <springProperty scope="context" name="LOG_DIR" source="app.log-dir" defaultValue="logs"/>
 
     <property name="CONSOLE_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level){INFO=green,WARN=yellow,ERROR=red} %logger{36}:%line %replace(%X{roomCode}){'^(.+)$','[room=$1] '}%replace(%X{sessionId}){'^(.+)$','[session=$1] '}%replace(%X{clientType}){'^(.+)$','[client=$1] '}- %msg%n%ex{full}"/>

@@ -7,6 +7,7 @@ import { TeamScore } from '../../../entities/team.scores';
 import { TeamScoreboard } from "../../../components/team-scoreboard/team-scoreboard";
 import { firstValueFrom } from 'rxjs';
 import { InterruptService } from '../../../services/interrupt.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-tvstage2',
@@ -15,6 +16,8 @@ import { InterruptService } from '../../../services/interrupt.service';
   styleUrl: './tvstage2.scss',
 })
 export class TVStage2 {
+
+  public environment = environment;
 
   songId !: string
   question !: string
