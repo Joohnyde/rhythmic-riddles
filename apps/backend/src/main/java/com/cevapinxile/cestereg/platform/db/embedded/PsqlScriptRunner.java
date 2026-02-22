@@ -21,7 +21,8 @@ public final class PsqlScriptRunner {
      * Runs all SQL scripts found under classpath:db/*.sql exactly once.
      *
      * The marker file lives in dataDir so reruns are avoided across restarts.
-     * Scripts are copied to a temp folder first because psql expects filesystem paths.
+     * Scripts are copied to a temp folder first because psql expects filesystem
+     * paths.
      */
     public static void runOnceFromClasspathDbFolder(
             AppEmbeddedDbProperties props,
@@ -46,7 +47,7 @@ public final class PsqlScriptRunner {
         Path psql = PgClientBundler.ensureBundledPsqlInstalled(AppDataDirs.appDataBaseDir());
         psql.toFile().setExecutable(true, false);
 
-        log.info("Running {} SQL script(s) via bundled psql (host={}, port={}) from {}", 
+        log.info("Running {} SQL script(s) via bundled psql (host={}, port={}) from {}",
                 scripts.size(), props.getHost(), actualPort, tempSqlDir);
 
         for (int i = 0; i < scripts.size(); i++) {
@@ -74,8 +75,8 @@ public final class PsqlScriptRunner {
     }
 
     /**
-     * Copies classpath SQL scripts (db/*.sql) to an output directory and returns them in filename order.
-     * Sorting makes execution deterministic.
+     * Copies classpath SQL scripts (db/*.sql) to an output directory and
+     * returns them in filename order. Sorting makes execution deterministic.
      */
     private static List<Path> extractClasspathScriptsTo(Path outDir) throws IOException {
         Resource[] resources = new PathMatchingResourcePatternResolver()
@@ -110,11 +111,11 @@ public final class PsqlScriptRunner {
     /**
      * Executes one SQL script using psql.
      *
-     * Notes:
-     * - ON_ERROR_STOP=1: any SQL error stops execution and causes non-zero exit
-     * - ECHO=all / -e: echoes commands; useful for debugging, but can be noisy
-     * - PGPASSWORD is only set if provided (keeps env clean)
-     * - LD_LIBRARY_PATH is set to the bundled Postgres lib dir so psql can run from the bundle
+     * Notes: - ON_ERROR_STOP=1: any SQL error stops execution and causes
+     * non-zero exit - ECHO=all / -e: echoes commands; useful for debugging, but
+     * can be noisy - PGPASSWORD is only set if provided (keeps env clean) -
+     * LD_LIBRARY_PATH is set to the bundled Postgres lib dir so psql can run
+     * from the bundle
      */
     private static void runPsql(
             Path psql,
@@ -129,14 +130,21 @@ public final class PsqlScriptRunner {
 
         List<String> cmd = new ArrayList<>();
         cmd.add(psql.toAbsolutePath().toString());
-        cmd.add("-v"); cmd.add("ON_ERROR_STOP=1");
-        cmd.add("-v"); cmd.add("ECHO=all");
+        cmd.add("-v");
+        cmd.add("ON_ERROR_STOP=1");
+        cmd.add("-v");
+        cmd.add("ECHO=all");
         cmd.add("-e");
-        cmd.add("-h"); cmd.add(host);
-        cmd.add("-p"); cmd.add(String.valueOf(port));
-        cmd.add("-U"); cmd.add(user);
-        cmd.add("-d"); cmd.add(db);
-        cmd.add("-f"); cmd.add(script.toAbsolutePath().toString());
+        cmd.add("-h");
+        cmd.add(host);
+        cmd.add("-p");
+        cmd.add(String.valueOf(port));
+        cmd.add("-U");
+        cmd.add(user);
+        cmd.add("-d");
+        cmd.add(db);
+        cmd.add("-f");
+        cmd.add(script.toAbsolutePath().toString());
 
         // psql binary lives in .../bin; libs are typically in .../lib
         Path binDir = psql.getParent();
@@ -150,10 +158,20 @@ public final class PsqlScriptRunner {
         var env = pb.environment();
 
         // Ensure our bundled psql is found first + has its own libs
-        env.put("PATH", binDir.toAbsolutePath() + ":" + env.getOrDefault("PATH", ""));
-        env.put("LD_LIBRARY_PATH",
-                libDir.toAbsolutePath() + ":"
-                + env.getOrDefault("LD_LIBRARY_PATH", ""));
+        String sep = java.io.File.pathSeparator; // ";" on Windows, ":" on Linux/macOS
+
+        // Always prepend binDir to PATH (psql + required dll/so/dylib resolution)
+        env.put("PATH", binDir.toAbsolutePath() + sep + env.getOrDefault("PATH", ""));
+
+        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        if (os.contains("win")) {
+            // Windows loads DLLs from PATH; include lib as well just in case
+            env.put("PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("PATH", ""));
+        } else if (os.contains("mac")) {
+            env.put("DYLD_LIBRARY_PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("DYLD_LIBRARY_PATH", ""));
+        } else {
+            env.put("LD_LIBRARY_PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("LD_LIBRARY_PATH", ""));
+        }
 
         if (passwordOrNull != null && !passwordOrNull.isBlank()) {
             env.put("PGPASSWORD", passwordOrNull);

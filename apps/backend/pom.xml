@@ -82,7 +82,7 @@
             ../../scripts/prod/... (repo-level scripts)
         -->
         <script.pg.packer.linux>${project.basedir}/../../scripts/prod/postgres_packer.sh</script.pg.packer.linux>
-        <script.pg.packer.windows>${project.basedir}/../../scripts/prod/postgres_packer.bat</script.pg.packer.windows>
+        <script.pg.packer.windows>${project.basedir}/../../scripts/prod/postgres_packer.ps1</script.pg.packer.windows>
         <script.pg.packer.macos>${project.basedir}/../../scripts/prod/postgres_packer_macos.sh</script.pg.packer.macos>
 
         <!-- =========================
@@ -465,9 +465,12 @@
                                 </goals>
                                 <configuration>
                                     <skip>${skip.pg.windows}</skip>
-                                    <executable>cmd</executable>
+                                    <executable>powershell</executable>
                                     <arguments>
-                                        <argument>/c</argument>
+                                        <argument>-NoProfile</argument>
+                                        <argument>-ExecutionPolicy</argument>
+                                        <argument>Bypass</argument>
+                                        <argument>-File</argument>
                                         <argument>${script.pg.packer.windows}</argument>
                                     </arguments>
                                     <environmentVariables>
@@ -642,7 +645,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
                 </plugins>
             </build>
         </profile>
