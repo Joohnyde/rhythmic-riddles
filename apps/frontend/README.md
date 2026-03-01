@@ -1,16 +1,20 @@
-# quiz-game frontend (Angular)
+# Frontend (apps/frontend)
 
-Contains two modules:
-- TV (public)
-- Admin (private)
+Angular SPA containing both operator screens:
+- **Admin** (host controls)
+- **TV** (audience display)
 
-## Run
-- `npm ci`
-- `npm start`
+In production builds the frontend is bundled into the backend jar and served as static resources by Spring Boot.
 
-## Styling
-We plan to use:
-- Tailwind CSS
-- daisyUI
+## Development
+Frontend can be run:
+- locally (Node + Angular CLI), or
+- containerized via devcontainers (preferred for shared environment consistency)
 
-> TODO: Wire Tailwind + daisyUI into the actual Angular project.
+## Notes
+When the frontend runs inside a container, the dev server must listen on `0.0.0.0` and the port must be forwarded to the host browser.
+
+## Documentation
+- Dev environment & IDE integration: `docs/developer-guide/devcontainers.md`
+- Packaging & SPA routing behavior: `docs/developer-guide/release_builds.md`
+- User-facing operation: `docs/user-guide/`
