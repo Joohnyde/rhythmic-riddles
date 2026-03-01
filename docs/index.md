@@ -17,8 +17,10 @@
 - [Testing strategy](developer-guide/testing-strategy.md)
 - [Exceptions](developer-guide/exceptions.md)
 - [Security model](developer-guide/security.md)
-- [IDE setup](developer-guide/ide-setup.md)
+- [Devcontaiers](developer-guide/devcontainers.md)
+- [EditorConfig](developer-guide/editorconfig.md)
 - [Logging](developer-guide/logging.md)
+
 
 ## Hardware docs
 - [Hardware overview](../hardware/docs/overview.md)
