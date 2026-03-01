@@ -1,10 +1,10 @@
+
 # Database Guide
 
 This document describes **everything database-related** for the project: local development setup, embedded vs external DB, schema overview (ERD), tables/columns, SQL scripts, idempotency rules, seeding/dumps, and how scripts are executed automatically in the devcontainer.
 
-* * *
 
-## 1) Quick start
+## Quick start
 
 ### Option A — Devcontainer (recommended)
 
@@ -26,9 +26,8 @@ psql "postgresql://rhytmicriddles:change_me@127.0.0.1:2345/rhytmicriddles"
 
 Install Postgres locally and run scripts in order with `psql` (details below).
 
-* * *
 
-## 2) Database modes: External vs Embedded
+## Database modes: External vs Embedded
 
 The application supports two runtime database modes.
 
@@ -49,9 +48,8 @@ The application supports two runtime database modes.
 - docker entrypoint init (`/docker-entrypoint-initdb.d`)
 - bundled/embedded `psql` execution (because scripts use `\connect`, etc.)
 
-* * *
 
-## 3) Installing Postgres (External DB)
+## Installing Postgres (External DB)
 
 ### Linux (Debian/Ubuntu/Mint)
 
@@ -85,9 +83,8 @@ brew services start postgresql@18
 - Install using the [official Postgres installer](https://sbp.enterprisedb.com/getfile.jsp?fileid=1260041).
 - Ensure `psql` is available in PATH.
 
-* * *
 
-## 4) Schema overview (ERD)
+## Schema overview (ERD)
 
 ### Mermaid ERD
 
@@ -177,9 +174,7 @@ erDiagram
 
 ```
 
-* * *
-
-## 5) Tables and columns
+## Tables and columns
 
 Below is a practical description of each table (purpose + columns). For exact DDL, see `db_01_create_schema.sql`.
 
@@ -298,9 +293,8 @@ Indexes:
 - `idx_interrupt_team_schedule (team_id, schedule_id)`
 - `interrupt_index_arrived_desc (arrived_at desc, deduplicate_items=true)`
 
-* * *
 
-## 6) SQL scripts in `db/`
+## SQL scripts in `db/`
 
 All scripts are **idempotent** (safe to run multiple times) and designed to work in:
 
@@ -314,7 +308,7 @@ All scripts are **idempotent** (safe to run multiple times) and designed to work
 3.  `db_02_set_table_ownership.sql`
 4.  `db_03_fill_tables_with_initial_data.sql`
 
-#### 6.1 `db_00_create_db.sql` (bootstrap: role + database)
+#### `db_00_create_db.sql` (bootstrap: role + database)
 
 **Purpose:**
 
@@ -353,7 +347,7 @@ Recommended pattern:
 - In production:
     - generate a concrete `db_00_create_db.sql` during build/deploy
 
-#### 6.2 `db_01_create_schema.sql` (schema)
+#### `db_01_create_schema.sql` (schema)
 
 **Purpose:**
 
@@ -374,7 +368,7 @@ Recommended pattern:
 - indexes use `CREATE INDEX IF NOT EXISTS`
     
 
-#### 6.3 `db_02_set_table_ownership.sql` (ownership normalization)
+#### `db_02_set_table_ownership.sql` (ownership normalization)
 
 **Purpose:**
 
@@ -399,7 +393,7 @@ Recommended pattern:
 - Ownership must be normalized so that later migrations/operations don’t fail.
 - Usually only a problem on linux
 
-#### 6.4 `db_03_fill_tables_with_initial_data.sql` (baseline seed)
+#### `db_03_fill_tables_with_initial_data.sql` (baseline seed)
 
 **Purpose:**
 
@@ -422,11 +416,10 @@ To avoid inserting a child before its parent (FK violations), this script insert
 
 `schedule` depends on `category` and `track`, and `interrupt` depends on `schedule` and `team`, so they are not seeded here.
 
-* * *
 
-## 7) Running scripts manually (external Postgres)
+## Running scripts manually (external Postgres)
 
-### 7.1 Using a single psql session (recommended)
+### Using a single psql session (recommended)
 
 If your scripts include `\connect`, you must use `psql` (not JDBC migration tools that don’t support psql meta-commands).
 
@@ -437,7 +430,7 @@ psql -h 127.0.0.1 -p 5432 -U rhytmic_riddles -d rhytmic_riddles -f db_02_set_tab
 psql -h 127.0.0.1 -p 5432 -U rhytmic_riddles -d rhytmic_riddles -f db_03_fill_tables_with_initial_data.sql
 ```
 
-### 7.2 Passing secrets safely (avoid hardcoding)
+### Passing secrets safely (avoid hardcoding)
 
 Example:
 
@@ -449,9 +442,8 @@ psql -h 127.0.0.1 -p 5432 -U postgres -d postgres \
   -f db_00_create_db.sql
 ```
 
-* * *
 
-## 8) Devcontainer automation (Docker Compose)
+## Devcontainer automation (Docker Compose)
 
 The provided `docker-compose.yml.example` runs:
 
@@ -486,9 +478,8 @@ So:
 
 > Devcontainer details (how we attach IDE, run services, etc.) will be documented in a separate devcontainer document later. This DB guide assumes docker-compose is the entry point.
 
-* * *
 
-## 9) Idempotency requirements (non-negotiable)
+## Idempotency requirements (non-negotiable)
 
 All scripts should be safe to re-run without destroying data.
 
@@ -547,9 +538,8 @@ Do **not**:
 
 If you need changes over time, add dedicated **patch scripts** (e.g. `db_patch_2026_02_01_11_52_add_column.sql`) and track their execution.
 
-* * *
 
-## 10) References
+## References
 
 - Source of truth for schema: `db/db_01_create_schema.sql`
 - Seed data: `db/db_03_fill_tables_with_initial_data.sql`

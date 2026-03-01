@@ -1,160 +1,233 @@
-# State machine & crash recovery
 
-This doc explains **how the system derives UI state** after reconnects and how each stage behaves.
 
-Source of truth:
-- `Igra.status` (0..3)
-- `Kategorija` selection rows
-- `Redoslijed` schedule rows
-- `Odgovor` (interrupts: team or technical)
+# State Machine & Reconstruction 
 
-The backend uses `IgraService.contextFetch(roomCode)` to create the `welcome` payload.
+This document explains how the backend reconstructs the **current state** when an app reconnects (Admin or TV),
+based on the current `GameEntity.stage` and persisted timestamps / interrupt frames.
 
----
+Source of truth: `GameServiceImpl.contextFetch(roomCode)` 
 
-## Stages
 
-### Stage 0 — Lobby (`status = 0`, `stage = "lobby"`)
-Payload:
-- `teams`: list of teams
+## Why this exists
 
-Meaning:
-- teams can be created/kicked
-- admin decides when to start album selection
+The TV/Admin clients can disconnect or refresh at any time. On connect (or reconnect), the server immediately sends a
+full **context snapshot** that allows the UI to render the correct screen without needing previous client-side state.
 
-Recovery:
-- simply re-send current team list
+The snapshot is a JSON object with:
 
----
+- `type: "welcome"`
+- `stage: "lobby" | "albums" | "songs" | "winner"`
+- plus stage-specific fields described below
 
-### Stage 1 — Albums (`status = 1`, `stage = "albums"`)
-Two sub-states exist:
+## Stage mapping (high level)
 
-#### 1) Picking in progress
-Condition (in code):
-- last category is null, or last category is `started = true` and we have not reached `brojAlbuma`
+`GameEntity.stage` → `stage` string returned to clients:
 
-Payload:
-- `albums`: categories prepared for the game
-- `team`: which team chooses next (or `null` if admin choice)
+- `0` → `"lobby"`
+- `1` → `"albums"`
+- `2` → `"songs"`
+- `3` → `"winner"` 
 
-#### 2) Picked but not started (between-state)
-Condition:
-- last category exists AND `started = false`
 
-Payload:
-- `selected`: the last chosen category (album)
+## Stage 0: Lobby (`stage = "lobby"`)
 
-Recovery rules:
-- if UI reconnects here, TV/Admin must show the “selected album” reveal
-- only then can admin start the category
+### When
+- `game.getStage() == 0`
 
----
+### Snapshot fields
+- `teams`: list of teams for this room
+- `stage: "lobby"`
 
-### Stage 2 — Songs (`status = 2`, `stage = "songs"`)
-This is the complex stage.
+### Meaning
+- Teams can be created and removed.
+- Admin decides when to move to album selection.
 
-Backend always determines:
-- last scheduled item (`Redoslijed zadnja`)
-- default “now playing” fields via `IgraService.getDefault(...)`
-- `scores` via `tim_interface.getTeamScores(code)`
+### Recovery behavior
+Reconnect simply resends the current team list.
 
-Then it branches:
 
-#### A) Song answer already revealed (between-state)
-Condition:
-- `zadnja.getVremeKraja() != null`
+## Stage 1: Albums (`stage = "albums"`)
 
-Payload:
+Stage 1 has two UI sub-states, determined by the “last chosen category” record.
+
+### When
+- `game.getStage() == 1` 
+
+### Sub-state A: Selecting a new album (picker turn)
+
+#### Condition
+A new selection is needed if:
+
+- `lastChosenCategory == null`, OR
+- `lastChosenCategory.isStarted() == true` AND `lastChosenCategory.ordinalNumber != game.maxAlbums` 
+
+*(In other words: there is no last selection yet, or the last selection was already started and we haven’t reached the configured album limit.)*
+
+#### Snapshot fields
+- `stage: "albums"`
+- `albums`: prepared categories for this game
+- `team`: the next team that should pick (or `null` if admin choice)
+
+`team` is returned as a `CreateTeamResponse` derived from `ChoosingTeam`. 
+
+#### UI behavior
+- Show available albums/categories.
+- Show who is picking (if applicable).
+
+### Sub-state B: Album picked but not started yet (choice display)
+
+#### Condition
+- `lastChosenCategory != null` AND `lastChosenCategory.isStarted() == false` 
+
+#### Snapshot fields
+- `stage: "albums"`
+- `selected`: the chosen album/category (`LastCategory`)
+
+#### UI behavior
+- Show the “selected album reveal” screen.
+- Only after this should the admin “start” the category (which moves into stage 2 later via normal flow).
+
+### Recovery behavior (stage 1)
+On reconnect, the server resends either:
+- the “picker selection view” payload (Sub-state A), or
+- the “picked but not started” payload (Sub-state B),
+
+so the UI can continue exactly where it left off.
+
+
+## Stage 2: Songs (`stage = "songs"`)
+
+Stage 2 is reconstructed from:
+- the last played schedule entry (`ScheduleEntity lastPlayedSong`)
+- its timestamps (`startedAt`, `revealedAt`)
+- interrupt frames (team pauses and system pauses)
+- derived playback timing (`seek`, `remaining`) 
+
+### When
+- `game.getStage() == 2` 
+
+### Always-present fields (base contract)
+
+Stage 2 always begins with:
+- `stage: "songs"`
+- “default fields” via `putDefaultFields(lastPlayedSong, json)`:
+  - `songId`
+  - `question`
+  - `answer`
+  - `scheduleId`
+  - `answerDuration`
+- `scores`: team scores for the room code (`teamService.getTeamScores(roomCode)`) 
+
+**Note on localization:** `question` currently falls back to `"Prepoznaj ovu pjesmu!"` when no custom question exists; there is a TODO to translate. 
+
+### Scenarion 0: Post-song revealed
+
+#### Condition
+- `lastPlayedSong.getRevealedAt() != null` 
+
+#### Snapshot fields (in addition to base contract)
 - `revealed: true`
-- `bravo`: who answered correctly (if any)
-- plus default song fields + scores
+- `bravo`: team id of the correct team (or `null`), from `interruptService.findCorrectAnswer(...)` 
 
-UI behavior:
-- show answer / applause moment
-- then transition to next song
+#### UI behavior
+- Show the answer reveal / “applause moment”.
+- Show “progress / next” action.
 
-#### B) Song finished with no answer (UI should show replay/reveal)
-Condition:
-- computed `remaining < 0`
+### Otherwise: Not revealed yet → compute playback timing
 
-Payload:
-- `revealed: false`
-- plus default song fields + scores
+If not revealed, the backend computes the effective playback time excluding pauses:
 
-UI behavior:
-- show “Replay” and “Reveal” actions
+- `seek = interruptService.calculateSeek(startedAt, scheduleId) / 1000.0`
+- `remaining = snippetDuration - seek` 
 
-#### C) Song still in progress (needs seek + pause analysis)
-Condition:
-- `remaining >= 0`
+#### Scenarion 1: Song finished but not revealed (waiting for admin action)
 
-Payload includes:
-- `seek`: current position (seconds)
-- `remaining`: seconds remaining (best-effort)
-- and then one of:
+##### Condition
+- `remaining < 0` 
 
-##### C1) Team is answering (team interrupt active)
-Condition:
-- latest interrupt with a team exists and `tacan == null`
+##### Snapshot fields
+- `revealed: false` (and base contract)
 
-Payload:
-- `team`: the answering team
-- `prekid_id`: the interrupt id
+##### UI behavior
+- Snippet is over.
+- UI should show “Replay” and “Reveal” actions.
 
-UI behavior:
-- pause playback
-- show answering team and correct/wrong buttons (admin)
+#### Otherwise: snippet still in progress → include `seek` & `remaining`
+If `remaining >= 0`, the snapshot includes:
 
-##### C2) Technical pause is active
-Condition:
-- latest pause interrupt exists and `vremeResen == null` (no team)
+- `seek`
+- `remaining` 
 
-Payload:
+Then we determine whether playback should be paused (interrupts).
+
+### Interrupt reconstruction (who/what paused the game)
+
+The service loads the latest unresolved interrupts relevant to this song:
+
+- `InterruptEntity[] interrupts = interruptService.getLastTwoInterrupts(startedAt, scheduleId)`
+  - `interrupts[0]` = last team interrupt
+  - `interrupts[1]` = last system interrupt 
+
+#### Scenarion 2: Team answering (team interrupt active)
+
+##### Condition
+- `teamInterrupt != null` AND `teamInterrupt.isCorrect() == null` 
+
+##### Snapshot fields (in addition to base contract + seek/remaining)
+- `answeringTeam`: team object (`CreateTeamResponse(team)`)
+- `interruptId`: id of the team interrupt
+
+##### UI behavior
+- Pause playback.
+- Display answering team.
+- Admin sees “Correct / Wrong” actions.
+
+#### Scenarion 3: System pause active (technical pause)
+
+##### Condition
+- `systemInterrupt != null` AND `systemInterrupt.getResolvedAt() == null` 
+
+##### Snapshot fields (in addition to base contract + seek/remaining)
 - `error: true`
 
-UI behavior:
-- show “App disconnected” / “Continue” flow
-- only continue when both sockets are back
+##### UI behavior
+- Show “technical difficulties / disconnected” flow.
+- Resume only after system pause is resolved by backend logic.
 
-##### C3) Normal playback
-No active interrupt and not finished:
-- continue playback at `seek`
+#### Scenarion 4: Normal playback
 
----
+If:
+- `remaining >= 0`
+- no active team interrupt
+- no unresolved system interrupt
 
-### Stage 3 — Winner (`status = 3`, `stage = "winner"`)
-Payload:
-- `teams`
+Then the UI should simply continue playback at `seek`.
 
-UI behavior:
-- show leaderboard / winners
 
----
 
-## Scenario persistence (UI recovery)
-UI sometimes needs to distinguish internal “sub-scenarios” not directly inferable from DB timestamps.
-The backend stores a small `scenario` int (0..4) to restore UI reliably.
+## Stage 3: Winner (`stage = "winner"`)
 
-Scenarios:
-- `0` Play the answer
-- `1` Show replay/next buttons
-- `2` Show the team currently answering
-- `3` Show “An app has disconnected”
-- `4` Play the snippet
+### When
+- `game.getStage() == 3` 
 
-If you change any scenario mapping, update:
-- frontend UI logic
-- docs/user guides
-- tests
+### Snapshot fields
+- `stage: "winner"`
+- `scores`: final team scores 
 
----
+### UI behavior
+- Display leaderboard / winners.
 
-## Testing checklist (must-have)
-- reconnect TV/Admin in every stage + sub-state above
-- ensure seek is stable across disconnects
-- ensure “Continue” only works when both sockets are back
-- ensure TV never receives answers
 
-See `docs/developer-guide/testing-strategy.md`.
+
+## Stage transitions and safety gates
+
+Stage changes go through `isChangeStageLegal(newStage, roomCode)` before being persisted. 
+
+Key rules enforced:
+- You can’t jump arbitrarily (e.g., lobby → songs is rejected).
+- While in stage 2, you can move only to stage 1 (albums) or stage 3 (winner).
+- A stage change is blocked if **both apps are not present**:
+  - `presenceGateway.areBothPresent(roomCode)` must be true, otherwise an error is thrown (TV must be connected). 
+
+After a successful stage change, the service broadcasts a fresh context snapshot (`type: "welcome"`) to clients. 
 

@@ -1,11 +1,11 @@
+
 # Exceptions and Error Codes
 **Document:** `exceptions.md`
 
 This file defines the **canonical error contract** for REST endpoints.
 
----
 
-## 1) Error philosophy
+## Error philosophy
 
 The backend uses **domain exceptions** to return predictable, frontend-friendly errors.
 
@@ -15,11 +15,10 @@ All domain exceptions extend:
 
 These exceptions are intended to be propagated to clients (as opposed to programmer errors / 500s).
 
----
 
-## 2) How error responses are produced
+## How error responses are produced
 
-### 2.1 DerivedException fields
+### DerivedException fields
 `DerivedException` carries:
 
 - `HTTP_CODE` — the HTTP status to return
@@ -27,7 +26,7 @@ These exceptions are intended to be propagated to clients (as opposed to program
 - `TITLE` — short category label
 - `message` — detailed message string
 
-### 2.2 Response body format (important)
+### Response body format (important)
 `DerivedException.toString()` returns a **JSON string** which is used as the response body:
 
 ```json
@@ -39,9 +38,8 @@ Notes:
 - The `error` field is built as `"E" + ERROR_CODE + " - " + TITLE"`.
   - In code, `ERROR_CODE` is typically `"004"`, `"007"`, etc. (without the leading `E`).
 
----
 
-## 3) Error code catalog (canonical)
+## Error code catalog (canonical)
 
 | Code | HTTP | Title | Exception class | Typical meaning |
 |---|---:|---|---|---|
@@ -55,9 +53,8 @@ Notes:
 | E007 | 404 | Asset Not Found | `AssetAccessException(Reason.NOT_FOUND)` | MP3 missing |
 | E008 | 503 | Asset Unavailable | `AssetAccessException(Reason.UNREADABLE)` | MP3 exists but cannot be read / storage issue |
 
----
 
-## 4) Where you’ll see each error (practical map)
+## Where you’ll see each error (practical map)
 
 ### E000 — Missing argument (400)
 You’ll see this when a controller expects a request body/param and it’s absent.
@@ -92,10 +89,7 @@ Thrown by `AssetAccessException`:
 - `NOT_FOUND` → E007 / 404
 - `UNREADABLE` → E008 / 503
 
----
-
-
-## 5) How to add a new error
+## How to add a new error
 1. Create a new subclass of `DerivedException`
 2. Pick the next numeric `ERROR_CODE`
 3. Use:
