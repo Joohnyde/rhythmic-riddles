@@ -1,12 +1,14 @@
+
 # Contributing to RhytmicRiddles
 
 This project is intentionally lightweight on ceremony but strict on **quality** and **traceability**.
 
-## 1) Issue-first workflow
+## Issue-first workflow
 
 Every change must have a GitHub Issue:
 - **Feature**
 - **Bug**
+- **DevOps issue**
 - **Chore / refactor**
 - **Docs**
 - **Security**
@@ -28,7 +30,7 @@ A ticket is “Done” only when:
 - docs updated (user/dev docs when relevant)
 - error catalog updated when new errors added
 
-## 2) Branch naming
+##  Branch naming
 
 Create a branch from `main` per ticket:
 
@@ -37,7 +39,7 @@ Create a branch from `main` per ticket:
 Example:
 - `filip/6728_palette_dark_mode`
 
-## 3) Commit message convention
+##  Commit message convention
 
 Each commit message begins with:
 
@@ -46,7 +48,7 @@ Each commit message begins with:
 Example:
 - `[6728 Filip] Add dark-mode toggle`
 
-## 4) PR title and description
+##  PR title and description
 
 ### PR Title
 Use:
@@ -67,13 +69,13 @@ Include:
 - Screenshots/gifs (UI changes)
 - Known limitations / follow-ups
 
-## 5) Review policy (team of 3)
+## Review policy
 
 - All PRs require review by the other two people (unless explicitly agreed otherwise).
 - Use **Draft PRs** for work-in-progress.
 - No direct pushes to `main`.
 
-## 6) Formatting & linting
+## Formatting & linting
 
 CI enforces formatting:
 - Java: Spotless (or configured formatter)
@@ -85,10 +87,10 @@ Run locally:
 
 See `docs/developer-guide/ide-setup.md`.
 
-## 7) Secrets
+##  Secrets
 
 Never commit secrets. Use:
-- `.env.example` files
+- `.example` files
 - local `.env` ignored by git
 - GitHub Actions secrets for CI/CD
 

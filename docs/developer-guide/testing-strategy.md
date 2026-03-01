@@ -1,3 +1,4 @@
+
 # Testing strategy
 
 Testing goals:
@@ -8,12 +9,12 @@ Testing goals:
 ## Backend (Spring Boot)
 ### Unit tests
 Use JUnit 5 and test:
-- service methods (IgraService, OdgovorService, KategorijaService)
+- service methods (GameService, InterruptService, CategoryService)
 - seek computation logic
 - invariants around interrupts
 
 ### Slice tests
-- repository queries (KategorijaRepository, RedoslijedRepository, etc.)
+- repository queries (CategoryRepository, ScheduleRepository, etc.)
 - controller advice / exception mapping
 
 ### Integration tests (high value)
@@ -43,8 +44,7 @@ On PR:
 
 Current GitHub Actions workflows include placeholders; wire them in as the next engineering task.
 
-## Your Serbian test list (converted to backlog)
-Your original notes are an excellent source for integration tests. Track them as issues:
+### Starting backlog
 - socket handshake sanity (room exists, pos 0/1, etc.)
 - create game params validation
 - team creation and kick constraints

@@ -8,23 +8,23 @@
 ## Developer guides
 - [Getting started](developer-guide/getting-started.md)
 - [Architecture](developer-guide/architecture.md)
+- [Database](developer-guide/database.md)
 - [API](developer-guide/api.md)
 - [State machine & recovery](developer-guide/state-machine-and-recovery.md)
 - [Recovery queries](developer-guide/recovery-queries.md)
-- [Assets storage](developer-guide/assets-storage.md)
-- [Using asset paths in code](developer-guide/assets-paths-in-code.md)
+- [Assets](developer-guide/assets.md)
 - [Testing strategy](developer-guide/testing-strategy.md)
-- [Error catalog](developer-guide/error-catalog.md)
+- [Exceptions](developer-guide/exceptions.md)
 - [Security model](developer-guide/security.md)
-- [IDE setup](developer-guide/ide-setup.md)
+- [Devcontaiers](developer-guide/devcontainers.md)
+- [EditorConfig](developer-guide/editorconfig.md)
 - [Logging](developer-guide/logging.md)
+- [Release builds](developer-guide/release-builds.md)
+
 
 ## Hardware docs
-- [Hardware overview](../hardware/docs/overview.md)
-- [Wiring](../hardware/docs/wiring.md)
-- [Pairing](../hardware/docs/pairing.md)
-- [Troubleshooting](../hardware/docs/troubleshooting.md)
-- [Bill of Materials](../hardware/docs/bom.md)
+- [Hardware overview](hardware/hardware-setup-guide.md)
+- [Bill of Materials](hardware/bom.md)
 
 ## ADRs
 - [ADR-0001: Monorepo](adr/0001-monorepo.md)
