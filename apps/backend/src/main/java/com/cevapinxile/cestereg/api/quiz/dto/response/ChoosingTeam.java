@@ -4,14 +4,14 @@
  */
 package com.cevapinxile.cestereg.api.quiz.dto.response;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface ChoosingTeam {
-    
-    String getId();
-    String getName();
-    String getImage();
-    
+
+  String getId();
+
+  String getName();
+
+  String getImage();
 }

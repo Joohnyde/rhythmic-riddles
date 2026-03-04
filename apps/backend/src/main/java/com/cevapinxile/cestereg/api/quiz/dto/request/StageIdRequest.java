@@ -6,13 +6,13 @@ package com.cevapinxile.cestereg.api.quiz.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/**
- *
+/*
  * @author denijal
  */
 @Schema(name = "StageIdRequest")
 public record StageIdRequest(
-        @Schema(example = "1", description = "New stage id (0=lobby, 1=album selection, 2=song playing, 3=winner table).")
-        int stageId) {
-
-}
+    @Schema(
+            example = "1",
+            description =
+                "New stage id (0=lobby, 1=album selection, 2=song playing, 3=winner table).")
+        int stageId) {}
