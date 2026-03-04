@@ -21,15 +21,9 @@
           <td class="team-col">
             <div class="team-info">
               <div class="avatar-wrapper">
-                <img
-                  [src]="team.image"
-                  [alt]="team.name"
-                  class="team-avatar"
-                />
+                <img [src]="team.image" [alt]="team.name" class="team-avatar" />
                 @if (isAnsweredWrong(team)) {
-                  <div class="answered-badge">
-                    ✕
-                  </div>
+                  <div class="answered-badge">✕</div>
                 }
               </div>
               <span class="team-name">{{ team.name }}</span>
@@ -43,19 +37,13 @@
 
           <!-- Status text -->
           <td class="status-col">
-            @if(bravo == undefined) {
-              <span class="status-ok">
-                Čeka odgovor
-              </span>
-            }@else if (isAnsweredWrong(team)) {
-              <span class="status-bad">
-                Pogrešan odgovor
-              </span>
-            }@else if(isAnsweredCorrect(team)) {
-              <span class="status-ok">
-                BRAVO BREEE
-              </span>
-            } 
+            @if (bravo === undefined) {
+              <span class="status-ok"> Čeka odgovor </span>
+            } @else if (isAnsweredWrong(team)) {
+              <span class="status-bad"> Pogrešan odgovor </span>
+            } @else if (isAnsweredCorrect(team)) {
+              <span class="status-ok"> BRAVO BREEE </span>
+            }
           </td>
         </tr>
       }

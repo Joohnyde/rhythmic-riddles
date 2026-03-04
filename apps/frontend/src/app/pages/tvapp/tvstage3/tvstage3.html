@@ -4,14 +4,14 @@
     <th>Ime</th>
   </tr>
 
-  @if(scores){
-      @for (score of scores; track $index) {
-          <tr>
-              <td>
-                  <img [src]="score.image" width="64" height="64" />
-                </td>
-                <td>{{ score.name }}</td>
-            </tr>
-        }
+  @if (scores) {
+    @for (score of scores; track $index) {
+      <tr>
+        <td>
+          <img [src]="score.image" width="64" height="64" />
+        </td>
+        <td>{{ score.name }}</td>
+      </tr>
     }
+  }
 </table>

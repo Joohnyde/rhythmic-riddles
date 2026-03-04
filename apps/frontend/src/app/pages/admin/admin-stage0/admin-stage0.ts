@@ -6,6 +6,7 @@ import { TeamService } from '../../../services/team.service';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { GameService } from '../../../services/game.service';
+import { S0WelcomeMessage } from '../../../entities/messages/stage0.messages';
 
 @Component({
   selector: 'app-admin-stage0',
@@ -14,7 +15,6 @@ import { GameService } from '../../../services/game.service';
   styleUrl: './admin-stage0.scss',
 })
 export class AdminStage0 implements OnInit {
-
   teams: Team[] = [];
 
   constructor(
@@ -23,19 +23,23 @@ export class AdminStage0 implements OnInit {
     private cdr: ChangeDetectorRef,
 
     private teamService: TeamService,
-    private gameService: GameService
+    private gameService: GameService,
   ) {
-    if (this.storage.code === "") {
-      this.router.navigate(['admin'])
+    if (this.storage.code === '') {
+      this.router.navigate(['admin']);
     }
   }
-    
+
   async ngOnInit(): Promise<void> {
     if (this.storage.messageObservable) {
-      const mes = await firstValueFrom(this.storage.messageObservable);
-      if (mes.type == "welcome" && mes.stage == "lobby") {
+      try {
+        const mes = (await firstValueFrom(this.storage.messageObservable)) as S0WelcomeMessage;
+        if (mes.type == 'welcome' && mes.stage == 'lobby') {
           this.teams = mes.teams;
           this.cdr.markForCheck();
+        }
+      } catch (_ignored) {
+        //Do nothing
       }
     }
   }
@@ -43,35 +47,34 @@ export class AdminStage0 implements OnInit {
   form = {
     name: '',
     image: '',
-    buttonCode: '1671'
+    buttonCode: '1671',
   };
 
   inTransit = false;
 
   async createTeam() {
     if (this.inTransit) return;
-    if (this.form.name == "" || this.form.image == "") return;
+    if (this.form.name == '' || this.form.image == '') return;
 
     const request = {
       name: this.form.name,
       image: this.form.image,
-      buttonCode: this.form.buttonCode
+      buttonCode: this.form.buttonCode,
     };
-
 
     this.inTransit = true;
     try {
       const new_team = await firstValueFrom(this.teamService.createTeam(request));
       this.teams.push(new_team);
 
-        this.cdr.markForCheck();
+      this.cdr.markForCheck();
       this.form = {
         name: '',
         image: '',
-        buttonCode: '1671'
-      }
-    } catch (err) {
-
+        buttonCode: '1671',
+      };
+    } catch (_ignored) {
+      /*TODO: Toast*/
     }
     this.inTransit = false;
   }
@@ -81,25 +84,23 @@ export class AdminStage0 implements OnInit {
     this.inTransit = true;
     try {
       await firstValueFrom(this.teamService.kickTeam(teamId));
-      this.teams = this.teams.filter(t => t.id !== teamId);
-        this.cdr.markForCheck();
-    } catch (err) {
-
+      this.teams = this.teams.filter((t) => t.id !== teamId);
+      this.cdr.markForCheck();
+    } catch (_ignored) {
+      /*TODO: Toast*/
     }
     this.inTransit = false;
-
   }
 
-  async start(){
-    if(this.inTransit) return;
-
+  async start() {
+    if (this.inTransit) return;
 
     this.inTransit = true;
-    try{
+    try {
       await firstValueFrom(this.gameService.changeState(1));
-      this.router.navigate(['admin', 'albums'])
-    }catch(err){
-
+      this.router.navigate(['admin', 'albums']);
+    } catch (_ignored) {
+      /*TODO: Toast*/
     }
     this.inTransit = false;
   }

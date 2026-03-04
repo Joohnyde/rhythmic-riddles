@@ -8,9 +8,8 @@ describe('SeekTimer', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SeekTimer]
-    })
-    .compileComponents();
+      imports: [SeekTimer],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SeekTimer);
     component = fixture.componentInstance;
