@@ -20,26 +20,28 @@ export class AudioPlayer implements OnInit, OnDestroy {
 
   // new inputs for animation logic
   @Input() remaining!: number; // seconds left from current position
-  @Input() seek = 0;           // current position in seconds
+  @Input() seek = 0; // current position in seconds
 
   @Output() completed = new EventEmitter<void>();
   @Output() stateOut = new EventEmitter<{ seek: number; remaining: number }>();
 
-
   private sub = new Subscription();
   private countdownSub?: Subscription;
 
-  totalDuration = 0;        // remaining + seek
-  remainingDisplay = 0;     // what we show, e.g. 5.0, 4.9, ...
-  loaderPercent = 0;        // 0..100 (remaining / total)
+  totalDuration = 0; // remaining + seek
+  remainingDisplay = 0; // what we show, e.g. 5.0, 4.9, ...
+  loaderPercent = 0; // 0..100 (remaining / total)
 
-  constructor(public audio: AudioPlayerService, private cdf: ChangeDetectorRef) {}
+  constructor(
+    public audio: AudioPlayerService,
+    private cdf: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.audio.load(this.src);
 
     this.totalDuration = (this.remaining ?? 0) + (this.seek ?? 0);
-    
+
     // position audio at initial seek
     if (this.seek && this.seek > 0) {
       this.audio.seek(this.seek);
@@ -53,7 +55,7 @@ export class AudioPlayer implements OnInit, OnDestroy {
       this.audio.ended$.subscribe(() => {
         this.completed.emit();
         this.stopCountdown();
-      })
+      }),
     );
 
     // start visual countdown
@@ -72,10 +74,7 @@ export class AudioPlayer implements OnInit, OnDestroy {
       this.remainingDisplay = Number(remainingNow.toFixed(1));
 
       // percent of remaining out of total, 0..100
-      this.loaderPercent =
-        this.totalDuration > 0
-          ? (remainingNow / this.totalDuration) * 100
-          : 0;
+      this.loaderPercent = this.totalDuration > 0 ? (remainingNow / this.totalDuration) * 100 : 0;
 
       // optional: if remaining hits 0, emit completed (if not already)
       if (remainingNow <= 0.0) {
@@ -99,7 +98,7 @@ export class AudioPlayer implements OnInit, OnDestroy {
     const remainingNow = Math.max(this.totalDuration - currentTime, 0);
     this.stateOut.emit({
       seek: currentTime,
-      remaining: remainingNow
+      remaining: remainingNow,
     });
     this.audio.pause();
     this.audio.seek(0);
