@@ -6,29 +6,26 @@ package com.cevapinxile.cestereg.core.service.impl;
 
 import com.cevapinxile.cestereg.common.exception.DerivedException;
 import com.cevapinxile.cestereg.core.gateway.AssetGateway;
-import java.util.UUID;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 import com.cevapinxile.cestereg.core.service.SongService;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-/**
- *
+/*
  * @author denijal
  */
 @Service
-public class SongServiceImpl implements SongService{
+public class SongServiceImpl implements SongService {
 
-    @Autowired
-    private AssetGateway assetGateway;
+  @Autowired private AssetGateway assetGateway;
 
+  @Override
+  public byte[] playSnippet(final UUID songId) throws DerivedException {
+    return assetGateway.readSnippetMp3(songId);
+  }
 
-    @Override
-     public byte[] playSnippet(UUID songId) throws DerivedException {
-        return assetGateway.readSnippetMp3(songId);
-    }  
-
-    @Override
-    public byte[] playAnswer(UUID songId) throws DerivedException {
-        return assetGateway.readAnswerMp3(songId);
-    }
+  @Override
+  public byte[] playAnswer(final UUID songId) throws DerivedException {
+    return assetGateway.readAnswerMp3(songId);
+  }
 }

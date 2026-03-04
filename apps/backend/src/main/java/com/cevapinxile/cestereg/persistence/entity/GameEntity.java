@@ -25,177 +25,182 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- *
+/*
  * @author denijal
  */
 @Entity
 @Table(schema = "public", name = "game")
 @NamedQueries({
-    @NamedQuery(name = "GameEntity.findAll", query = "SELECT g FROM GameEntity g"),
-    @NamedQuery(name = "GameEntity.findByDate", query = "SELECT g FROM GameEntity g WHERE g.date = :date"),
-    @NamedQuery(name = "GameEntity.findByStage", query = "SELECT g FROM GameEntity g WHERE g.stage = :stage"),
-    @NamedQuery(name = "GameEntity.findByMaxSongs", query = "SELECT g FROM GameEntity g WHERE g.maxSongs = :maxSongs"),
-    @NamedQuery(name = "GameEntity.findByMaxAlbums", query = "SELECT g FROM GameEntity g WHERE g.maxAlbums = :maxAlbums"),
-    @NamedQuery(name = "GameEntity.findByCode", query = "SELECT g FROM GameEntity g WHERE g.code = :roomCode"),
-    @NamedQuery(name = "GameEntity.findByPasswordHash", query = "SELECT g FROM GameEntity g WHERE g.passwordHash = :passwordHash")})
+  @NamedQuery(name = "GameEntity.findAll", query = "SELECT g FROM GameEntity g"),
+  @NamedQuery(
+      name = "GameEntity.findByDate",
+      query = "SELECT g FROM GameEntity g WHERE g.date = :date"),
+  @NamedQuery(
+      name = "GameEntity.findByStage",
+      query = "SELECT g FROM GameEntity g WHERE g.stage = :stage"),
+  @NamedQuery(
+      name = "GameEntity.findByMaxSongs",
+      query = "SELECT g FROM GameEntity g WHERE g.maxSongs = :maxSongs"),
+  @NamedQuery(
+      name = "GameEntity.findByMaxAlbums",
+      query = "SELECT g FROM GameEntity g WHERE g.maxAlbums = :maxAlbums"),
+  @NamedQuery(
+      name = "GameEntity.findByCode",
+      query = "SELECT g FROM GameEntity g WHERE g.code = :roomCode"),
+  @NamedQuery(
+      name = "GameEntity.findByPasswordHash",
+      query = "SELECT g FROM GameEntity g WHERE g.passwordHash = :passwordHash")
+})
 public class GameEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    @Id
-    @Basic(optional = false)
-    @NotNull
-    @Lob
-    @Column(name = "id")
-    private UUID id;
-    @Basic(optional = false)
-    @NotNull
-    @Column(name = "date")
-    private LocalDateTime date;
-    @Basic(optional = false)
-    @Column(name = "stage")
-    private int stage = 0;
-    @Basic(optional = false)
-    @Column(name = "max_songs")
-    private int maxSongs = 10;
-    @Basic(optional = false)
-    @Column(name = "max_albums")
-    private int maxAlbums = 10;
-    @Size(max = 4)
-    @Column(name = "code")
-    private String code;
-    @Size(max = 128)
-    @Column(name = "password_hash")
-    private String passwordHash;
-    @OneToMany(mappedBy = "gameId")
-    private List<TeamEntity> teamList;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "gameId")
-    private List<CategoryEntity> categoryList;
+  private static final long serialVersionUID = 1L;
 
-    public GameEntity() {
-    }
+  @Id
+  @Basic(optional = false)
+  @NotNull
+  @Lob
+  @Column(name = "id")
+  private UUID id;
 
-    public GameEntity(UUID id) {
-        this.id = id;
-    }
+  @Basic(optional = false)
+  @NotNull
+  @Column(name = "date")
+  private LocalDateTime date;
 
-    public GameEntity(UUID id, LocalDateTime date, int stage, int maxSongs, int maxAlbums) {
-        this.id = id;
-        this.date = date;
-        this.stage = stage;
-        this.maxSongs = maxSongs;
-        this.maxAlbums = maxAlbums;
-    }
+  @Basic(optional = false)
+  @Column(name = "stage")
+  private int stage = 0;
 
-    public GameEntity(CreateGameRequest cgr) {
-        this.id = UUID.randomUUID();
-        this.date = LocalDateTime.now();
-        
-        if(cgr.maxAlbums()!= null) this.maxAlbums = cgr.maxAlbums();
-        if(cgr.maxSongs()!= null) this.maxSongs = cgr.maxSongs();
-        
-        this.code = new Random().ints(4, (int) 'A', (int)'Z' +1)
-                               .mapToObj(i -> "" + (char) i)
-                               .collect(Collectors.joining());
-    }
-    
-    public UUID getId() {
-        return id;
-    }
+  @Basic(optional = false)
+  @Column(name = "max_songs")
+  private int maxSongs = 10;
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  @Basic(optional = false)
+  @Column(name = "max_albums")
+  private int maxAlbums = 10;
 
-    public LocalDateTime getDate() {
-        return date;
+  @Size(max = 4)
+  @Column(name = "code")
+  private String code;
+
+  @Size(max = 128)
+  @Column(name = "password_hash")
+  private String passwordHash;
+
+  @OneToMany(mappedBy = "gameId")
+  private List<TeamEntity> teamList;
+
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "gameId")
+  private List<CategoryEntity> categoryList;
+
+  public GameEntity() {}
+
+  public GameEntity(UUID id) {
+    this.id = id;
+  }
+
+  public GameEntity(UUID id, LocalDateTime date, int stage, int maxSongs, int maxAlbums) {
+    this.id = id;
+    this.date = date;
+    this.stage = stage;
+    this.maxSongs = maxSongs;
+    this.maxAlbums = maxAlbums;
+  }
+
+  public GameEntity(CreateGameRequest cgr) {
+    this.id = UUID.randomUUID();
+    this.date = LocalDateTime.now();
+
+    if (cgr.maxAlbums() != null) {
+      this.maxAlbums = cgr.maxAlbums();
+    }
+    if (cgr.maxSongs() != null) {
+      this.maxSongs = cgr.maxSongs();
     }
 
-    public void setDate(LocalDateTime date) {
-        this.date = date;
-    }
+    this.code =
+        new Random()
+            .ints(4, (int) 'A', (int) 'Z' + 1)
+            .mapToObj(i -> "" + (char) i)
+            .collect(Collectors.joining());
+  }
 
-    public int getStage() {
-        return stage;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public void setStage(int stage) {
-        this.stage = stage;
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    public int getMaxSongs() {
-        return maxSongs;
-    }
+  public LocalDateTime getDate() {
+    return date;
+  }
 
-    public void setMaxSongs(int maxSongs) {
-        this.maxSongs = maxSongs;
-    }
+  public void setDate(LocalDateTime date) {
+    this.date = date;
+  }
 
-    public int getMaxAlbums() {
-        return maxAlbums;
-    }
+  public int getStage() {
+    return stage;
+  }
 
-    public void setMaxAlbums(int maxAlbums) {
-        this.maxAlbums = maxAlbums;
-    }
+  public void setStage(int stage) {
+    this.stage = stage;
+  }
 
-    public String getCode() {
-        return code;
-    }
+  public int getMaxSongs() {
+    return maxSongs;
+  }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+  public void setMaxSongs(int maxSongs) {
+    this.maxSongs = maxSongs;
+  }
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
+  public int getMaxAlbums() {
+    return maxAlbums;
+  }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
+  public void setMaxAlbums(int maxAlbums) {
+    this.maxAlbums = maxAlbums;
+  }
 
-    @XmlTransient
-    public List<TeamEntity> getTeamList() {
-        return teamList;
-    }
+  public String getCode() {
+    return code;
+  }
 
-    public void setTeamList(List<TeamEntity> teamList) {
-        this.teamList = teamList;
-    }
+  public void setCode(String code) {
+    this.code = code;
+  }
 
-    @XmlTransient
-    public List<CategoryEntity> getCategoryList() {
-        return categoryList;
-    }
+  public String getPasswordHash() {
+    return passwordHash;
+  }
 
-    public void setCategoryList(List<CategoryEntity> categoryList) {
-        this.categoryList = categoryList;
-    }
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
 
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        hash += (id != null ? id.hashCode() : 0);
-        return hash;
-    }
+  @XmlTransient
+  public List<TeamEntity> getTeamList() {
+    return teamList;
+  }
 
-    @Override
-    public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof GameEntity)) {
-            return false;
-        }
-        GameEntity other = (GameEntity) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
-            return false;
-        }
-        return true;
-    }
+  public void setTeamList(List<TeamEntity> teamList) {
+    this.teamList = teamList;
+  }
 
-    @Override
-    public String toString() {
-        return "com.cevapinxile.cestereg.persistence.entity.Game[ id=" + id + " ]";
-    }
-    
+  @XmlTransient
+  public List<CategoryEntity> getCategoryList() {
+    return categoryList;
+  }
+
+  public void setCategoryList(List<CategoryEntity> categoryList) {
+    this.categoryList = categoryList;
+  }
+
+  @Override
+  public String toString() {
+    return "com.cevapinxile.cestereg.persistence.entity.Game[ id=" + id + " ]";
+  }
 }

@@ -6,13 +6,10 @@ package com.cevapinxile.cestereg.api.quiz.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/**
- *
+/*
  * @author denijal
  */
 @Schema(name = "RoomCodeResponse")
 public record RoomCodeResponse(
-        @Schema(example = "AKKU", description = "4-character room code of the newly created game.")
-        String roomCode) {
-
-}
+    @Schema(example = "AKKU", description = "4-character room code of the newly created game.")
+        String roomCode) {}

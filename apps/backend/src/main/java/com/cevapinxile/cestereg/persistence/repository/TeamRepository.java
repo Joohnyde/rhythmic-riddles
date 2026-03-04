@@ -14,15 +14,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface TeamRepository extends JpaRepository<TeamEntity, UUID> {
-    
-    public List<CreateTeamResponse> findByGameId(String roomCode);
-    
-    @Query(value = """
+
+  List<CreateTeamResponse> findByGameId(String roomCode);
+
+  @Query(
+      value =
+          """
                    SELECT t.id,
                           t.name,
                           t.image
@@ -37,14 +38,15 @@ public interface TeamRepository extends JpaRepository<TeamEntity, UUID> {
                                                              t1.game_id = :gameId))
                    ORDER  BY COUNT(c.picked_by_team_id) ASC,
                              t.id ASC
-                   LIMIT  1 
-                   """, nativeQuery = true)
-    
-    public ChoosingTeam findNext(@Param("gameId") UUID gameId, @Param("totalAlbums") int totalAlbums);
-    
-    @Query(
-        value = """
-        SELECT DISTINCT ON (t.id) 
+                   LIMIT  1
+                   """,
+      nativeQuery = true)
+  ChoosingTeam findNext(@Param("gameId") UUID gameId, @Param("totalAlbums") int totalAlbums);
+
+  @Query(
+      value =
+          """
+        SELECT DISTINCT ON (t.id)
                         t.id                                AS team,
                         t.image,
                         t.NAME,
@@ -60,7 +62,6 @@ public interface TeamRepository extends JpaRepository<TeamEntity, UUID> {
         ORDER BY        t.id,
                         i.arrived_at DESC
         """,
-        nativeQuery = true)
-      public List<TeamScoreProjection> getTeamScores(String roomCode);
-    
+      nativeQuery = true)
+  List<TeamScoreProjection> getTeamScores(String roomCode);
 }

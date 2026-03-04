@@ -6,14 +6,17 @@ package com.cevapinxile.cestereg.api.quiz.dto.response;
 
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface TeamScoreProjection {
-    UUID getTeam();
-    String getImage();
-    String getName();
-    Integer getScore();
-    UUID getSchedule();
+  UUID getTeam();
+
+  String getImage();
+
+  String getName();
+
+  Integer getScore();
+
+  UUID getSchedule();
 }

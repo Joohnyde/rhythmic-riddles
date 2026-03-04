@@ -11,16 +11,14 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface CategoryRepository extends JpaRepository<CategoryEntity, UUID> {
 
-    public List<CategorySimple> findByGameId(UUID gameId);
+  List<CategorySimple> findByGameId(UUID gameId);
 
-    public Integer findNextId(UUID gameId);
+  Integer findNextId(UUID gameId);
 
-    public LastCategory findLastCategory(UUID gameId);
-
+  LastCategory findLastCategory(UUID gameId);
 }

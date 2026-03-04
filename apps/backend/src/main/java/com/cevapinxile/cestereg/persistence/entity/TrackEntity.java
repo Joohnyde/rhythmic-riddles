@@ -23,108 +23,93 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 @Entity
 @Table(name = "track")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "TrackEntity.findAll", query = "SELECT t FROM TrackEntity t"),
-    @NamedQuery(name = "TrackEntity.findByCustomAnswer", query = "SELECT t FROM TrackEntity t WHERE t.customAnswer = :customAnswer")})
+  @NamedQuery(name = "TrackEntity.findAll", query = "SELECT t FROM TrackEntity t"),
+  @NamedQuery(
+      name = "TrackEntity.findByCustomAnswer",
+      query = "SELECT t FROM TrackEntity t WHERE t.customAnswer = :customAnswer")
+})
 public class TrackEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    @Id
-    @Basic(optional = false)
-    @NotNull
-    @Lob
-    @Column(name = "id")
-    private UUID id;
-    @Size(max = 2147483647)
-    @Column(name = "custom_answer")
-    private String customAnswer;
-    @OneToMany(mappedBy = "trackId")
-    private List<ScheduleEntity> scheduleList;
-    @JoinColumn(name = "album_id", referencedColumnName = "id")
-    @ManyToOne
-    private AlbumEntity albumId;
-    @JoinColumn(name = "song_id", referencedColumnName = "id")
-    @ManyToOne
-    private SongEntity songId;
+  private static final long serialVersionUID = 1L;
 
-    public TrackEntity() {
-    }
+  @Id
+  @Basic(optional = false)
+  @NotNull
+  @Lob
+  @Column(name = "id")
+  private UUID id;
 
-    public TrackEntity(UUID id) {
-        this.id = id;
-    }
+  @Size(max = 2147483647)
+  @Column(name = "custom_answer")
+  private String customAnswer;
 
-    public UUID getId() {
-        return id;
-    }
+  @OneToMany(mappedBy = "trackId")
+  private List<ScheduleEntity> scheduleList;
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  @JoinColumn(name = "album_id", referencedColumnName = "id")
+  @ManyToOne
+  private AlbumEntity albumId;
 
-    public String getCustomAnswer() {
-        return customAnswer;
-    }
+  @JoinColumn(name = "song_id", referencedColumnName = "id")
+  @ManyToOne
+  private SongEntity songId;
 
-    public void setCustomAnswer(String customAnswer) {
-        this.customAnswer = customAnswer;
-    }
+  public TrackEntity() {}
 
-    @XmlTransient
-    public List<ScheduleEntity> getScheduleList() {
-        return scheduleList;
-    }
+  public TrackEntity(UUID id) {
+    this.id = id;
+  }
 
-    public void setScheduleList(List<ScheduleEntity> scheduleList) {
-        this.scheduleList = scheduleList;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public AlbumEntity getAlbumId() {
-        return albumId;
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    public void setAlbumId(AlbumEntity albumId) {
-        this.albumId = albumId;
-    }
+  public String getCustomAnswer() {
+    return customAnswer;
+  }
 
-    public SongEntity getSongId() {
-        return songId;
-    }
+  public void setCustomAnswer(String customAnswer) {
+    this.customAnswer = customAnswer;
+  }
 
-    public void setSongId(SongEntity songId) {
-        this.songId = songId;
-    }
+  @XmlTransient
+  public List<ScheduleEntity> getScheduleList() {
+    return scheduleList;
+  }
 
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        hash += (id != null ? id.hashCode() : 0);
-        return hash;
-    }
+  public void setScheduleList(List<ScheduleEntity> scheduleList) {
+    this.scheduleList = scheduleList;
+  }
 
-    @Override
-    public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof TrackEntity)) {
-            return false;
-        }
-        TrackEntity other = (TrackEntity) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
-            return false;
-        }
-        return true;
-    }
+  public AlbumEntity getAlbumId() {
+    return albumId;
+  }
 
-    @Override
-    public String toString() {
-        return "com.cevapinxile.cestereg.persistence.entity.Track[ id=" + id + " ]";
-    }
-    
+  public void setAlbumId(AlbumEntity albumId) {
+    this.albumId = albumId;
+  }
+
+  public SongEntity getSongId() {
+    return songId;
+  }
+
+  public void setSongId(SongEntity songId) {
+    this.songId = songId;
+  }
+
+  @Override
+  public String toString() {
+    return "com.cevapinxile.cestereg.persistence.entity.Track[ id=" + id + " ]";
+  }
 }

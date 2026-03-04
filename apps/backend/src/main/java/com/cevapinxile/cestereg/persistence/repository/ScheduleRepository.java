@@ -9,14 +9,12 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-/**
- *
+/*
  * @author denijal
  */
-public interface ScheduleRepository extends JpaRepository<ScheduleEntity, UUID>{
-    
-    public ScheduleEntity findLastPlayed(UUID gameId);
-    
-    public Optional<ScheduleEntity> findNext(UUID gameId);
-    
+public interface ScheduleRepository extends JpaRepository<ScheduleEntity, UUID> {
+
+  ScheduleEntity findLastPlayed(UUID gameId);
+
+  Optional<ScheduleEntity> findNext(UUID gameId);
 }
