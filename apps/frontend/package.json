@@ -28,7 +28,7 @@
   "packageManager": "npm@11.6.2",
   "dependencies": {
     "@angular/common": "^21.0.0",
-    "@angular/compiler": "^21.0.0",
+    "@angular/compiler": "^21.2.1",
     "@angular/core": "^21.2.1",
     "@angular/forms": "^21.0.0",
     "@angular/platform-browser": "^21.2.1",
@@ -41,7 +41,7 @@
     "@angular-eslint/eslint-plugin-template": "^21.2.0",
     "@angular-eslint/template-parser": "^21.2.0",
     "@angular/build": "^21.2.0",
-    "@angular/cli": "^21.0.1",
+    "@angular/cli": "^21.2.1",
     "@angular/compiler-cli": "^21.2.1",
     "@eslint/js": "^9.39.3",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
