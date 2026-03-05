@@ -7,13 +7,9 @@ package com.cevapinxile.cestereg.api.quiz.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 @Schema(name = "ScheduleIdRequest")
 public record ScheduleIdRequest(
-        @Schema(description = "UUID of the last played song (schedule).")
-        UUID scheduleId) {
-
-}
+    @Schema(description = "UUID of the last played song (schedule).") UUID scheduleId) {}

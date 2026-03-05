@@ -4,13 +4,7 @@
  */
 package com.cevapinxile.cestereg.api.quiz.dto.request;
 
-
-/**
- *
+/*
  * @author denijal
  */
-public record CreateTeamRequest(
-    String name,
-    String buttonCode,
-    String image
-) {}
+public record CreateTeamRequest(String name, String buttonCode, String image) {}

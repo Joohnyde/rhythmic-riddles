@@ -4,17 +4,16 @@
  */
 package com.cevapinxile.cestereg.core.gateway;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface PresenceGateway {
 
-    boolean isTvPresent(String roomCode);
+  boolean isTvPresent(String roomCode);
 
-    boolean isAdminPresent(String roomCode);
+  boolean isAdminPresent(String roomCode);
 
-    default boolean areBothPresent(String roomCode){
-        return isTvPresent(roomCode) && isAdminPresent(roomCode);
-    }
+  default boolean areBothPresent(String roomCode) {
+    return isTvPresent(roomCode) && isAdminPresent(roomCode);
+  }
 }

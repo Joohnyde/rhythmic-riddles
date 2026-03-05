@@ -4,10 +4,7 @@
  */
 package com.cevapinxile.cestereg.api.quiz.dto.response;
 
-/**
- *
+/*
  * @author denijal
  */
-public record CategoryPreview
-( String title, String image)
-{}
+public record CategoryPreview(String title, String image) {}

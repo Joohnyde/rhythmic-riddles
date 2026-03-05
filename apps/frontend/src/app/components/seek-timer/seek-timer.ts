@@ -1,4 +1,3 @@
-
 import { CommonModule } from '@angular/common';
 import {
   Component,
@@ -19,7 +18,7 @@ import { interval, Subscription } from 'rxjs';
 })
 export class SeekTimer implements OnInit, OnChanges, OnDestroy {
   /** Total length in seconds; if null => infinite timer */
-  @Input() duration !: number;
+  @Input() duration!: number;
 
   /** External seek command in seconds */
   @Input() seek: number | null = null;
@@ -33,7 +32,6 @@ export class SeekTimer implements OnInit, OnChanges, OnDestroy {
   /** Emits current time on every tick / seek */
   @Output() timeChange = new EventEmitter<number>();
   @Output() stateOut = new EventEmitter<{ seek: number; remaining: number }>();
-
 
   currentTime = 0;
   private tickSub?: Subscription;
@@ -111,7 +109,7 @@ export class SeekTimer implements OnInit, OnChanges, OnDestroy {
 
     this.stateOut.emit({
       seek: currentSeek,
-      remaining: currentRemaining
+      remaining: currentRemaining,
     });
   }
 }

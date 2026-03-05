@@ -6,13 +6,10 @@ package com.cevapinxile.cestereg.api.quiz.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/**
- *
+/*
  * @author denijal
  */
 @Schema(name = "ScenarioRequest")
 public record ScenarioRequest(
-        @Schema(example = "2", description = "Scenario id (0..4), but 3 is not allowed here.")
-        int scenario) {
-
-}
+    @Schema(example = "2", description = "Scenario id (0..4), but 3 is not allowed here.")
+        int scenario) {}

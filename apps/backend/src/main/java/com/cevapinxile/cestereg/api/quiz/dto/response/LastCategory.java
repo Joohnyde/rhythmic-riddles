@@ -8,68 +8,69 @@ import com.cevapinxile.cestereg.persistence.entity.CategoryEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 public class LastCategory {
-    private UUID categoryId;
-    private CategoryPreview chosenCategoryPreview;    
-    private CreateTeamResponse pickedByTeam = null;
-    private boolean started = false;
-    private int ordinalNumber;
-    
-    public LastCategory(){}
-    
-    public LastCategory(CategoryEntity c){
-        this.categoryId = c.getId();
-        this.chosenCategoryPreview = new CategoryPreview(c.getAlbumId().getName(), c.getAlbumId().getId()+".png");
-        TeamEntity choosingTeam = c.getPickedByTeamId();
-        if(choosingTeam != null) this.pickedByTeam = new CreateTeamResponse(choosingTeam);
-        if(c.isDone() != null) this.started = c.isDone();
-        this.ordinalNumber = c.getOrdinalNumber();
-    }
+  private UUID categoryId;
+  private CategoryPreview chosenCategoryPreview;
+  private CreateTeamResponse pickedByTeam = null;
+  private boolean started = false;
+  private int ordinalNumber;
 
-    public UUID getCategoryId() {
-        return categoryId;
-    }
+  public LastCategory() {}
 
-    public void setCategoryId(UUID categoryId) {
-        this.categoryId = categoryId;
+  public LastCategory(CategoryEntity c) {
+    this.categoryId = c.getId();
+    this.chosenCategoryPreview =
+        new CategoryPreview(c.getAlbumId().getName(), c.getAlbumId().getId() + ".png");
+    final TeamEntity choosingTeam = c.getPickedByTeamId();
+    if (choosingTeam != null) {
+      this.pickedByTeam = new CreateTeamResponse(choosingTeam);
     }
+    if (c.isDone() != null) {
+      this.started = c.isDone();
+    }
+    this.ordinalNumber = c.getOrdinalNumber();
+  }
 
-    public CategoryPreview getChosenCategoryPreview() {
-        return chosenCategoryPreview;
-    }
+  public UUID getCategoryId() {
+    return categoryId;
+  }
 
-    public void setChosenCategoryPreview(CategoryPreview chosenCategoryPreview) {
-        this.chosenCategoryPreview = chosenCategoryPreview;
-    }
+  public void setCategoryId(UUID categoryId) {
+    this.categoryId = categoryId;
+  }
 
-    public CreateTeamResponse getPickedByTeam() {
-        return pickedByTeam;
-    }
+  public CategoryPreview getChosenCategoryPreview() {
+    return chosenCategoryPreview;
+  }
 
-    public void setPickedByTeam(CreateTeamResponse pickedByTeam) {
-        this.pickedByTeam = pickedByTeam;
-    }
+  public void setChosenCategoryPreview(CategoryPreview chosenCategoryPreview) {
+    this.chosenCategoryPreview = chosenCategoryPreview;
+  }
 
-    public boolean isStarted() {
-        return started;
-    }
+  public CreateTeamResponse getPickedByTeam() {
+    return pickedByTeam;
+  }
 
-    public void setStarted(boolean started) {
-        this.started = started;
-    }
+  public void setPickedByTeam(CreateTeamResponse pickedByTeam) {
+    this.pickedByTeam = pickedByTeam;
+  }
 
-    public int getOrdinalNumber() {
-        return ordinalNumber;
-    }
+  public boolean isStarted() {
+    return started;
+  }
 
-    public void setOrdinalNumber(int ordinalNumber) {
-        this.ordinalNumber = ordinalNumber;
-    }
-    
-    
-    
+  public void setStarted(boolean started) {
+    this.started = started;
+  }
+
+  public int getOrdinalNumber() {
+    return ordinalNumber;
+  }
+
+  public void setOrdinalNumber(int ordinalNumber) {
+    this.ordinalNumber = ordinalNumber;
+  }
 }

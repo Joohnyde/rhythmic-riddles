@@ -7,14 +7,12 @@ package com.cevapinxile.cestereg.core.service;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface SongService {
 
-    public byte[] playSnippet(UUID songId) throws DerivedException;
-    
-    public byte[] playAnswer(UUID songId) throws DerivedException;
-    
+  byte[] playSnippet(UUID songId) throws DerivedException;
+
+  byte[] playAnswer(UUID songId) throws DerivedException;
 }

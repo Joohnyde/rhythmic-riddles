@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from "../../../../node_modules/@angular/router/types/_router_module-chunk";
+import { RouterOutlet } from '../../../../node_modules/@angular/router/types/_router_module-chunk';
 
 @Component({
   selector: 'app-tvapp',
@@ -7,6 +7,4 @@ import { RouterOutlet } from "../../../../node_modules/@angular/router/types/_ro
   templateUrl: './tvapp.html',
   styleUrl: './tvapp.scss',
 })
-export class Tvapp {
-
-}
+export class Tvapp {}
