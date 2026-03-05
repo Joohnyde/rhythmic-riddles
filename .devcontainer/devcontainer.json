@@ -22,7 +22,7 @@
       }
     }
   },
-  "postCreateCommand": "chmod +x ../scripts/dev/*.sh || true",
+  "postCreateCommand": "chmod +x scripts/dev/*.sh || true",
   "remoteUser": "vscode",
   "forwardPorts": [4200, 8080]
 }
