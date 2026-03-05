@@ -23,6 +23,7 @@ services:
       - .:/workspace:cached
     depends_on:
       - db
+    init: true
     # keep it alive so any IDE/terminal can "attach" to it
     command: sleep infinity
     # optional: forward ports if you run ng serve / spring boot inside this container
