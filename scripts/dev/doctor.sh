@@ -215,9 +215,9 @@ if [ -f "$NB_DOCKER_ACTIONS_FILE" ]; then
 
   # args points to your script path (allow whitespace)
   if grep -Eq "<exec\.args>\s*\.\./\.\./scripts/dev/backend\.sh\s*</exec\.args>" "$NB_DOCKER_ACTIONS_FILE"; then
-    ok "nbactions-docker.xml points to ../../scripts/dev/backend.sh"
+    ok "nbactions-docker.xml points to ../../scripts/dev/run-backend.sh"
   else
-    warn "nbactions-docker.xml does not point to ../../scripts/dev/backend.sh (or formatting differs)"
+    warn "nbactions-docker.xml does not point to ../../scripts/dev/run-backend.sh (or formatting differs)"
   fi
 
 else
