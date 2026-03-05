@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Storage } from '../utils/storage';
+import { Team } from '../entities/teams';
 
 export interface CreateTeamRequest {
   name: string;
@@ -13,17 +14,20 @@ export interface CreateTeamRequest {
   providedIn: 'root',
 })
 export class TeamService {
-  constructor(private http: HttpClient, private storage: Storage) {}
+  constructor(
+    private http: HttpClient,
+    private storage: Storage,
+  ) {}
 
-  apiUrl(){
-    if(this.storage.code == "") throw new Error("Unknown room_code");
-    return 'http://localhost:8080/api/v1/games/'+this.storage.code+'/teams';
+  apiUrl() {
+    if (this.storage.code == '') throw new Error('Unknown room_code');
+    return 'http://localhost:8080/api/v1/games/' + this.storage.code + '/teams';
   }
 
-  createTeam(req: CreateTeamRequest): Observable<any> {
-    return this.http.post(this.apiUrl(), req);
+  createTeam(req: CreateTeamRequest): Observable<Team> {
+    return this.http.post<Team>(this.apiUrl(), req);
   }
-  kickTeam(id : string): Observable<any> {
-    return this.http.delete(this.apiUrl()+"/"+id);
+  kickTeam(id: string): Observable<void> {
+    return this.http.delete<void>(this.apiUrl() + '/' + id);
   }
 }

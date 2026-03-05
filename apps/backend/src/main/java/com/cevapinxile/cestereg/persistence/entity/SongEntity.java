@@ -21,120 +21,112 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 @Entity
 @Table(name = "song")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "SongEntity.findAll", query = "SELECT s FROM SongEntity s"),
-    @NamedQuery(name = "SongEntity.findByAuthors", query = "SELECT s FROM SongEntity s WHERE s.authors = :authors"),
-    @NamedQuery(name = "SongEntity.findByName", query = "SELECT s FROM SongEntity s WHERE s.name = :name"),
-    @NamedQuery(name = "SongEntity.findBySnippetDuration", query = "SELECT s FROM SongEntity s WHERE s.snippetDuration = :snippetDuration"),
-    @NamedQuery(name = "SongEntity.findByAnswerDuration", query = "SELECT s FROM SongEntity s WHERE s.answerDuration = :answerDuration")})
+  @NamedQuery(name = "SongEntity.findAll", query = "SELECT s FROM SongEntity s"),
+  @NamedQuery(
+      name = "SongEntity.findByAuthors",
+      query = "SELECT s FROM SongEntity s WHERE s.authors = :authors"),
+  @NamedQuery(
+      name = "SongEntity.findByName",
+      query = "SELECT s FROM SongEntity s WHERE s.name = :name"),
+  @NamedQuery(
+      name = "SongEntity.findBySnippetDuration",
+      query = "SELECT s FROM SongEntity s WHERE s.snippetDuration = :snippetDuration"),
+  @NamedQuery(
+      name = "SongEntity.findByAnswerDuration",
+      query = "SELECT s FROM SongEntity s WHERE s.answerDuration = :answerDuration")
+})
 public class SongEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    @Id
-    @Basic(optional = false)
-    @NotNull
-    @Lob
-    @Column(name = "id")
-    private UUID id;
-    @Size(max = 2147483647)
-    @Column(name = "authors")
-    private String authors;
-    @Size(max = 2147483647)
-    @Column(name = "name")
-    private String name;
-    @Column(name = "snippet_duration")
-    private Double snippetDuration;
-    @Column(name = "answer_duration")
-    private Double answerDuration;
-    @OneToMany(mappedBy = "songId")
-    private List<TrackEntity> trackList;
+  private static final long serialVersionUID = 1L;
 
-    public SongEntity() {
-    }
+  @Id
+  @Basic(optional = false)
+  @NotNull
+  @Lob
+  @Column(name = "id")
+  private UUID id;
 
-    public SongEntity(UUID id) {
-        this.id = id;
-    }
+  @Size(max = 2147483647)
+  @Column(name = "authors")
+  private String authors;
 
-    public UUID getId() {
-        return id;
-    }
+  @Size(max = 2147483647)
+  @Column(name = "name")
+  private String name;
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  @Column(name = "snippet_duration")
+  private Double snippetDuration;
 
-    public String getAuthors() {
-        return authors;
-    }
+  @Column(name = "answer_duration")
+  private Double answerDuration;
 
-    public void setAuthors(String authors) {
-        this.authors = authors;
-    }
+  @OneToMany(mappedBy = "songId")
+  private List<TrackEntity> trackList;
 
-    public String getName() {
-        return name;
-    }
+  public SongEntity() {}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public SongEntity(UUID id) {
+    this.id = id;
+  }
 
-    public Double getSnippetDuration() {
-        return snippetDuration;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public void setSnippetDuration(Double snippetDuration) {
-        this.snippetDuration = snippetDuration;
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    public Double getAnswerDuration() {
-        return answerDuration;
-    }
+  public String getAuthors() {
+    return authors;
+  }
 
-    public void setAnswerDuration(Double answerDuration) {
-        this.answerDuration = answerDuration;
-    }
+  public void setAuthors(String authors) {
+    this.authors = authors;
+  }
 
-    @XmlTransient
-    public List<TrackEntity> getTrackList() {
-        return trackList;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public void setTrackList(List<TrackEntity> trackList) {
-        this.trackList = trackList;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        hash += (id != null ? id.hashCode() : 0);
-        return hash;
-    }
+  public Double getSnippetDuration() {
+    return snippetDuration;
+  }
 
-    @Override
-    public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof SongEntity)) {
-            return false;
-        }
-        SongEntity other = (SongEntity) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
-            return false;
-        }
-        return true;
-    }
+  public void setSnippetDuration(Double snippetDuration) {
+    this.snippetDuration = snippetDuration;
+  }
 
-    @Override
-    public String toString() {
-        return authors+" - "+name;
-    }
-    
+  public Double getAnswerDuration() {
+    return answerDuration;
+  }
+
+  public void setAnswerDuration(Double answerDuration) {
+    this.answerDuration = answerDuration;
+  }
+
+  @XmlTransient
+  public List<TrackEntity> getTrackList() {
+    return trackList;
+  }
+
+  public void setTrackList(List<TrackEntity> trackList) {
+    this.trackList = trackList;
+  }
+
+  @Override
+  public String toString() {
+    return authors + " - " + name;
+  }
 }

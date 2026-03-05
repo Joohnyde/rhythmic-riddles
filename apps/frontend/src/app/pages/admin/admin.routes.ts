@@ -6,9 +6,9 @@ import { AdminStage2 } from './admin-stage2/admin-stage2';
 import { AdminStage3 } from './admin-stage3/admin-stage3';
 
 export const admin_routes: Routes = [
-    {path:'winner', component: AdminStage3},
-    {path:'songs', component: AdminStage2},
-    {path:'albums', component: AdminStage1},
-    {path:'lobby', component: AdminStage0},
-    {path:'**', component: AdminHome}
+  { path: 'winner', component: AdminStage3 },
+  { path: 'songs', component: AdminStage2 },
+  { path: 'albums', component: AdminStage1 },
+  { path: 'lobby', component: AdminStage0 },
+  { path: '**', component: AdminHome },
 ];

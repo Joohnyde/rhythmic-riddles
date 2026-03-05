@@ -13,65 +13,64 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-/**
- *
+/*
  * @author denijal
  */
 @Component
 public class WebSocketBroadcastGateway implements BroadcastGateway {
 
-    private static final Logger log = LoggerFactory.getLogger(WebSocketBroadcastGateway.class);
-    
-    private final SessionRegistry registry;
+  private static final Logger LOG = LoggerFactory.getLogger(WebSocketBroadcastGateway.class);
 
-    public WebSocketBroadcastGateway(SessionRegistry registry) {
-        this.registry = registry;
-    }
-    
-    @Override
-    public void broadcast(String code, String payload){
-        toTv(code, payload);
-        toAdmin(code, payload);
-    }
+  private final SessionRegistry registry;
 
-    @Override
-    public void toTv(String code, String payload) {
-        WebSocketSession tvSession = registry.getTvSession(code);
-        if(tvSession == null){
-            log.warn("Tried sending this {} to non-existing TV", payload);
-            return;
-        }
-        try {
-            tvSession.sendMessage(new TextMessage(payload));
-        } catch (IOException ex) {
-            log.warn("An IO exception occured", payload);
-        }
-    }
+  public WebSocketBroadcastGateway(final SessionRegistry registry) {
+    this.registry = registry;
+  }
 
-    @Override
-    public void toAdmin(String code, String payload) {
-        WebSocketSession adminSession = registry.getAdminSession(code);
-        if(adminSession == null){
-            log.warn("Tried sending this {} to non-existing Admin", payload);
-            return;
-        }
-        try {
-            adminSession.sendMessage(new TextMessage(payload));
-        } catch (IOException ex) {
-            log.warn("An IO exception occured", payload);
-        }
+  @Override
+  public void broadcast(final String code, final String payload) {
+    toTv(code, payload);
+    toAdmin(code, payload);
+  }
+
+  @Override
+  public void toTv(final String code, final String payload) {
+    final WebSocketSession tvSession = registry.getTvSession(code);
+    if (tvSession == null) {
+      LOG.warn("Tried sending this {} to non-existing TV", payload);
+      return;
     }
-    
-    public void sendToSomeone(WebSocketSession socket, String payload){
-        if(socket == null || !socket.isOpen()){
-            log.warn("Tried sending this {} to non-existing socket", payload);
-            return;
-        }
-        try {
-            socket.sendMessage(new TextMessage(payload));
-            log.info("Sent {} to {}", payload, socket.getUri());
-        } catch (IOException ex) {
-            log.error(null, ex);
-        }
+    try {
+      tvSession.sendMessage(new TextMessage(payload));
+    } catch (IOException ex) {
+      LOG.warn("An IO exception occured", payload);
     }
+  }
+
+  @Override
+  public void toAdmin(final String code, final String payload) {
+    final WebSocketSession adminSession = registry.getAdminSession(code);
+    if (adminSession == null) {
+      LOG.warn("Tried sending this {} to non-existing Admin", payload);
+      return;
+    }
+    try {
+      adminSession.sendMessage(new TextMessage(payload));
+    } catch (IOException ex) {
+      LOG.warn("An IO exception occured", payload);
+    }
+  }
+
+  public void sendToSomeone(final WebSocketSession socket, final String payload) {
+    if (socket == null || !socket.isOpen()) {
+      LOG.warn("Tried sending this {} to non-existing socket", payload);
+      return;
+    }
+    try {
+      socket.sendMessage(new TextMessage(payload));
+      LOG.info("Sent {} to {}", payload, socket.getUri());
+    } catch (IOException ex) {
+      LOG.error(null, ex);
+    }
+  }
 }

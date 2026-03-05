@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Login } from "../../../components/login/login";
+import { Login } from '../../../components/login/login';
 
 @Component({
   selector: 'app-tvhome',
@@ -8,6 +8,4 @@ import { Login } from "../../../components/login/login";
   templateUrl: './tvhome.html',
   styleUrl: './tvhome.scss',
 })
-export class TVHome {
-  
-}
+export class TVHome {}

@@ -5,37 +5,40 @@
 package com.cevapinxile.cestereg.common.exception;
 
 /**
+ * Exception thrown when an asset (e.g., audio or image) cannot be accessed.
+ *
+ * <p>The {@link Reason} indicates whether the asset is missing or exists but cannot be read due to
+ * a storage or I/O problem.
+ *
  * @author denijal
- * Thrown when an asset (audio/image) cannot be loaded from storage.
- *
- * <p>The {@link Reason} determines whether the failure is treated as:</p>
- * <ul>
- *   <li>{@link Reason#NOT_FOUND} → HTTP 404 (missing asset)</li>
- *   <li>{@link Reason#UNREADABLE} → HTTP 503 (asset exists but cannot be read / storage unavailable)</li>
- * </ul>
- *
- * <p>Typical throw sites:</p>
- * <ul>
- *   <li>{@code LocalAssetGateway.readSnippetMp3(...)} when snippet MP3 is missing/unreadable</li>
- *   <li>{@code LocalAssetGateway.readAnswerMp3(...)} when answer MP3 is missing/unreadable</li>
- * </ul>
  */
 public class AssetAccessException extends DerivedException {
 
-    public enum Reason {
-        NOT_FOUND,
-        UNREADABLE
-    }
+  /** Describes the reason why the asset access failed. */
+  public enum Reason {
 
-    private final Reason reason;
+    /** The requested asset does not exist. */
+    NOT_FOUND,
 
-    public AssetAccessException(Reason reason, String message) {
-        super(
-            reason == Reason.NOT_FOUND ? 404 : 503,
-            reason == Reason.NOT_FOUND ? "007" : "008",
-            reason == Reason.NOT_FOUND ? "Asset Not Found" : "Asset Unavailable",
-            message
-        );
-        this.reason = reason;
-    }
+    /** The asset exists but cannot be read (e.g., storage unavailable). */
+    UNREADABLE
+  }
+
+  /** Reason for the failure. */
+  private final Reason reason;
+
+  /**
+   * Creates a new asset access exception.
+   *
+   * @param reason the reason why the asset access failed
+   * @param message detailed error message
+   */
+  public AssetAccessException(Reason reason, String message) {
+    super(
+        reason == Reason.NOT_FOUND ? 404 : 503,
+        reason == Reason.NOT_FOUND ? "007" : "008",
+        reason == Reason.NOT_FOUND ? "Asset Not Found" : "Asset Unavailable",
+        message);
+    this.reason = reason;
+  }
 }

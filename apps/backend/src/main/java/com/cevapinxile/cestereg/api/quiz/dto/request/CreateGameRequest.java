@@ -4,11 +4,7 @@
  */
 package com.cevapinxile.cestereg.api.quiz.dto.request;
 
-/**
- *
+/*
  * @author denijal
  */
-public record CreateGameRequest(
-    Integer maxSongs,
-    Integer maxAlbums
-) {}
+public record CreateGameRequest(Integer maxSongs, Integer maxAlbums) {}

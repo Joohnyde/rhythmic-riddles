@@ -8,9 +8,8 @@ describe('Tvapp', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Tvapp]
-    })
-    .compileComponents();
+      imports: [Tvapp],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(Tvapp);
     component = fixture.componentInstance;

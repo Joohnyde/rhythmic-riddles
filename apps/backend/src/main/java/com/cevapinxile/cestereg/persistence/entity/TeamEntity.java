@@ -24,141 +24,139 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-/**
- *
+/*
  * @author denijal
  */
 @Entity
 @Table(name = "team")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "TeamEntity.findAll", query = "SELECT t FROM TeamEntity t"),
-    @NamedQuery(name = "TeamEntity.findByButtonCode", query = "SELECT t FROM TeamEntity t WHERE t.buttonCode = :buttonCode"),
-    @NamedQuery(name = "TeamEntity.findByName", query = "SELECT t FROM TeamEntity t WHERE t.name = :name"),
-    @NamedQuery(name = "TeamEntity.findByImage", query = "SELECT t FROM TeamEntity t WHERE t.image = :image"),
-    @NamedQuery(name = "TeamEntity.findByGameId", query = "SELECT new com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse(t.id, t.name, t.image) FROM TeamEntity t WHERE t.gameId.code = :roomCode")})
+  @NamedQuery(name = "TeamEntity.findAll", query = "SELECT t FROM TeamEntity t"),
+  @NamedQuery(
+      name = "TeamEntity.findByButtonCode",
+      query = "SELECT t FROM TeamEntity t WHERE t.buttonCode = :buttonCode"),
+  @NamedQuery(
+      name = "TeamEntity.findByName",
+      query = "SELECT t FROM TeamEntity t WHERE t.name = :name"),
+  @NamedQuery(
+      name = "TeamEntity.findByImage",
+      query = "SELECT t FROM TeamEntity t WHERE t.image = :image"),
+  @NamedQuery(
+      name = "TeamEntity.findByGameId",
+      query =
+          """
+              SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse(t.id, t.name, t.image)
+              FROM   TeamEntity t
+              WHERE  t.gameId.code = :roomCode
+              """)
+})
 public class TeamEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-    @Id
-    @Basic(optional = false)
-    @NotNull
-    @Lob
-    @Column(name = "id")
-    private UUID id;
-    @Size(max = 2147483647)
-    @Column(name = "button_code")
-    private String buttonCode;
-    @Size(max = 2147483647)
-    @Column(name = "name")
-    private String name;
-    @Size(max = 2147483647)
-    @Column(name = "image")
-    private String image;
-    @OneToMany(mappedBy = "teamId")
-    private List<InterruptEntity> interruptList;
-    @JoinColumn(name = "game_id", referencedColumnName = "id")
-    @ManyToOne
-    private GameEntity gameId;
-    @OneToMany(mappedBy = "pickedByTeamId")
-    private List<CategoryEntity> categoryList;
+  private static final long serialVersionUID = 1L;
 
-    public TeamEntity() {
-    }
+  @Id
+  @Basic(optional = false)
+  @NotNull
+  @Lob
+  @Column(name = "id")
+  private UUID id;
 
-    public TeamEntity(UUID id) {
-        this.id = id;
-    }
+  @Size(max = 2147483647)
+  @Column(name = "button_code")
+  private String buttonCode;
 
-    public TeamEntity(CreateTeamRequest ctr, UUID gameId) {
-        this.id = UUID.randomUUID();
-        this.gameId = new GameEntity(gameId);
-        this.image = ctr.image();
-        this.name = ctr.name();
-        this.buttonCode = ctr.buttonCode();
-    }
+  @Size(max = 2147483647)
+  @Column(name = "name")
+  private String name;
 
-    public UUID getId() {
-        return id;
-    }
+  @Size(max = 2147483647)
+  @Column(name = "image")
+  private String image;
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  @OneToMany(mappedBy = "teamId")
+  private List<InterruptEntity> interruptList;
 
-    public String getButtonCode() {
-        return buttonCode;
-    }
+  @JoinColumn(name = "game_id", referencedColumnName = "id")
+  @ManyToOne
+  private GameEntity gameId;
 
-    public void setButtonCode(String buttonCode) {
-        this.buttonCode = buttonCode;
-    }
+  @OneToMany(mappedBy = "pickedByTeamId")
+  private List<CategoryEntity> categoryList;
 
-    public String getName() {
-        return name;
-    }
+  public TeamEntity() {}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public TeamEntity(UUID id) {
+    this.id = id;
+  }
 
-    public String getImage() {
-        return image;
-    }
+  public TeamEntity(CreateTeamRequest ctr, UUID gameId) {
+    this.id = UUID.randomUUID();
+    this.gameId = new GameEntity(gameId);
+    this.image = ctr.image();
+    this.name = ctr.name();
+    this.buttonCode = ctr.buttonCode();
+  }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    @XmlTransient
-    public List<InterruptEntity> getInterruptList() {
-        return interruptList;
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    public void setInterruptList(List<InterruptEntity> interruptList) {
-        this.interruptList = interruptList;
-    }
+  public String getButtonCode() {
+    return buttonCode;
+  }
 
-    public GameEntity getGameId() {
-        return gameId;
-    }
+  public void setButtonCode(String buttonCode) {
+    this.buttonCode = buttonCode;
+  }
 
-    public void setGameId(GameEntity gameId) {
-        this.gameId = gameId;
-    }
+  public String getName() {
+    return name;
+  }
 
-    @XmlTransient
-    public List<CategoryEntity> getCategoryList() {
-        return categoryList;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public void setCategoryList(List<CategoryEntity> categoryList) {
-        this.categoryList = categoryList;
-    }
+  public String getImage() {
+    return image;
+  }
 
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        hash += (id != null ? id.hashCode() : 0);
-        return hash;
-    }
+  public void setImage(String image) {
+    this.image = image;
+  }
 
-    @Override
-    public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof TeamEntity)) {
-            return false;
-        }
-        TeamEntity other = (TeamEntity) object;
-        if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
-            return false;
-        }
-        return true;
-    }
+  @XmlTransient
+  public List<InterruptEntity> getInterruptList() {
+    return interruptList;
+  }
 
-    @Override
-    public String toString() {
-        return "com.cevapinxile.cestereg.persistence.entity.Team[ id=" + id + " ]";
-    }
+  public void setInterruptList(List<InterruptEntity> interruptList) {
+    this.interruptList = interruptList;
+  }
 
+  public GameEntity getGameId() {
+    return gameId;
+  }
+
+  public void setGameId(GameEntity gameId) {
+    this.gameId = gameId;
+  }
+
+  @XmlTransient
+  public List<CategoryEntity> getCategoryList() {
+    return categoryList;
+  }
+
+  public void setCategoryList(List<CategoryEntity> categoryList) {
+    this.categoryList = categoryList;
+  }
+
+  @Override
+  public String toString() {
+    return "com.cevapinxile.cestereg.persistence.entity.Team[ id=" + id + " ]";
+  }
 }

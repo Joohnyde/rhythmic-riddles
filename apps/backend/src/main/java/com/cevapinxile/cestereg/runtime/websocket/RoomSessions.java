@@ -6,22 +6,23 @@ package com.cevapinxile.cestereg.runtime.websocket;
 
 import org.springframework.web.socket.WebSocketSession;
 
-/**
- *
+/*
  * @author denijal
  */
 public record RoomSessions(WebSocketSession admin, WebSocketSession tv) {
 
-    public WebSocketSession get(ClientType type) {
-        return type == ClientType.ADMIN ? admin : tv;
-    }
+  public WebSocketSession get(final ClientType type) {
+    return type == ClientType.ADMIN ? admin : tv;
+  }
 
-    public RoomSessions with(ClientType type, WebSocketSession session) {
-        return type == ClientType.ADMIN ? new RoomSessions(session, tv) : new RoomSessions(admin, session);
-    }
+  public RoomSessions with(final ClientType type, final WebSocketSession session) {
+    return type == ClientType.ADMIN
+        ? new RoomSessions(session, tv)
+        : new RoomSessions(admin, session);
+  }
 
-    public boolean isPresent(ClientType type) {
-        WebSocketSession s = get(type);
-        return s != null && s.isOpen();
-    }
+  public boolean isPresent(final ClientType type) {
+    final WebSocketSession s = get(type);
+    return s != null && s.isOpen();
+  }
 }

@@ -16,20 +16,18 @@ export class AudioPlayerService {
   duration$ = this.durationSubject.asObservable();
 
   // Emits once per "ended"
-  ended$ = fromEvent(this.audio, 'ended').pipe(
-    map(() => true)
-  );
+  ended$ = fromEvent(this.audio, 'ended').pipe(map(() => true));
 
   constructor() {
     // Update current time
     fromEvent(this.audio, 'timeupdate')
       .pipe(map(() => this.audio.currentTime))
-      .subscribe(t => this.currentTimeSubject.next(t));
+      .subscribe((t) => this.currentTimeSubject.next(t));
 
     // Update duration when metadata is loaded
     fromEvent(this.audio, 'loadedmetadata')
       .pipe(map(() => this.audio.duration))
-      .subscribe(d => this.durationSubject.next(d));
+      .subscribe((d) => this.durationSubject.next(d));
 
     // Playing / paused state
     fromEvent(this.audio, 'play').subscribe(() => this.isPlayingSubject.next(true));
