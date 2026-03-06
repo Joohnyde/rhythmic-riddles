@@ -13,7 +13,6 @@
 - [State machine & recovery](developer-guide/state-machine-and-recovery.md)
 - [Recovery queries](developer-guide/recovery-queries.md)
 - [Assets](developer-guide/assets.md)
-- [Testing strategy](developer-guide/testing-strategy.md)
 - [Exceptions](developer-guide/exceptions.md)
 - [Security model](developer-guide/security.md)
 - [Devcontaiers](developer-guide/devcontainers.md)
@@ -21,10 +20,15 @@
 - [Logging](developer-guide/logging.md)
 - [Release builds](developer-guide/release-builds.md)
 
+## Testing docs
+- [Testing overview](developer-guide/testing/testing-overview.md)
+- [Writing tests](developer-guide/testing/writing-tests.md)
+- [Test catalog](developer-guide/testing/test-catalog.md)
+- [Unit testing](developer-guide/testing/unit-testing.md)
 
 ## Hardware docs
-- [Hardware overview](hardware/hardware-setup-guide.md)
-- [Bill of Materials](hardware/bom.md)
+- [Hardware overview](developer-guide/hardware/hardware-setup-guide.md)
+- [Bill of Materials](developer-guide/hardware/bom.md)
 
 ## ADRs
 - [ADR-0001: Monorepo](adr/0001-monorepo.md)
