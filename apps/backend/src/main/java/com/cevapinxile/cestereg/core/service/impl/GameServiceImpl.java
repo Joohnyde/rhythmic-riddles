@@ -250,8 +250,8 @@ public class GameServiceImpl implements GameService {
 
     // Log here
 
-    if (newStage < 1 || newStage > 4) {
-      throw new InvalidArgumentException("Stage id has to be a number between 1 and 3");
+    if (newStage < 0 || newStage > 3) {
+      throw new InvalidArgumentException("Game state has to be a number between 0 and 3");
     }
     if (newStage == currentStage) {
       throw new InvalidArgumentException("Game is already in that state");
