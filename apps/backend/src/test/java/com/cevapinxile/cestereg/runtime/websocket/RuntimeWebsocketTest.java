@@ -15,95 +15,108 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.socket.WebSocketHandler;
 
-class ClientTypeTest {
+/**
+ * @author denijal
+ */
+public class RuntimeWebsocketTest {
 
-  @Test
-  void indexReturnsExpectedSocketPositions() {
-    assertEquals(0, ClientType.ADMIN.index());
-    assertEquals(1, ClientType.TV.index());
+  @Nested
+  @ExtendWith(MockitoExtension.class)
+  class ClientTypeTest {
+
+    @Test
+    void indexReturnsExpectedSocketPositions() {
+      assertEquals(0, ClientType.ADMIN.index());
+      assertEquals(1, ClientType.TV.index());
+    }
+
+    @Test
+    void fromSocketPositionMapsKnownValues() {
+      assertEquals(ClientType.ADMIN, ClientType.fromSocketPosition(0));
+      assertEquals(ClientType.TV, ClientType.fromSocketPosition(1));
+    }
+
+    @Test
+    void fromSocketPositionRejectsUnknownValues() {
+      final IllegalArgumentException exception =
+          assertThrows(IllegalArgumentException.class, () -> ClientType.fromSocketPosition(2));
+
+      assertEquals("Invalid SOCKET_POSITION: 2", exception.getMessage());
+    }
   }
 
-  @Test
-  void fromSocketPositionMapsKnownValues() {
-    assertEquals(ClientType.ADMIN, ClientType.fromSocketPosition(0));
-    assertEquals(ClientType.TV, ClientType.fromSocketPosition(1));
-  }
+  @Nested
+  @ExtendWith(MockitoExtension.class)
+  class GameCodeExtractorTest {
 
-  @Test
-  void fromSocketPositionRejectsUnknownValues() {
-    final IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> ClientType.fromSocketPosition(2));
+    private final GameRepository gameRepository = mock(GameRepository.class);
+    private final GameCodeExtractor extractor = new GameCodeExtractor();
 
-    assertEquals("Invalid SOCKET_POSITION: 2", exception.getMessage());
-  }
-}
+    @BeforeEach
+    void setUp() {
+      ReflectionTestUtils.setField(extractor, "gameRepository", gameRepository);
+    }
 
-class GameCodeExtractorTest {
+    @Test
+    void beforeHandshakeAcceptsKnownRoomAndStoresAttributes() {
+      when(gameRepository.findByCode("AKKU"))
+          .thenReturn(Optional.of(new GameEntity(UUID.randomUUID())));
 
-  private final GameRepository gameRepository = mock(GameRepository.class);
-  private final GameCodeExtractor extractor = new GameCodeExtractor();
+      final Map<String, Object> attributes = new HashMap<>();
+      final boolean accepted =
+          extractor.beforeHandshake(
+              request("ws://localhost/ws/0AKKU"),
+              mock(ServerHttpResponse.class),
+              mock(WebSocketHandler.class),
+              attributes);
 
-  @BeforeEach
-  void setUp() {
-    ReflectionTestUtils.setField(extractor, "gameRepository", gameRepository);
-  }
+      assertTrue(accepted);
+      assertEquals("AKKU", attributes.get("ROOM_CODE"));
+      assertEquals(0, attributes.get("SOCKET_POSITION"));
+    }
 
-  @Test
-  void beforeHandshakeAcceptsKnownRoomAndStoresAttributes() {
-    when(gameRepository.findByCode("AKKU"))
-        .thenReturn(Optional.of(new GameEntity(UUID.randomUUID())));
+    @Test
+    void beforeHandshakeRejectsUnknownRoom() {
+      when(gameRepository.findByCode("MISS")).thenReturn(Optional.empty());
 
-    final Map<String, Object> attributes = new HashMap<>();
-    final boolean accepted =
-        extractor.beforeHandshake(
-            request("ws://localhost/ws/0AKKU"),
-            mock(ServerHttpResponse.class),
-            mock(WebSocketHandler.class),
-            attributes);
+      final boolean accepted =
+          extractor.beforeHandshake(
+              request("ws://localhost/ws/1MISS"),
+              mock(ServerHttpResponse.class),
+              mock(WebSocketHandler.class),
+              new HashMap<>());
 
-    assertTrue(accepted);
-    assertEquals("AKKU", attributes.get("ROOM_CODE"));
-    assertEquals(0, attributes.get("SOCKET_POSITION"));
-  }
+      assertFalse(accepted);
+    }
 
-  @Test
-  void beforeHandshakeRejectsUnknownRoom() {
-    when(gameRepository.findByCode("MISS")).thenReturn(Optional.empty());
+    @Test
+    void beforeHandshakeRejectsUnsupportedSocketPosition() {
+      when(gameRepository.findByCode("AKKU"))
+          .thenReturn(Optional.of(new GameEntity(UUID.randomUUID())));
 
-    final boolean accepted =
-        extractor.beforeHandshake(
-            request("ws://localhost/ws/1MISS"),
-            mock(ServerHttpResponse.class),
-            mock(WebSocketHandler.class),
-            new HashMap<>());
+      final boolean accepted =
+          extractor.beforeHandshake(
+              request("ws://localhost/ws/2AKKU"),
+              mock(ServerHttpResponse.class),
+              mock(WebSocketHandler.class),
+              new HashMap<>());
 
-    assertFalse(accepted);
-  }
+      assertFalse(accepted);
+    }
 
-  @Test
-  void beforeHandshakeRejectsUnsupportedSocketPosition() {
-    when(gameRepository.findByCode("AKKU"))
-        .thenReturn(Optional.of(new GameEntity(UUID.randomUUID())));
-
-    final boolean accepted =
-        extractor.beforeHandshake(
-            request("ws://localhost/ws/2AKKU"),
-            mock(ServerHttpResponse.class),
-            mock(WebSocketHandler.class),
-            new HashMap<>());
-
-    assertFalse(accepted);
-  }
-
-  private ServerHttpRequest request(final String uri) {
-    final ServerHttpRequest request = mock(ServerHttpRequest.class);
-    when(request.getURI()).thenReturn(URI.create(uri));
-    return request;
+    private ServerHttpRequest request(final String uri) {
+      final ServerHttpRequest request = mock(ServerHttpRequest.class);
+      when(request.getURI()).thenReturn(URI.create(uri));
+      return request;
+    }
   }
 }
