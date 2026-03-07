@@ -136,3 +136,13 @@ logs/
 *.orig
 *.rej
 
+############################################
+# Scripts folder
+############################################
+# Always track scripts folder
+!scripts/
+!scripts/**
+
+# But ignore logs inside scripts
+scripts/**/*.log
+scripts/**/*.log.*
