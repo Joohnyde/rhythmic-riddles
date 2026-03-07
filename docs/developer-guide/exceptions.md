@@ -52,6 +52,7 @@ Notes:
 | E006 | 409 | Guess wasn't allowed | `GuessNotAllowedException` | Guess not allowed (paused / already guessed / song ended / etc.) |
 | E007 | 404 | Asset Not Found | `AssetAccessException(Reason.NOT_FOUND)` | MP3 missing |
 | E008 | 503 | Asset Unavailable | `AssetAccessException(Reason.UNREADABLE)` | MP3 exists but cannot be read / storage issue |
+| E999 | 500 | Internal Server Error | `InternalServerErrorException` | Unexpected internal error occured |
 
 
 ## Where you’ll see each error (practical map)
@@ -88,6 +89,9 @@ Buzz/answer rules reject the action:
 Thrown by `AssetAccessException`:
 - `NOT_FOUND` → E007 / 404
 - `UNREADABLE` → E008 / 503
+
+### E999 — Internal Server Error (500)
+Error that endpoints return when an unexpected Exception is caught.
 
 ## How to add a new error
 1. Create a new subclass of `DerivedException`

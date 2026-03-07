@@ -8,6 +8,7 @@ import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.StageIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.RoomCodeResponse;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
+import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.GameService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -75,7 +76,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E002 - Malformed argument\","
-                                + "\"message\":\"maxSongs and maxAlbums must be positive integers.\"}")))
+                                + "\"message\":\"maxSongs and maxAlbums must be positive integers.\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PostMapping
   public ResponseEntity<?> createGame(@RequestBody CreateGameRequest cgr) {
@@ -85,8 +98,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 
@@ -140,7 +153,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E004 - App not reachable\","
-                                + "\"message\":\"TV app is not reachable; cannot broadcast stage change.\"}")))
+                                + "\"message\":\"TV app is not reachable; cannot broadcast stage change.\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PutMapping("/{roomCode}/stage")
   public ResponseEntity<?> changeState(
@@ -152,8 +177,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 }

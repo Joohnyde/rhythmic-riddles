@@ -275,9 +275,12 @@ core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,k
 core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,saveTeamAnswerReusesCacheAcrossCalls,Save team answer reuses cache across calls.,9
 core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,findByRoomCodeAndFindByIdDelegateToRepository,Find by room code and find by id delegate to repository.,5
 core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,findNextChoosingTeamDelegatesToRepository,Find next choosing team delegates to repository.,5
-runtime/websocket/RuntimeWebsocketTest.java,,indexReturnsExpectedSocketPositions,Index returns expected socket positions.,6
-runtime/websocket/RuntimeWebsocketTest.java,,fromSocketPositionMapsKnownValues,From socket position maps known values.,6
-runtime/websocket/RuntimeWebsocketTest.java,,fromSocketPositionRejectsUnknownValues,From socket position rejects unknown values.,8
-runtime/websocket/RuntimeWebsocketTest.java,,beforeHandshakeAcceptsKnownRoomAndStoresAttributes,Before handshake accepts known room and stores attributes.,6
-runtime/websocket/RuntimeWebsocketTest.java,,beforeHandshakeRejectsUnknownRoom,Before handshake rejects unknown room.,8
-runtime/websocket/RuntimeWebsocketTest.java,,beforeHandshakeRejectsUnsupportedSocketPosition,Before handshake rejects unsupported socket position.,8
+runtime/websocket/RuntimeWebsocketTest.java,ClientTypeTest,indexReturnsExpectedSocketPositions,Index returns expected socket positions.,6
+runtime/websocket/RuntimeWebsocketTest.java,ClientTypeTest,fromSocketPositionMapsKnownValues,From socket position maps known values.,6
+runtime/websocket/RuntimeWebsocketTest.java,ClientTypeTest,fromSocketPositionRejectsUnknownValues,From socket position rejects unknown values.,8
+runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshakeAcceptsKnownRoomAndStoresAttributes,Before handshake accepts known room and stores attributes.,6
+runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshakeRejectsUnknownRoom,Before handshake rejects unknown room.,8
+runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshakeRejectsUnsupportedSocketPosition,Before handshake rejects unsupported socket position.,8
+consistency/TestCatalogConsistencyTest.java,,testCatalogMustMatchCode,Tests and this document are consistent with each other,5
+consistency/ExceptionCatalogConsistencyTest.java,,exceptionCatalogMustMatchCode,Exceptions and exception catalog must be consistent with each other,5
+consistency/SwaggerConsistencyTest.java,,swaggerContractMustBeStructurallyConsistent,All API endpoints must be properly documented via Swagger,5

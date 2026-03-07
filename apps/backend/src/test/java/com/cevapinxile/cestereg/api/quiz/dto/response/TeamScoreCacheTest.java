@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class TeamScoreCacheTest {
+public class TeamScoreCacheTest {
 
   @Test
   void returnsAndUpdatesScoresForExistingTeams() throws Exception {
