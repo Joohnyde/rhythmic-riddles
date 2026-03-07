@@ -38,7 +38,7 @@ Compatible receiver modules (MVP):
 
 For detailed wiring diagrams, soldering guidance, and assembly instructions, see:
 
-`docs/hardware/hardware-setup-guide.md`
+`docs/developer-guide/hardware/hardware-setup-guide.md`
 
 
 
@@ -58,4 +58,4 @@ The backend service reads the configured serial port and treats each line as a d
 
 For full hardware integration details, pairing workflow, and troubleshooting, refer to:
 
-`docs/hardware/hardware-setup-guide.md`
+`docs/developer-guide/hardware/hardware-setup-guide.md`
