@@ -20,103 +20,103 @@ import org.springframework.stereotype.Component;
 /**
  * Local filesystem-based asset gateway.
  *
- * Base directory is configured via: app.assets.base-dir: /absolute/path/to/data
+ * <p>Base directory is configured via: app.assets.base-dir: /absolute/path/to/data
  *
- * Expected structure under base-dir: audio/snippets/<songId>.mp3
- * audio/answers/<songId>.mp3 images/teams/<teamId>.(png|jpg|jpeg|webp)
- * images/albums/<albumId>.(png|jpg|jpeg|webp)
+ * <p>Expected structure under base-dir: audio/snippets/<songId>.mp3 audio/answers/<songId>.mp3
+ * images/teams/<teamId>.(png|jpg|jpeg|webp) images/albums/<albumId>.(png|jpg|jpeg|webp)
  *
  * @author denijal
  */
 @Component
 public class LocalAssetGateway implements AssetGateway {
 
-    private static final Logger log = LoggerFactory.getLogger(LocalAssetGateway.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LocalAssetGateway.class);
 
-    private static final String[] IMAGE_EXTS = new String[]{"png", "jpg", "jpeg", "webp"};
+  private static final String[] IMAGE_EXTS = new String[] {"png", "jpg", "jpeg", "webp"};
 
-    private final Path basePath;
+  private final Path basePath;
 
-    public LocalAssetGateway(AssetProperties props) {
-        // IMPORTANT: base-dir should point to the "data" folder.
-        // Example: /home/denijal/Documents/cestereg/data
-        this.basePath = Path.of(props.getBaseDir()).toAbsolutePath().normalize();
-        log.info("LocalAssetGateway basePath={}", basePath);
+  public LocalAssetGateway(AssetProperties props) {
+    // IMPORTANT: base-dir should point to the "data" folder.
+    // Example: /home/denijal/Documents/cestereg/data
+    this.basePath = Path.of(props.getBaseDir()).toAbsolutePath().normalize();
+    LOG.info("LocalAssetGateway basePath={}", basePath);
+  }
+
+  // -------------------- Audio --------------------
+  @Override
+  public byte[] readSnippetMp3(final UUID songId) throws DerivedException {
+    final Path path = resolveAudioPath(songId, AudioType.SNIPPET);
+    if (!Files.exists(path)) {
+      throw new AssetAccessException(
+          AssetAccessException.Reason.NOT_FOUND, "Snippet not found for song " + songId);
     }
-
-    // -------------------- Audio --------------------
-    @Override
-    public byte[] readSnippetMp3(UUID songId) throws DerivedException {
-        Path path = resolveAudioPath(songId, AudioType.SNIPPET);
-        if (!Files.exists(path)) {
-            throw new AssetAccessException(AssetAccessException.Reason.NOT_FOUND, "Snippet not found for song " + songId);
-        }
-        try {
-            return Files.readAllBytes(path);
-        } catch (IOException e) {
-            throw new AssetAccessException(AssetAccessException.Reason.UNREADABLE, "Failed reading snippet for song " + songId);
-        }
+    try {
+      return Files.readAllBytes(path);
+    } catch (IOException e) {
+      throw new AssetAccessException(
+          AssetAccessException.Reason.UNREADABLE, "Failed reading snippet for song " + songId);
     }
+  }
 
-    @Override
-    public byte[] readAnswerMp3(UUID songId) throws DerivedException {
-        Path path = resolveAudioPath(songId, AudioType.ANSWER);
-        if (!Files.exists(path)) {
-            throw new AssetAccessException(AssetAccessException.Reason.NOT_FOUND, "Answer not found for song " + songId);
-        }
-        try {
-            return Files.readAllBytes(path);
-        } catch (IOException e) {
-            throw new AssetAccessException(AssetAccessException.Reason.UNREADABLE, "Failed reading answer for song " + songId);
-        }
+  @Override
+  public byte[] readAnswerMp3(final UUID songId) throws DerivedException {
+    final Path path = resolveAudioPath(songId, AudioType.ANSWER);
+    if (!Files.exists(path)) {
+      throw new AssetAccessException(
+          AssetAccessException.Reason.NOT_FOUND, "Answer not found for song " + songId);
     }
+    try {
+      return Files.readAllBytes(path);
+    } catch (IOException e) {
+      throw new AssetAccessException(
+          AssetAccessException.Reason.UNREADABLE, "Failed reading answer for song " + songId);
+    }
+  }
 
-    private Path resolveAudioPath(UUID songId, AudioType type) {
-        return basePath
-                .resolve("audio")
-                .resolve(type.folder())
-                .resolve(songId.toString() + ".mp3");
-    }
+  private Path resolveAudioPath(final UUID songId, final AudioType type) {
+    return basePath.resolve("audio").resolve(type.folder()).resolve(songId.toString() + ".mp3");
+  }
 
-    // -------------------- Images --------------------
-    @Override
-    public Optional<byte[]> readTeamImage(UUID teamId) throws IOException {
-        return readFirstExistingImage(basePath.resolve("images").resolve("teams"), teamId);
-    }
+  // -------------------- Images --------------------
+  @Override
+  public Optional<byte[]> readTeamImage(final UUID teamId) throws IOException {
+    return readFirstExistingImage(basePath.resolve("images").resolve("teams"), teamId);
+  }
 
-    @Override
-    public Optional<byte[]> readAlbumImage(UUID albumId) throws IOException {
-        return readFirstExistingImage(basePath.resolve("images").resolve("albums"), albumId);
-    }
+  @Override
+  public Optional<byte[]> readAlbumImage(final UUID albumId) throws IOException {
+    return readFirstExistingImage(basePath.resolve("images").resolve("albums"), albumId);
+  }
 
-    private Optional<byte[]> readFirstExistingImage(Path folder, UUID id) throws IOException {
-        for (String ext : IMAGE_EXTS) {
-            Path candidate = folder.resolve(id.toString() + "." + ext);
-            if (Files.exists(candidate) && Files.isRegularFile(candidate)) {
-                return Optional.of(Files.readAllBytes(candidate));
-            }
-        }
-        return Optional.empty();
+  private Optional<byte[]> readFirstExistingImage(final Path folder, final UUID id)
+      throws IOException {
+    for (String ext : IMAGE_EXTS) {
+      final Path candidate = folder.resolve(id.toString() + "." + ext);
+      if (Files.exists(candidate) && Files.isRegularFile(candidate)) {
+        return Optional.of(Files.readAllBytes(candidate));
+      }
     }
+    return Optional.empty();
+  }
 }
 
 enum AudioType {
+  SNIPPET("snippets"),
+  ANSWER("answers");
 
-    SNIPPET("snippets"),
-    ANSWER("answers");
+  private final String folderName;
 
-    private final String folderName;
+  AudioType(String folderName) {
+    this.folderName = folderName;
+  }
 
-    AudioType(String folderName) {
-        this.folderName = folderName;
-    }
+  public String folder() {
+    return folderName;
+  }
 
-    public String folder() {
-        return folderName;
-    }
-
-    @Override
-    public String toString() {
-        return folderName;
-    }
+  @Override
+  public String toString() {
+    return folderName;
+  }
 }

@@ -13,57 +13,59 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID> {
-    
 
-    /**
-    * Returns outermost interrupt frames after {@code startTimestamp} for the given schedule.
-    *
-    * <p>"Outermost" means the returned intervals are not strictly contained by another interrupt interval
-    * that starts earlier (or equal) and resolves later (or is unresolved). This allows seek computation
-    * to subtract paused time without double-counting nested pauses.</p>
-    *
-    * <p><b>Requires invariant:</b> interrupt intervals are disjoint or fully nested (no partial overlap).</p>
-    *
-    * @param startTimestamp snippet start time; only interrupts after this timestamp are considered
-    * @param scheduleId schedule identifier
-    * @return list of outermost interrupt frames ordered by arrival time ascending
-    */
-    public List<InterruptFrame> findInterrupts(LocalDateTime startTimestamp, UUID scheduleId);
-    
-    /**
-    * Returns the latest system interrupt/pause affecting the given schedule since {@code startTimestamp}.
-    *
-    * <p>Typically used to attach auxiliary metadata to the most recent pause (e.g., UI restoration scenario).</p>
-    *
-    * @param startTimestamp lower bound timestamp (usually song start)
-    * @param scheduleId schedule identifier
-    * @return latest pause interrupt or {@code null} if none exists
-    */
-    public InterruptEntity findLastPause(LocalDateTime startTimestamp, UUID scheduleId);
-    
-    /**
-    * Returns the latest team caused interrupt/buzz-in for the given schedule since {@code startTimestamp}.
-    *
-    * <p>It's main usage is to calculate if the game is stopped because someone is answering and to properly show that team on the UI.</p>
-    *
-    * @param startTimestamp lower bound timestamp (usually song start)
-    * @param scheduleId schedule identifier
-    * @return latest pause interrupt or {@code null} if none exists
-    */
-    public InterruptEntity findLastAnswer(LocalDateTime startTimestamp, UUID scheduleId);
+  /**
+   * Returns outermost interrupt frames after {@code startTimestamp} for the given schedule.
+   *
+   * <p>"Outermost" means the returned intervals are not strictly contained by another interrupt
+   * interval that starts earlier (or equal) and resolves later (or is unresolved). This allows seek
+   * computation to subtract paused time without double-counting nested pauses.
+   *
+   * <p><b>Requires invariant:</b> interrupt intervals are disjoint or fully nested (no partial
+   * overlap).
+   *
+   * @param startTimestamp snippet start time; only interrupts after this timestamp are considered
+   * @param scheduleId schedule identifier
+   * @return list of outermost interrupt frames ordered by arrival time ascending
+   */
+  List<InterruptFrame> findInterrupts(LocalDateTime startTimestamp, UUID scheduleId);
 
-    public Optional<Boolean> didTeamAnswer(UUID teamId);
-    
-    @Modifying
-    public void resolveErrors(UUID scheduleId, LocalDateTime resolvedAt);
+  /**
+   * Returns the latest system interrupt/pause affecting the given schedule since {@code
+   * startTimestamp}.
+   *
+   * <p>Typically used to attach auxiliary metadata to the most recent pause (e.g., UI restoration
+   * scenario).
+   *
+   * @param startTimestamp lower bound timestamp (usually song start)
+   * @param scheduleId schedule identifier
+   * @return latest pause interrupt or {@code null} if none exists
+   */
+  InterruptEntity findLastPause(LocalDateTime startTimestamp, UUID scheduleId);
 
-    public UUID findCorrectAnswer(UUID scheduleId);
-    
-    public Integer findPreviousScenarioId(UUID scheduleId);
-    
+  /**
+   * Returns the latest team caused interrupt/buzz-in for the given schedule since {@code
+   * startTimestamp}.
+   *
+   * <p>It's main usage is to calculate if the game is stopped because someone is answering and to
+   * properly show that team on the UI.
+   *
+   * @param startTimestamp lower bound timestamp (usually song start)
+   * @param scheduleId schedule identifier
+   * @return latest pause interrupt or {@code null} if none exists
+   */
+  InterruptEntity findLastAnswer(LocalDateTime startTimestamp, UUID scheduleId);
+
+  Optional<Boolean> didTeamAnswer(UUID teamId);
+
+  @Modifying
+  void resolveErrors(UUID scheduleId, LocalDateTime resolvedAt);
+
+  UUID findCorrectAnswer(UUID scheduleId);
+
+  Integer findPreviousScenarioId(UUID scheduleId);
 }

@@ -4,18 +4,17 @@
  */
 package com.cevapinxile.cestereg.core.gateway;
 
-/**
- *
+/*
  * @author denijal
  */
 public interface BroadcastGateway {
 
-    void toTv(String roomCode, String payload);
+  void toTv(String roomCode, String payload);
 
-    void toAdmin(String roomCode, String payload);
+  void toAdmin(String roomCode, String payload);
 
-    default void broadcast(String roomCode, String payload) {
-        toTv(roomCode, payload);
-        toAdmin(roomCode, payload);
-    }
+  default void broadcast(String roomCode, String payload) {
+    toTv(roomCode, payload);
+    toAdmin(roomCode, payload);
+  }
 }

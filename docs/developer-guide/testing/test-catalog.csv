@@ -1,0 +1,286 @@
+file,suite,test_name,description,importance
+RhytmicRiddlesApplicationTests.java,,contextLoads,Context loads.,9
+api/quiz/dto/response/TeamScoreCacheTest.java,,returnsAndUpdatesScoresForExistingTeams,Returns and updates scores for existing teams.,6
+api/quiz/dto/response/TeamScoreCacheTest.java,,rejectsUnknownTeamLookups,Rejects unknown team lookups.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumRejectsUnknownTeam,Pick album rejects unknown team.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumRejectsTeamRoomMismatch,Pick album rejects team room mismatch.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumRejectsCategoryRoomMismatch,Pick album rejects category room mismatch.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumRejectsWrongStage,Pick album rejects wrong stage.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumRequiresTvPresence,Pick album requires tv presence.,6
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumAssignsPickerOrdinalPersistsAndBroadcasts,Pick album assigns picker ordinal persists and broadcasts.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,startCategoryRejectsMissingCategory,Start category rejects missing category.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,startCategoryRejectsRoomMismatch,Start category rejects room mismatch.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,startCategoryRejectsAlbumWithTooFewSongs,Start category rejects album with too few songs.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,startCategoryCreatesSchedulesStartsFirstSongAndChangesStage,Start category creates schedules starts first song and changes stage.,6
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,finishAndNextMarksLastCategoryDoneAndReturnsAlbumStageWhenMoreRemain,Finish and next marks last category done and returns album stage when more remain.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,finishAndNextReturnsWinnerStageAfterLastAlbum,Finish and next returns winner stage after last album.,9
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,pickAlbumRequiresRequestBody,Pick album requires request body.,6
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,pickAlbumRequiresCategoryId,Pick album requires category id.,6
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,pickAlbumRejectsUnknownTeam,Pick album rejects unknown team.,8
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,pickAlbumRejectsRoomMismatchBetweenTeamAndGame,Pick album rejects room mismatch between team and game.,8
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,pickAlbumRejectsWrongGameStage,Pick album rejects wrong game stage.,8
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,pickAlbumRequiresTvPresence,Pick album requires tv presence.,6
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,startCategoryRejectsRoomMismatch,Start category rejects room mismatch.,8
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,startCategoryRejectsCategoryWithTooFewSongs,Start category rejects category with too few songs.,8
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,startCategoryCreatesSchedulesAndTransitionsToStageTwo,Start category creates schedules and transitions to stage two.,6
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,finishAndNextRejectsMissingPersistedCategory,Finish and next rejects missing persisted category.,9
+core/service/impl/CategoryServiceImplTest.java,CategorySelectionValidation,finishAndNextReturnsWinnerStageWhenLastAlbumWasCompleted,Finish and next returns winner stage when last album was completed.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsMissingBody,Pick album rejects missing body.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsMissingCategoryId,Pick album rejects missing category id.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsUnknownCategory,Pick album rejects unknown category.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsUnknownTeam,Pick album rejects unknown team.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsCategoryFromDifferentRoom,Pick album rejects category from different room.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsWhenGameIsNotChoosingAlbums,Pick album rejects when game is not choosing albums.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumRejectsWhenTvMissing,Pick album rejects when tv missing.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,pickAlbumSupportsNullPickerAndBroadcastsSelectedAlbum,Pick album supports null picker and broadcasts selected album.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,startCategoryRejectsUnknownCategory,Start category rejects unknown category.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,startCategoryRejectsCategoryFromDifferentRoom,Start category rejects category from different room.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,startCategoryRejectsWhenAlbumHasTooFewTracks,Start category rejects when album has too few tracks.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,startCategoryCreatesSchedulesStartsFirstSongAndChangesStage,Start category creates schedules starts first song and changes stage.,6
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,finishAndNextMarksLastCategoryDoneAndReturnsWinnerStageAtEnd,Finish and next marks last category done and returns winner stage at end.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryLifecycleAndBoundaries,finishAndNextRejectsWhenLastCategoryProjectionPointsToMissingCategory,Finish and next rejects when last category projection points to missing category.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryRegressionAndFailureCases,pickAlbumRejectsTeamFromDifferentRoom,Pick album rejects team from different room.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryRegressionAndFailureCases,pickAlbumPersistsOrdinalAndPickerOnSuccess,Pick album persists ordinal and picker on success.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryRegressionAndFailureCases,startCategoryPropagatesWrongStageFromGameService,Start category propagates wrong stage from game service.,6
+core/service/impl/CategoryServiceImplTest.java,CategoryRegressionAndFailureCases,finishAndNextRejectsMissingPersistedLastCategory,Finish and next rejects missing persisted last category.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryRegressionAndFailureCases,finishAndNextReturnsAlbumSelectionWhenMoreAlbumsRemain,Finish and next returns album selection when more albums remain.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryOrderingAndFinalization,startCategoryRejectsForeignRoomWithoutCreatingScheduleOrChangingStage,Start category rejects foreign room without creating schedule or changing stage.,8
+core/service/impl/CategoryServiceImplTest.java,CategoryOrderingAndFinalization,startCategoryPersistsSchedulesBeforeChangingStage,Start category persists schedules before changing stage.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryOrderingAndFinalization,finishAndNextOnFinalAlbumReturnsWinnerStateAndPersistsDoneFlag,Finish and next on final album returns winner state and persists done flag.,9
+core/service/impl/CategoryServiceImplTest.java,CategoryOrderingAndFinalization,finishAndNextFailsWhenNoPersistedLastCategoryExists,Finish and next fails when no persisted last category exists.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,createGameRejectsNegativeAlbumCount,Create game rejects negative album count.,8
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,createGameRejectsNegativeSongCount,Create game rejects negative song count.,8
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,createGameRegeneratesRoomCodeUntilUniqueAndPersistsGame,Create game regenerates room code until unique and persists game.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,putDefaultFieldsUsesCustomQuestionAndAnswerWhenPresent,Put default fields uses custom question and answer when present.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,putDefaultFieldsFallsBackToDefaultQuestionAndSongToString,Put default fields falls back to default question and song to string.,6
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchReturnsEmptyPayloadWhenRoomDoesNotExist,Context fetch returns empty payload when room does not exist.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageZeroReturnsLobbyTeams,Context fetch stage zero returns lobby teams.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageOneReturnsAlbumsAndChoosingTeamWhenNothingChosenYet,Context fetch stage one returns albums and choosing team when nothing chosen yet.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageOneReturnsAlbumsAndNullTeamWhenChooserIsNull,Context fetch stage one returns albums and null team when chooser is null.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageOneReturnsSelectedAlbumWhenChoiceWasMadeButNotStarted,Context fetch stage one returns selected album when choice was made but not started.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageTwoReturnsRevealedPayloadWhenSongWasRevealed,Context fetch stage two returns revealed payload when song was revealed.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageTwoReturnsFinishedSongWhenSeekPassedSnippetEnd,Context fetch stage two returns finished song when seek passed snippet end.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageTwoReturnsTeamAnsweringState,Context fetch stage two returns team answering state.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageTwoReturnsSystemErrorState,Context fetch stage two returns system error state.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageTwoReturnsActivePlaybackStateWhenNothingInterruptsSong,Context fetch stage two returns active playback state when nothing interrupts song.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchStageThreeReturnsWinnerScoreboard,Context fetch stage three returns winner scoreboard.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,contextFetchRejectsUnknownInternalStage,Context fetch rejects unknown internal stage.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRejectsUnknownRoomCode,Is change stage legal rejects unknown room code.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRejectsInvalidStageId,Is change stage legal rejects invalid stage id.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRejectsTransitionToSameStage,Is change stage legal rejects transition to same stage.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRejectsLobbyToNonAlbumTransition,Is change stage legal rejects lobby to non album transition.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRejectsIllegalStageTransitions,Is change stage legal rejects illegal stage transitions.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRejectsZeroAsInvalidTargetStage,Is change stage legal rejects zero as invalid target stage.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalRequiresBothAppsToBePresent,Is change stage legal requires both apps to be present.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,isChangeStageLegalReturnsGameForAllowedTransition,Is change stage legal returns game for allowed transition.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,changeStagePersistsStateAndBroadcastsRefreshedContext,Change stage persists state and broadcasts refreshed context.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,getStageReturnsMinusOneForMissingRoom,Get stage returns minus one for missing room.,6
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,getStageReturnsPersistedStage,Get stage returns persisted stage.,9
+core/service/impl/GameServiceImplTest.java,CoreGameFlow,findByCodeDelegatesToRepositoryStageAwareLookup,Find by code delegates to repository stage aware lookup.,5
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,contextFetchStageOneReturnsAlbumSelectionAgainWhenPreviousCategoryAlreadyStarted,Context fetch stage one returns album selection again when previous category already started.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,contextFetchStageOneStopsAddingAlbumSelectionDataWhenAllAlbumsWereAlreadyPlayed,Context fetch stage one stops adding album selection data when all albums were already played.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,contextFetchStageTwoKeepsPlayingStateWhenPreviousInterruptsAreResolved,Context fetch stage two keeps playing state when previous interrupts are resolved.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,contextFetchStageThreeReturnsWinnerPayloadWithScores,Context fetch stage three returns winner payload with scores.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,contextFetchRejectsInvalidStoredStage,Context fetch rejects invalid stored stage.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,getStageReturnsMinusOneWhenGameIsMissing,Get stage returns minus one when game is missing.,6
+core/service/impl/GameServiceImplTest.java,ContextFetchVariants,getStageReturnsPersistedStageWhenGameExists,Get stage returns persisted stage when game exists.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageZeroReturnsEmptyTeamListWhenNoTeamsExist,Context fetch stage zero returns empty team list when no teams exist.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageOneReturnsSelectionPayloadWhenPreviousStartedButAlbumsRemain,Context fetch stage one returns selection payload when previous started but albums remain.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageOneFinalStartedCategoryKeepsAlbumsStageWithoutChooserOrSelection,Context fetch stage one final started category keeps albums stage without chooser or selection.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoWithMissingLastPlayedSongCurrentlyFailsFastOnInconsistentState,Context fetch stage two with missing last played song currently fails fast on inconsistent state.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoReturnsPlayingPayloadWhenNoInterruptsAndSongStillRunning,Context fetch stage two returns playing payload when no interrupts and song still running.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoReturnsAnsweringPayloadWhenTeamInterruptIsPending,Context fetch stage two returns answering payload when team interrupt is pending.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoPrefersPendingTeamAnswerOverUnresolvedSystemPause,Context fetch stage two prefers pending team answer over unresolved system pause.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoReturnsErrorPayloadWhenSystemInterruptIsUnresolved,Context fetch stage two returns error payload when system interrupt is unresolved.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoIgnoresResolvedSystemInterruptAndKeepsPlaybackState,Context fetch stage two ignores resolved system interrupt and keeps playback state.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoReturnsFinishedPayloadWhenSongAlreadyRanOut,Context fetch stage two returns finished payload when song already ran out.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageTwoReturnsRevealedPayloadAndCorrectTeam,Context fetch stage two returns revealed payload and correct team.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchStageThreeReturnsWinnerScoresEvenWhenEmpty,Context fetch stage three returns winner scores even when empty.,9
+core/service/impl/GameServiceImplTest.java,ContextFetchCorruptionAndCoverage,contextFetchRejectsUnknownStage,Context fetch rejects unknown stage.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,isChangeStageLegalRejectsNegativeStage,Is change stage legal rejects negative stage.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,isChangeStageLegalRejectsTransitionFromLobbyToSongs,Is change stage legal rejects transition from lobby to songs.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,isChangeStageLegalRejectsTransitionFromAlbumsToLobby,Is change stage legal rejects transition from albums to lobby.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,isChangeStageLegalRejectsTransitionFromSongsToLobby,Is change stage legal rejects transition from songs to lobby.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,isChangeStageLegalRequiresTvPresenceEvenForOtherwiseValidTransition,Is change stage legal requires tv presence even for otherwise valid transition.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,isChangeStageLegalReturnsGameWhenTransitionIsValid,Is change stage legal returns game when transition is valid.,9
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,findByCodeDelegatesToRepositoryDefaultValidation,Find by code delegates to repository default validation.,5
+core/service/impl/GameServiceImplTest.java,GameRulesAndValidation,changeStageDoesNotPersistWhenValidationFails,Change stage does not persist when validation fails.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRejectsMissingGame,Is change stage legal rejects missing game.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRejectsStageIdsOutsideSupportedRange,Is change stage legal rejects stage ids outside supported range.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRejectsRepeatedStateTransitions,Is change stage legal rejects repeated state transitions.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRejectsLobbyToSongJump,Is change stage legal rejects lobby to song jump.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRejectsAlbumSelectionToWinnerJump,Is change stage legal rejects album selection to winner jump.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRejectsSongStateBackToLobby,Is change stage legal rejects song state back to lobby.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalAllowsSongBackToAlbumWhenTvPresent,Is change stage legal allows song back to album when tv present.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalAllowsSongToWinnerWhenTvPresent,Is change stage legal allows song to winner when tv present.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,isChangeStageLegalRequiresTvPresenceForOtherwiseValidTransition,Is change stage legal requires tv presence for otherwise valid transition.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,changeStagePersistsRequestedStageAndBroadcastsFreshContext,Change stage persists requested stage and broadcasts fresh context.,9
+core/service/impl/GameServiceImplTest.java,StageTransitionMatrix,changeStageDoesNotPersistOrBroadcastWhenTransitionIsIllegal,Change stage does not persist or broadcast when transition is illegal.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,createGameRejectsNegativeAlbumCount,Create game rejects negative album count.,8
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,createGameRejectsNegativeSongCount,Create game rejects negative song count.,8
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,putDefaultFieldsFallsBackToDefaultsWhenQuestionAndAnswerMissing,Put default fields falls back to defaults when question and answer missing.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,contextFetchStageOneReturnsSelectedCategoryWhenAlbumWasPickedButNotStarted,Context fetch stage one returns selected category when album was picked but not started.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,contextFetchStageTwoShowsUnresolvedTeamAnsweringPayload,Context fetch stage two shows unresolved team answering payload.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,contextFetchStageTwoShowsSystemErrorPayload,Context fetch stage two shows system error payload.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,contextFetchStageTwoFinishedSongOmitsSeekAndInterruptFields,Context fetch stage two finished song omits seek and interrupt fields.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,contextFetchStageThreeReturnsSameScoresObjectWithoutMutatingIt,Context fetch stage three returns same scores object without mutating it.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,contextFetchRejectsInvalidPersistedStage,Context fetch rejects invalid persisted stage.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,changeStagePersistsBeforeBroadcastAndBroadcastsRebuiltContext,Change stage persists before broadcast and broadcasts rebuilt context.,9
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,getStageReturnsMinusOneWhenRoomMissing,Get stage returns minus one when room missing.,6
+core/service/impl/GameServiceImplTest.java,GameSupportAndLookupMethods,findByCodeDelegatesToStageAwareRepositoryMethod,Find by code delegates to stage aware repository method.,5
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,contextFetchStageTwoMissingScheduleFailsFastWithoutLoadingScoresOrInterrupts,Context fetch stage two missing schedule fails fast without loading scores or interrupts.,9
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,contextFetchStageTwoMissingAnsweringTeamFailsBeforePublishingErrorState,Context fetch stage two missing answering team fails before publishing error state.,9
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,contextFetchStageThreeIgnoresStaleSongStateAndOnlyLoadsScores,Context fetch stage three ignores stale song state and only loads scores.,9
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,contextFetchStageZeroDoesNotMutateTeamsListFromService,Context fetch stage zero does not mutate teams list from service.,9
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,changeStageSameTargetTwiceOnlyPersistsAndBroadcastsFirstTime,Change stage same target twice only persists and broadcasts first time.,9
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,changeStageInvalidTransitionDoesNotPersistOrBroadcast,Change stage invalid transition does not persist or broadcast.,9
+core/service/impl/GameServiceImplTest.java,GameOrderingAndRegressionGuards,changeStagePersistsBeforeRebuildingAndBroadcastingContext,Change stage persists before rebuilding and broadcasting context.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,calculateSeekSubtractsOuterInterruptDurations,Calculate seek subtracts outer interrupt durations.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,getLastTwoInterruptsReturnsTeamThenSystemInterrupt,Get last two interrupts returns team then system interrupt.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptRejectsUnknownTeamId,Interrupt rejects unknown team id.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptRejectsTeamsFromAnotherGame,Interrupt rejects teams from another game.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptRejectsSecondGuessFromSameTeamForSong,Interrupt rejects second guess from same team for song.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptRejectsAlreadyFinishedSong,Interrupt rejects already finished song.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptRejectsWhenAnotherTeamIsStillAnswering,Interrupt rejects when another team is still answering.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptRejectsWhenSystemPauseIsActive,Interrupt rejects when system pause is active.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptCreatesAndBroadcastsSystemPause,Interrupt creates and broadcasts system pause.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,interruptCreatesAndBroadcastsTeamPause,Interrupt creates and broadcasts team pause.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,resolveErrorsRejectsMissingSchedule,Resolve errors rejects missing schedule.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,resolveErrorsRequiresBothApps,Resolve errors requires both apps.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,resolveErrorsResolvesAndBroadcastsPreviousScenario,Resolve errors resolves and broadcasts previous scenario.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,answerRejectsAlreadyResolvedGuess,Answer rejects already resolved guess.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,answerRejectsRoomMismatch,Answer rejects room mismatch.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,answerCorrectAwardsPointsRevealsSongAndBroadcasts,Answer correct awards points reveals song and broadcasts.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,answerWrongAppliesPenaltyWithoutRevealingSong,Answer wrong applies penalty without revealing song.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,savePreviousScenarioRejectsUnsupportedScenarioIds,Save previous scenario rejects unsupported scenario ids.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptCoreFlow,savePreviousScenarioStoresScenarioOnLatestPause,Save previous scenario stores scenario on latest pause.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,calculateSeekTreatsNullInterruptListAsStillPlaying,Calculate seek treats null interrupt list as still playing.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,interruptRejectsRevealedSongsEvenWhenSnippetTimeWouldOtherwiseRemain,Interrupt rejects revealed songs even when snippet time would otherwise remain.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,interruptAllowsTeamBuzzWhenEarlierInterruptsWereFullyResolved,Interrupt allows team buzz when earlier interrupts were fully resolved.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,resolveErrorsBroadcastsPreviousScenarioAndTimestampResolution,Resolve errors broadcasts previous scenario and timestamp resolution.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,answerRequiresBothAppsPresent,Answer requires both apps present.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,answerRejectsMissingInterrupt,Answer rejects missing interrupt.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,answerRejectsRoomCodeMismatch,Answer rejects room code mismatch.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,answerRejectsAlreadyResolvedGuess,Answer rejects already resolved guess.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,answerMarksCorrectGuessPersistsRevealAndSendsUpdatedScore,Answer marks correct guess persists reveal and sends updated score.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,answerMarksWrongGuessWithoutRevealingSong,Answer marks wrong guess without revealing song.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,findCorrectAnswerDelegatesToRepository,Find correct answer delegates to repository.,5
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,savePreviousScenarioRejectsInvalidValuesAndReservedScenarioThree,Save previous scenario rejects invalid values and reserved scenario three.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,savePreviousScenarioDoesNothingWhenNoSongHasBeenPlayedYet,Save previous scenario does nothing when no song has been played yet.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptValidationAndEligibility,savePreviousScenarioStoresScenarioOnLatestPause,Save previous scenario stores scenario on latest pause.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,calculateSeekTreatsNullInterruptListAsStillPlayingUntilNow,Calculate seek treats null interrupt list as still playing until now.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,calculateSeekAddsSyntheticOpenFrameWhenLastInterruptResolved,Calculate seek adds synthetic open frame when last interrupt resolved.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptAllowsSystemPauseWithNullTeamId,Interrupt allows system pause with null team id.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsUnknownTeam,Interrupt rejects unknown team.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsTeamFromDifferentGame,Interrupt rejects team from different game.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsDuplicateAttemptBySameTeamForSong,Interrupt rejects duplicate attempt by same team for song.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsWhenSongAlreadyRevealed,Interrupt rejects when song already revealed.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsWhenSongFinishedByTime,Interrupt rejects when song finished by time.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsWhenAnotherTeamIsAlreadyGuessing,Interrupt rejects when another team is already guessing.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptRejectsWhenSystemPauseIsStillActive,Interrupt rejects when system pause is still active.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,interruptPersistsNewTeamInterruptAndBroadcastsExactPayload,Interrupt persists new team interrupt and broadcasts exact payload.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,resolveErrorsRequiresBothApps,Resolve errors requires both apps.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,resolveErrorsClosesOnlySystemErrorsAndBroadcastsScenarioRecovery,Resolve errors closes only system errors and broadcasts scenario recovery.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerRejectsWhenAppsAreNotBothPresent,Answer rejects when apps are not both present.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerRejectsWhenAnswerDoesNotExist,Answer rejects when answer does not exist.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerRejectsWhenRoomCodeDoesNotMatchAnswerTeamGame,Answer rejects when room code does not match answer team game.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerRejectsAlreadyAnsweredInterrupt,Answer rejects already answered interrupt.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerRejectsAlreadyResolvedInterrupt,Answer rejects already resolved interrupt.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerMarksCorrectAnswerRevealsScheduleUpdatesScoreAndBroadcastsInOrder,Answer marks correct answer reveals schedule updates score and broadcasts in order.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,answerMarksWrongAnswerWithoutRevealingSongAndStillSavesPenalty,Answer marks wrong answer without revealing song and still saves penalty.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,findCorrectAnswerDelegatesToRepositoryAfterStageValidation,Find correct answer delegates to repository after stage validation.,5
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,savePreviousScenarioRejectsInvalidScenarioIds,Save previous scenario rejects invalid scenario ids.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,savePreviousScenarioDoesNothingWhenNoSongWasPlayedYet,Save previous scenario does nothing when no song was played yet.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,savePreviousScenarioDoesNothingWhenNoPauseExists,Save previous scenario does nothing when no pause exists.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptRecoveryAndBranchCoverage,savePreviousScenarioUpdatesPauseScenarioWhenPauseExists,Save previous scenario updates pause scenario when pause exists.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,calculateSeekTreatsNullInterruptListAsRunningPlayback,Calculate seek treats null interrupt list as running playback.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,resolveErrorsRejectsUnknownSchedule,Resolve errors rejects unknown schedule.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,resolveErrorsRejectsWhenAppsMissing,Resolve errors rejects when apps missing.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,resolveErrorsResolvesBeforeBroadcastingPreviousScenario,Resolve errors resolves before broadcasting previous scenario.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,answerRejectsWhenAlreadyResolvedByTimestamp,Answer rejects when already resolved by timestamp.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,answerWrongGuessDoesNotRevealSongAndPersistsPenaltyBeforeBroadcast,Answer wrong guess does not reveal song and persists penalty before broadcast.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,findCorrectAnswerDelegatesAfterStageValidation,Find correct answer delegates after stage validation.,5
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,savePreviousScenarioRejectsForbiddenScenarioThree,Save previous scenario rejects forbidden scenario three.,8
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,savePreviousScenarioDoesNothingWhenLastSongMissing,Save previous scenario does nothing when last song missing.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,savePreviousScenarioDoesNothingWhenPauseMissing,Save previous scenario does nothing when pause missing.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptSupportAndCalculations,savePreviousScenarioUpdatesPauseScenarioId,Save previous scenario updates pause scenario id.,6
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,interruptRejectsUnknownTeamWithoutPersistingOrBroadcasting,Interrupt rejects unknown team without persisting or broadcasting.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,interruptRejectsForeignTeamWithoutPersistingOrBroadcasting,Interrupt rejects foreign team without persisting or broadcasting.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,interruptRejectsWhenSongAlreadyRevealedWithoutPersistingOrBroadcasting,Interrupt rejects when song already revealed without persisting or broadcasting.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,interruptRejectsWhenSystemPauseStillActive,Interrupt rejects when system pause still active.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,interruptSystemPausePersistsAndBroadcastsNullAnsweringTeam,Interrupt system pause persists and broadcasts null answering team.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,answerCorrectPersistsThenRevealsThenUpdatesScoreThenBroadcasts,Answer correct persists then reveals then updates score then broadcasts.,9
+core/service/impl/InterruptServiceImplTest.java,InterruptOrderingAndRegressionGuards,answerRepeatedAfterResolutionDoesNotResolveErrorsAgainOrBroadcast,Answer repeated after resolution does not resolve errors again or broadcast.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,replaySongRejectsMissingSchedule,Replay song rejects missing schedule.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,replaySongRequiresBothApps,Replay song requires both apps.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,replaySongResetsStartTimeResolvesErrorsAndBroadcasts,Replay song resets start time resolves errors and broadcasts.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,revealAnswerRejectsMissingSchedule,Reveal answer rejects missing schedule.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,revealAnswerMarksSongRevealedAndBroadcasts,Reveal answer marks song revealed and broadcasts.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,progressRequiresBothApps,Progress requires both apps.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,progressStartsNextSongAndBroadcastsSongNextPayload,Progress starts next song and broadcasts song next payload.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleCoreFlow,progressFinishesCategoryAndChangesStageWhenNoMoreSongsRemain,Progress finishes category and changes stage when no more songs remain.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,replaySongRejectsUnknownSchedule,Replay song rejects unknown schedule.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,replaySongRequiresBothApps,Replay song requires both apps.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,replaySongResetsStartTimeAndBroadcastsRepeat,Replay song resets start time and broadcasts repeat.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,revealAnswerRejectsUnknownSchedule,Reveal answer rejects unknown schedule.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,revealAnswerRequiresBothApps,Reveal answer requires both apps.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,revealAnswerMarksScheduleAndBroadcastsReveal,Reveal answer marks schedule and broadcasts reveal.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,progressRequiresBothApps,Progress requires both apps.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleValidationAndPresence,progressFinishesCategoryAndChangesStageWhenNoNextSongExists,Progress finishes category and changes stage when no next song exists.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,replaySongUpdatesTimestampResolvesErrorsBeforePersistingAndBroadcastsRemaining,Replay song updates timestamp resolves errors before persisting and broadcasts remaining.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,revealAnswerRequiresBothApps,Reveal answer requires both apps.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,revealAnswerResolvesErrorsPersistsRevealAndBroadcastsSongReveal,Reveal answer resolves errors persists reveal and broadcasts song reveal.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,progressBlowsUpWhenThereIsNoLastPlayedSong,Progress blows up when there is no last played song.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,progressStartsNextSongResolvesErrorsAndDoesNotChangeStage,Progress starts next song resolves errors and does not change stage.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,progressCanBeCalledRepeatedlyAndResolvesErrorsForEachCurrentSong,Progress can be called repeatedly and resolves errors for each current song.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,progressFinishesCategoryAndMovesBackToAlbumsWhenMoreAlbumsRemain,Progress finishes category and moves back to albums when more albums remain.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleReplayRevealAndProgression,progressFinishesCategoryAndMovesToWinnerAtEndOfGame,Progress finishes category and moves to winner at end of game.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,replaySongRejectsUnknownSchedule,Replay song rejects unknown schedule.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,replaySongRejectsWhenBothAppsMissing,Replay song rejects when both apps missing.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,replaySongResolvesThenSavesThenBroadcasts,Replay song resolves then saves then broadcasts.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,revealAnswerRejectsUnknownSchedule,Reveal answer rejects unknown schedule.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,revealAnswerResolvesThenSavesThenBroadcasts,Reveal answer resolves then saves then broadcasts.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,progressWithoutNextSongFinishesCategoryThenChangesStage,Progress without next song finishes category then changes stage.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,progressWithNullLastPlayedSongBlowsUpBeforeAnySideEffects,Progress with null last played song blows up before any side effects.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleRegressionAndExceptionHandling,progressStartsNextSongAndBroadcastsPayloadWithCoreFields,Progress starts next song and broadcasts payload with core fields.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleOrderingAndRepeatedProgression,replaySongRejectsWhenAppsMissingAndDoesNotResolveSaveOrBroadcast,Replay song rejects when apps missing and does not resolve save or broadcast.,9
+core/service/impl/ScheduleServiceImplTest.java,ScheduleOrderingAndRepeatedProgression,progressTwiceFirstBroadcastsNextSongThenFinishesCategory,Progress twice first broadcasts next song then finishes category.,9
+core/service/impl/SongServiceImplTest.java,SongAssetGatewayDelegation,playSnippetDelegatesToAssetGateway,Play snippet delegates to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongAssetGatewayDelegation,playAnswerDelegatesToAssetGateway,Play answer delegates to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongAssetGatewayPayloads,playSnippetDelegatesToAssetGateway,Play snippet delegates to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongAssetGatewayPayloads,playAnswerDelegatesToAssetGateway,Play answer delegates to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongCombinedGatewayDelegation,playSnippetAndAnswerDelegateToAssetGateway,Play snippet and answer delegate to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongReturnValueRegression,playSnippetDelegatesToAssetGateway,Play snippet delegates to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongReturnValueRegression,playAnswerDelegatesToAssetGateway,Play answer delegates to asset gateway.,5
+core/service/impl/SongServiceImplTest.java,SongExactBytePayloads,playSnippetAndAnswerReturnExactGatewayBytes,Play snippet and answer return exact gateway bytes.,5
+core/service/impl/TeamServiceImplTest.java,TeamCreationAndCaching,createTeamRejectsBlankNameOrImage,Create team rejects blank name or image.,8
+core/service/impl/TeamServiceImplTest.java,TeamCreationAndCaching,createTeamPersistsTeamAndBroadcastsToTv,Create team persists team and broadcasts to tv.,9
+core/service/impl/TeamServiceImplTest.java,TeamCreationAndCaching,getTeamScoresUsesCacheAfterFirstLoad,Get team scores uses cache after first load.,7
+core/service/impl/TeamServiceImplTest.java,TeamScoreCacheAndValidation,createTeamRejectsBlankPayloadFields,Create team rejects blank payload fields.,8
+core/service/impl/TeamServiceImplTest.java,TeamScoreCacheAndValidation,getTeamPointsLoadsCacheOnlyOnceAndThenReusesIt,Get team points loads cache only once and then reuses it.,7
+core/service/impl/TeamServiceImplTest.java,TeamScoreCacheAndValidation,saveTeamAnswerUpdatesCachedValue,Save team answer updates cached value.,9
+core/service/impl/TeamServiceImplTest.java,TeamScoreCacheAndValidation,getTeamScoresRejectsUnknownRoomWhenRepositoryReturnsNull,Get team scores rejects unknown room when repository returns null.,8
+core/service/impl/TeamServiceImplTest.java,TeamLookupAndCacheConsistency,createTeamRejectsBlankNameOrImage,Create team rejects blank name or image.,8
+core/service/impl/TeamServiceImplTest.java,TeamLookupAndCacheConsistency,kickTeamRejectsUnknownTeam,Kick team rejects unknown team.,8
+core/service/impl/TeamServiceImplTest.java,TeamLookupAndCacheConsistency,getTeamScoresCachesRepositoryResultAndReusesIt,Get team scores caches repository result and reuses it.,7
+core/service/impl/TeamServiceImplTest.java,TeamLookupAndCacheConsistency,getTeamScoresRejectsMissingGameWhenRepositoryReturnsNull,Get team scores rejects missing game when repository returns null.,8
+core/service/impl/TeamServiceImplTest.java,TeamLookupAndCacheConsistency,saveTeamAnswerUpdatesCacheAndThenPointsCanBeReadBack,Save team answer updates cache and then points can be read back.,9
+core/service/impl/TeamServiceImplTest.java,TeamLookupAndCacheConsistency,findByRoomCodeAndFindNextChoosingTeamDelegateToRepository,Find by room code and find next choosing team delegate to repository.,5
+core/service/impl/TeamServiceImplTest.java,TeamValidationAndRepositoryFailures,createTeamRejectsBlankNameOrImage,Create team rejects blank name or image.,8
+core/service/impl/TeamServiceImplTest.java,TeamValidationAndRepositoryFailures,kickTeamRejectsUnknownTeamId,Kick team rejects unknown team id.,8
+core/service/impl/TeamServiceImplTest.java,TeamValidationAndRepositoryFailures,getTeamScoresCachesFirstLookupAndReusesIt,Get team scores caches first lookup and reuses it.,7
+core/service/impl/TeamServiceImplTest.java,TeamValidationAndRepositoryFailures,getTeamPointsRejectsUnknownGameWhenRepositoryReturnsNullScores,Get team points rejects unknown game when repository returns null scores.,8
+core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,createTeamPersistsBeforeBroadcasting,Create team persists before broadcasting.,9
+core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,kickTeamDeletesFlushesThenBroadcasts,Kick team deletes flushes then broadcasts.,9
+core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,saveTeamAnswerReusesCacheAcrossCalls,Save team answer reuses cache across calls.,9
+core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,findByRoomCodeAndFindByIdDelegateToRepository,Find by room code and find by id delegate to repository.,5
+core/service/impl/TeamServiceImplTest.java,TeamOrderingAndRepositoryDelegation,findNextChoosingTeamDelegatesToRepository,Find next choosing team delegates to repository.,5
+runtime/websocket/RuntimeWebsocketTest.java,ClientTypeTest,indexReturnsExpectedSocketPositions,Index returns expected socket positions.,6
+runtime/websocket/RuntimeWebsocketTest.java,ClientTypeTest,fromSocketPositionMapsKnownValues,From socket position maps known values.,6
+runtime/websocket/RuntimeWebsocketTest.java,ClientTypeTest,fromSocketPositionRejectsUnknownValues,From socket position rejects unknown values.,8
+runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshakeAcceptsKnownRoomAndStoresAttributes,Before handshake accepts known room and stores attributes.,6
+runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshakeRejectsUnknownRoom,Before handshake rejects unknown room.,8
+runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshakeRejectsUnsupportedSocketPosition,Before handshake rejects unsupported socket position.,8
+consistency/TestCatalogConsistencyTest.java,,testCatalogMustMatchCode,Tests and this document are consistent with each other,5
+consistency/ExceptionCatalogConsistencyTest.java,,exceptionCatalogMustMatchCode,Exceptions and exception catalog must be consistent with each other,5
+consistency/SwaggerConsistencyTest.java,,swaggerContractMustBeStructurallyConsistent,All API endpoints must be properly documented via Swagger,5

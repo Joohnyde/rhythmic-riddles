@@ -7,46 +7,58 @@ package com.cevapinxile.cestereg.common.exception;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
+ * Base exception for domain errors that should be returned to clients as a structured API error
+ * response.
+ *
+ * <p>The exception contains an HTTP status code and additional metadata used by the frontend to
+ * identify and display the error.
+ *
+ * <p>Concrete error types in the application should extend this class and define their own status
+ * code, error code, and title.
+ *
  * @author denijal
- * Base domain exception for errors that should be propagated to clients as a structured error payload.
- *
- * <p>This exception carries:</p>
- * <ul>
- *   <li>{@link #HTTP_CODE} - HTTP status that best matches the failure</li>
- *   <li>{@code ERROR_CODE} - short stable code used by the frontend (e.g., "E007")</li>
- *   <li>{@code TITLE} - human-friendly category (e.g., "Asset Not Found")</li>
- *   <li>{@code message} - specific details for debugging or user feedback</li>
- * </ul>
- *
- * <p>All concrete error types in the project extend this class and define their own
- * status/code/title combination.</p>
  */
-
 @Schema(name = "ErrorResponse", description = "Standard error payload returned by the API.")
-public class DerivedException extends Exception{
-    
-    public final int HTTP_CODE;
-    
-    @Schema(example = "E007")
-    private final String ERROR_CODE;
-    
-    @Schema(example = "Asset Not Found")
-    private final String TITLE;
-    
-    @Schema(example = "Answer not found for song 8b49ee99-1799-4e7a-9295-aed8a89c13cb")
-    private String message = "";
-    
-    public DerivedException(int http_code, String error_code, String title, String message){
-        super(message);
-        this.ERROR_CODE = error_code;
-        this.HTTP_CODE = http_code;
-        this.TITLE = title;
-        this.message = message;
-    }
-    
-    @Override
-    public String toString() {
-        return "{\"error\":\"E" + ERROR_CODE + " - " + TITLE + "\" ,\"message\":\"" + message + "\"}";
-    }
-    
+public class DerivedException extends Exception {
+
+  /** HTTP status code associated with the error. */
+  public final int httpCode;
+
+  /** Stable error identifier used by the frontend. */
+  @Schema(example = "E007")
+  private final String errorCode;
+
+  /** Short human-readable title describing the error category. */
+  @Schema(example = "Asset Not Found")
+  private final String title;
+
+  /** Detailed error message describing the failure. */
+  @Schema(example = "Answer not found for song 8b49ee99-1799-4e7a-9295-aed8a89c13cb")
+  private String message = "";
+
+  /**
+   * Creates a new domain exception with the given error metadata.
+   *
+   * @param httpCode HTTP status code representing the error
+   * @param errorCode stable error identifier
+   * @param title short human-readable title of the error
+   * @param message detailed description of the error
+   */
+  public DerivedException(int httpCode, String errorCode, String title, String message) {
+    super(message);
+    this.errorCode = errorCode;
+    this.httpCode = httpCode;
+    this.title = title;
+    this.message = message;
+  }
+
+  /**
+   * Returns a JSON-like string representation of the error.
+   *
+   * @return formatted error description
+   */
+  @Override
+  public String toString() {
+    return "{\"error\":\"E" + errorCode + " - " + title + "\" ,\"message\":\"" + message + "\"}";
+  }
 }

@@ -1,201 +1,250 @@
 package com.cevapinxile.cestereg.platform.db.embedded;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.util.*;
-
 public final class PsqlScriptRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(PsqlScriptRunner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PsqlScriptRunner.class);
 
-    private PsqlScriptRunner() {
+  private PsqlScriptRunner() {}
+
+  /**
+   * Executes all SQL scripts located under {@code classpath:db/*.sql} exactly once.
+   *
+   * <p>The method checks for a marker file {@code .cestereg_sql_done} inside {@code dataDir}. If
+   * the marker exists, execution is skipped to ensure the bootstrap runs only once across
+   * application restarts.
+   *
+   * <p>SQL scripts are first extracted from the classpath into a temporary directory, because
+   * {@code psql} requires filesystem paths.
+   *
+   * <p>The bundled {@code psql} client is installed (if necessary) and used to execute the scripts
+   * sequentially:
+   *
+   * <ul>
+   *   <li>The first script is executed in an <b>admin phase</b>, connecting as user {@code
+   *       postgres} to the {@code postgres} database. This is intended for tasks such as creating
+   *       roles, databases, or extensions.
+   *   <li>All remaining scripts are executed in an <b>application phase</b>, connecting with the
+   *       application credentials ({@code props.getUsername()}, {@code props.getDatabase()}).
+   * </ul>
+   *
+   * <p>If all scripts complete successfully, the marker file is written to {@code dataDir} to
+   * prevent subsequent executions.
+   *
+   * @param props database connection configuration
+   * @param actualPort the port on which the embedded PostgreSQL instance is running
+   * @param distBase base distribution directory (reserved for future use)
+   * @param dataDir application data directory where the execution marker is stored
+   * @throws Exception if script extraction or SQL execution fails
+   */
+  public static void runOnceFromClasspathDbFolder(
+      final AppEmbeddedDbProperties props,
+      final int actualPort,
+      final Path distBase,
+      final Path dataDir)
+      throws Exception {
+
+    final Path marker = dataDir.resolve(".cestereg_sql_done");
+    if (Files.exists(marker)) {
+      LOG.debug("SQL bootstrap already done (marker exists): {}", marker);
+      return;
     }
 
-    /**
-     * Runs all SQL scripts found under classpath:db/*.sql exactly once.
-     *
-     * The marker file lives in dataDir so reruns are avoided across restarts.
-     * Scripts are copied to a temp folder first because psql expects filesystem
-     * paths.
-     */
-    public static void runOnceFromClasspathDbFolder(
-            AppEmbeddedDbProperties props,
-            int actualPort,
-            Path distBase,
-            Path dataDir
-    ) throws Exception {
+    // Extract scripts to a TEMP directory (not APPDATA), so we don't pollute user data
+    final Path tempSqlDir = Files.createTempDirectory("cestereg-sql-");
+    tempSqlDir.toFile().deleteOnExit(); // best-effort cleanup
 
-        Path marker = dataDir.resolve(".cestereg_sql_done");
-        if (Files.exists(marker)) {
-            log.debug("SQL bootstrap already done (marker exists): {}", marker);
-            return;
-        }
+    final List<Path> scripts = extractClasspathScriptsTo(tempSqlDir);
 
-        // Extract scripts to a TEMP directory (not APPDATA), so we don't pollute user data
-        Path tempSqlDir = Files.createTempDirectory("cestereg-sql-");
-        tempSqlDir.toFile().deleteOnExit(); // best-effort cleanup
+    // Ensure bundled psql is installed and executable
+    final Path psql = PgClientBundler.ensureBundledPsqlInstalled(AppDataDirs.appDataBaseDir());
+    psql.toFile().setExecutable(true, false);
 
-        List<Path> scripts = extractClasspathScriptsTo(tempSqlDir);
+    LOG.info(
+        "Running {} SQL script(s) via bundled psql (host={}, port={}) from {}",
+        scripts.size(),
+        props.getHost(),
+        actualPort,
+        tempSqlDir);
 
-        // Ensure bundled psql is installed and executable
-        Path psql = PgClientBundler.ensureBundledPsqlInstalled(AppDataDirs.appDataBaseDir());
-        psql.toFile().setExecutable(true, false);
+    for (int i = 0; i < scripts.size(); i++) {
+      final Path script = scripts.get(i);
+      final long start = System.nanoTime();
 
-        log.info("Running {} SQL script(s) via bundled psql (host={}, port={}) from {}",
-                scripts.size(), props.getHost(), actualPort, tempSqlDir);
+      if (i == 0) {
+        // Admin phase: connect as postgres user to db "postgres" (e.g., create user/db, extensions)
+        LOG.info("SQL admin phase: executing {}", script.getFileName());
+        runPsql(
+            psql, tempSqlDir, props.getHost(), actualPort, "postgres", "postgres", null, script);
+      } else {
+        // App phase: connect as app user to target DB (schema/data init)
+        LOG.info("SQL app phase: executing {}", script.getFileName());
+        runPsql(
+            psql,
+            tempSqlDir,
+            props.getHost(),
+            actualPort,
+            props.getUsername(),
+            props.getDatabase(),
+            props.getPassword(),
+            script);
+      }
 
-        for (int i = 0; i < scripts.size(); i++) {
-            Path script = scripts.get(i);
-            long start = System.nanoTime();
-
-            if (i == 0) {
-                // Admin phase: connect as postgres user to db "postgres" (e.g., create user/db, extensions)
-                log.info("SQL admin phase: executing {}", script.getFileName());
-                runPsql(psql, tempSqlDir, props.getHost(), actualPort,
-                        "postgres", "postgres", null, script);
-            } else {
-                // App phase: connect as app user to target DB (schema/data init)
-                log.info("SQL app phase: executing {}", script.getFileName());
-                runPsql(psql, tempSqlDir, props.getHost(), actualPort,
-                        props.getUsername(), props.getDatabase(), props.getPassword(), script);
-            }
-
-            long ms = (System.nanoTime() - start) / 1_000_000;
-            log.info("Finished {} in {} ms", script.getFileName(), ms);
-        }
-
-        Files.writeString(marker, "ok", StandardCharsets.UTF_8);
-        log.info("SQL bootstrap completed; wrote marker {}", marker);
+      final long ms = (System.nanoTime() - start) / 1_000_000;
+      LOG.info("Finished {} in {} ms", script.getFileName(), ms);
     }
 
-    /**
-     * Copies classpath SQL scripts (db/*.sql) to an output directory and
-     * returns them in filename order. Sorting makes execution deterministic.
-     */
-    private static List<Path> extractClasspathScriptsTo(Path outDir) throws IOException {
-        Resource[] resources = new PathMatchingResourcePatternResolver()
-                .getResources("classpath:db/*.sql");
+    Files.writeString(marker, "ok", StandardCharsets.UTF_8);
+    LOG.info("SQL bootstrap completed; wrote marker {}", marker);
+  }
 
-        Arrays.sort(resources, Comparator.comparing(
-                Resource::getFilename,
-                Comparator.nullsLast(String::compareTo)
-        ));
+  /**
+   * Copies classpath SQL scripts (db/*.sql) to an output directory and returns them in filename
+   * order. Sorting makes execution deterministic.
+   */
+  private static List<Path> extractClasspathScriptsTo(final Path outDir) throws IOException {
+    final Resource[] resources =
+        new PathMatchingResourcePatternResolver().getResources("classpath:db/*.sql");
 
-        List<Path> result = new ArrayList<>();
-        for (Resource r : resources) {
-            if (!r.exists() || r.getFilename() == null) {
-                continue;
-            }
+    Arrays.sort(
+        resources,
+        Comparator.comparing(Resource::getFilename, Comparator.nullsLast(String::compareTo)));
 
-            Path target = outDir.resolve(r.getFilename());
-            try (var in = r.getInputStream()) {
-                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-            result.add(target);
-        }
+    final List<Path> result = new ArrayList<>();
+    for (Resource r : resources) {
+      if (!r.exists() || r.getFilename() == null) {
+        continue;
+      }
 
-        if (result.isEmpty()) {
-            throw new IllegalStateException("No SQL scripts found under classpath:db/*.sql");
-        }
-
-        log.debug("Extracted SQL scripts to {}: {}", outDir, result);
-        return result;
+      final Path target = outDir.resolve(r.getFilename());
+      try (var in = r.getInputStream()) {
+        Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+      }
+      result.add(target);
     }
 
-    /**
-     * Executes one SQL script using psql.
-     *
-     * Notes: - ON_ERROR_STOP=1: any SQL error stops execution and causes
-     * non-zero exit - ECHO=all / -e: echoes commands; useful for debugging, but
-     * can be noisy - PGPASSWORD is only set if provided (keeps env clean) -
-     * LD_LIBRARY_PATH is set to the bundled Postgres lib dir so psql can run
-     * from the bundle
-     */
-    private static void runPsql(
-            Path psql,
-            Path workingDir,
-            String host,
-            int port,
-            String user,
-            String db,
-            String passwordOrNull,
-            Path script
-    ) throws Exception {
-
-        List<String> cmd = new ArrayList<>();
-        cmd.add(psql.toAbsolutePath().toString());
-        cmd.add("-v");
-        cmd.add("ON_ERROR_STOP=1");
-        cmd.add("-v");
-        cmd.add("ECHO=all");
-        cmd.add("-e");
-        cmd.add("-h");
-        cmd.add(host);
-        cmd.add("-p");
-        cmd.add(String.valueOf(port));
-        cmd.add("-U");
-        cmd.add(user);
-        cmd.add("-d");
-        cmd.add(db);
-        cmd.add("-f");
-        cmd.add(script.toAbsolutePath().toString());
-
-        // psql binary lives in .../bin; libs are typically in .../lib
-        Path binDir = psql.getParent();
-        Path pgRoot = binDir.getParent();
-        Path libDir = pgRoot.resolve("lib");
-
-        ProcessBuilder pb = new ProcessBuilder(cmd)
-                .directory(workingDir.toFile())
-                .redirectErrorStream(true);
-
-        var env = pb.environment();
-
-        // Ensure our bundled psql is found first + has its own libs
-        String sep = java.io.File.pathSeparator; // ";" on Windows, ":" on Linux/macOS
-
-        // Always prepend binDir to PATH (psql + required dll/so/dylib resolution)
-        env.put("PATH", binDir.toAbsolutePath() + sep + env.getOrDefault("PATH", ""));
-
-        String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-        if (os.contains("win")) {
-            // Windows loads DLLs from PATH; include lib as well just in case
-            env.put("PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("PATH", ""));
-        } else if (os.contains("mac")) {
-            env.put("DYLD_LIBRARY_PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("DYLD_LIBRARY_PATH", ""));
-        } else {
-            env.put("LD_LIBRARY_PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("LD_LIBRARY_PATH", ""));
-        }
-
-        if (passwordOrNull != null && !passwordOrNull.isBlank()) {
-            env.put("PGPASSWORD", passwordOrNull);
-        }
-
-        // Don't log full command with credentials; this one doesn't include password (it’s in env).
-        log.debug("Executing psql for script {} (user={}, db={}, host={}, port={})",
-                script.getFileName(), user, db, host, port);
-
-        Process p = pb.start();
-        String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        int exit = p.waitFor();
-
-        if (exit != 0) {
-            // Avoid throwing megabytes (or sensitive logs) in exception; keep tail.
-            String tail = output.length() <= 4000 ? output : output.substring(output.length() - 4000);
-            log.debug("psql output (full) for {}:\n{}", script.getFileName(), output);
-
-            throw new IllegalStateException(
-                    "psql failed on script " + script.getFileName()
-                    + " (exit=" + exit + ")\n--- output tail ---\n" + tail
-            );
-        }
-
-        log.debug("psql succeeded for {}", script.getFileName());
+    if (result.isEmpty()) {
+      throw new IllegalStateException("No SQL scripts found under classpath:db/*.sql");
     }
+
+    LOG.debug("Extracted SQL scripts to {}: {}", outDir, result);
+    return result;
+  }
+
+  /**
+   * Executes one SQL script using psql.
+   *
+   * <p>Notes: - ON_ERROR_STOP=1: any SQL error stops execution and causes non-zero exit - ECHO=all
+   * / -e: echoes commands; useful for debugging, but can be noisy - PGPASSWORD is only set if
+   * provided (keeps env clean) - LD_LIBRARY_PATH is set to the bundled Postgres lib dir so psql can
+   * run from the bundle
+   */
+  private static void runPsql(
+      final Path psql,
+      final Path workingDir,
+      final String host,
+      final int port,
+      final String user,
+      final String db,
+      final String passwordOrNull,
+      final Path script)
+      throws Exception {
+
+    final List<String> cmd = new ArrayList<>();
+    cmd.add(psql.toAbsolutePath().toString());
+    cmd.add("-v");
+    cmd.add("ON_ERROR_STOP=1");
+    cmd.add("-v");
+    cmd.add("ECHO=all");
+    cmd.add("-e");
+    cmd.add("-h");
+    cmd.add(host);
+    cmd.add("-p");
+    cmd.add(String.valueOf(port));
+    cmd.add("-U");
+    cmd.add(user);
+    cmd.add("-d");
+    cmd.add(db);
+    cmd.add("-f");
+    cmd.add(script.toAbsolutePath().toString());
+
+    // psql binary lives in .../bin; libs are typically in .../lib
+    final Path binDir = psql.getParent();
+    final Path pgRoot = binDir.getParent();
+    final Path libDir = pgRoot.resolve("lib");
+
+    final ProcessBuilder pb =
+        new ProcessBuilder(cmd).directory(workingDir.toFile()).redirectErrorStream(true);
+
+    final Map<String, String> env = pb.environment();
+
+    // Ensure our bundled psql is found first + has its own libs
+    final String sep = java.io.File.pathSeparator; // ";" on Windows, ":" on Linux/macOS
+
+    // Always prepend binDir to PATH (psql + required dll/so/dylib resolution)
+    env.put("PATH", binDir.toAbsolutePath() + sep + env.getOrDefault("PATH", ""));
+
+    final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+    if (os.contains("win")) {
+      // Windows loads DLLs from PATH; include lib as well just in case
+      env.put("PATH", libDir.toAbsolutePath() + sep + env.getOrDefault("PATH", ""));
+    } else if (os.contains("mac")) {
+      env.put(
+          "DYLD_LIBRARY_PATH",
+          libDir.toAbsolutePath() + sep + env.getOrDefault("DYLD_LIBRARY_PATH", ""));
+    } else {
+      env.put(
+          "LD_LIBRARY_PATH",
+          libDir.toAbsolutePath() + sep + env.getOrDefault("LD_LIBRARY_PATH", ""));
+    }
+
+    if (passwordOrNull != null && !passwordOrNull.isBlank()) {
+      env.put("PGPASSWORD", passwordOrNull);
+    }
+
+    // Don't log full command with credentials; this one doesn't include password (it’s in env).
+    LOG.debug(
+        "Executing psql for script {} (user={}, db={}, host={}, port={})",
+        script.getFileName(),
+        user,
+        db,
+        host,
+        port);
+
+    final Process p = pb.start();
+    final String output = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+    final int exit = p.waitFor();
+
+    if (exit != 0) {
+      // Avoid throwing megabytes (or sensitive logs) in exception; keep tail.
+      final String tail =
+          output.length() <= 4000 ? output : output.substring(output.length() - 4000);
+      LOG.debug("psql output (full) for {}:\n{}", script.getFileName(), output);
+
+      throw new IllegalStateException(
+          "psql failed on script "
+              + script.getFileName()
+              + " (exit="
+              + exit
+              + ")\n--- output tail ---\n"
+              + tail);
+    }
+
+    LOG.debug("psql succeeded for {}", script.getFileName());
+  }
 }

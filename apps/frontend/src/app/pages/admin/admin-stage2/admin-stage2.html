@@ -1,49 +1,48 @@
-@switch(scenario){
-    @case (0) {
-        <!-- Pusti odgovor -->
-         <button (click)="nextSong()">Dalje</button>
+@switch (scenario) {
+  @case (0) {
+    <!-- Pusti odgovor -->
+    <button (click)="nextSong()">Dalje</button>
+  }
+  @case (1) {
+    <button (click)="advanceGame(true)">Refresh</button>
+    <br />
+    <button (click)="advanceGame(false)">Reveal</button>
+  }
+  @case (2) {
+    Sad odgovara tim:
+    <br />
+    @if (answeringTeam) {
+      <img [src]="answeringTeam.image" wideth="64" height="64" />{{ answeringTeam.name }}
     }
-    @case (1) {
-        <button (click)="advanceGame(true)">Refresh</button>
-        <br>
-        <button (click)="advanceGame(false)">Reveal</button>
-    }
-    @case (2) {
-        Sad odgovara tim:
-        <br>
-        @if(answeringTeam){
-            <img [src]="answeringTeam.image" wideth="64" height="64" />{{ answeringTeam.name }}
-        }
-        <br>
-        <button (click)="teamAnswered(true)">Tacno</button>
-        <br>
-        <button (click)="teamAnswered(false)">Netacno</button>
-    }
-    @case (3) {
-        TV se iskljucio!<br>
-        <button (click)="resolveError()">Nastavi</button>
-    }
-    @case (4) {
-        <!-- Pusti pesmu -->
-         <app-seek-timer
-    [duration]="seek+remaining"
-    [seek]="seek"
-    [showDebug]="true"
-    (timeChange)="onTimeChange($event)"
-    (completed)="onTrackFinished()"
-    (stateOut)="onStateSave($event)"
-  ></app-seek-timer>
-    }
-    @default {
-        Pesma se ucitava...
-    }
+    <br />
+    <button (click)="teamAnswered(true)">Tacno</button>
+    <br />
+    <button (click)="teamAnswered(false)">Netacno</button>
+  }
+  @case (3) {
+    TV se iskljucio!<br />
+    <button (click)="resolveError()">Nastavi</button>
+  }
+  @case (4) {
+    <!-- Pusti pesmu -->
+    <app-seek-timer
+      [duration]="(seek ?? 0) + (remaining ?? 0)"
+      [seek]="seek ?? 0"
+      [showDebug]="true"
+      (completed)="onTrackFinished()"
+      (stateOut)="onStateSave($event)"
+    ></app-seek-timer>
+  }
+  @default {
+    Pesma se ucitava...
+  }
 }
 
 @if (teams && lastPlayedSong) {
-    <br>
-    <app-team-scoreboard
+  <br />
+  <app-team-scoreboard
     [bravo]="bravo"
     [teams]="teams"
     [currentScheduleId]="lastPlayedSong"
-    ></app-team-scoreboard>
+  ></app-team-scoreboard>
 }

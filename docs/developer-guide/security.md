@@ -4,17 +4,17 @@
 The current implementation is designed for a **trusted local network** (single laptop / venue).
 
 - WebSockets are accepted for a valid room code and socket position (0/1).
-- Most REST endpoints require `ROOM_CODE` header.
+- Most REST endpoints require `roomCode` path variable.
 - There is **no password/token enforcement** in the backend yet.
 
 **Important implication:** anyone on the same network who knows the room code could call endpoints.
 For public venues, treat the laptop as the trusted boundary.
 
 ## Non-leak principle (critical)
-The TV must never receive answers.
+The TV must never prematurely receive answers.
 
 Enforce this in:
-- backend: do not include answer fields in TV-targeted messages
+- backend: do not include answer fields in TV-targeted messages until the end
 - frontend: TV UI must not request answer endpoints
 - logs: avoid logging answers in contexts that could be shown publicly
 
@@ -31,8 +31,7 @@ Enforce this in:
 
 ## Secrets handling
 - never commit real credentials in `application.yml`
-- use `.env.example` templates
-- store CI secrets in GitHub Actions secrets
+- use `.example` templates
 
 ## SaaS future notes
 If hosted:

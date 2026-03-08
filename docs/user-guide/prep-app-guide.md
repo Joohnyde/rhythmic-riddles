@@ -1,6 +1,7 @@
+
 # Prep App Guide (planned)
 
-The Prep App is not implemented yet in this repository (`apps/prep-app/*` is a placeholder).
+The Prep App is not implemented yet in this repository.
 
 Goal of the Prep App:
 - ingest songs from sources (YouTube/Spotify/Apple Music links or search)
@@ -17,6 +18,6 @@ Once implemented, this guide will include:
 - where assets are stored (filesystem now; object storage later)
 
 For now, see:
-- `docs/developer-guide/assets-storage.md`
+- `docs/developer-guide/assets.md`
 - `docs/developer-guide/architecture.md`
 

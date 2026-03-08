@@ -4,15 +4,14 @@ import { EMPTY, Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class AppService {
+  constructor(private http: HttpClient) {}
 
-    constructor(private http: HttpClient) { }
-
-    killApp(): Observable<void> {
-        const url = environment.shutdownUrl;
-        if (!url) return EMPTY;
-        return this.http.post<void>(url, null);
-    }
+  killApp(): Observable<void> {
+    const url = environment.shutdownUrl;
+    if (!url) return EMPTY;
+    return this.http.post<void>(url, null);
+  }
 }

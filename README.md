@@ -1,10 +1,10 @@
+
 # RhytmicRiddles
 
 RhytmicRiddles is a live, pub-quiz style music guessing game. A **10s snippet** plays on a big screen (TV app). Teams **buzz in** using 433MHz RF buttons and verbally answer (typically *artist + title*). A moderator runs the game from a separate **Admin app** that controls flow, scoring, and fairness.
 
 This repository is an **"enterprise-around-the-code"** setup: documentation, developer onboarding, strict CI, quality gates, and reproducible environments—so a 3-person team can ship reliably without heavy process.
 
----
 
 ## System overview
 
@@ -24,13 +24,11 @@ This repository is an **"enterprise-around-the-code"** setup: documentation, dev
 
 > Internal codename: **cestereg** (inside joke). Product name: **RhytmicRiddles**.
 
----
 
 ## Repository structure (monorepo)
 
 This is a monorepo containing:
-- `apps/quiz-game/` — the live game (backend + frontend)
-- `apps/prep-app/` — the preparation tool (backend + frontend; scaffolding only for now)
+- `apps/` — the live game + the preparation tool (backend + frontend)
 - `docs/` — user guide + developer guide + architecture decisions
 - `hardware/` — RF receiver firmware + wiring + troubleshooting docs
 - `infra/` — docker-compose, optional reverse-proxy configs
@@ -43,7 +41,6 @@ Why monorepo:
 
 If at any point these products diverge heavily, we can split into multiple repos; monorepo doesn't block that.
 
----
 
 ## Quickstart (dev)
 
@@ -75,8 +72,6 @@ Ports (default):
 - Backend: `http://localhost:8080`
 - Frontend: `http://localhost:4200`
 
----
-
 ## Asset storage (audio + images)
 
 Assets are **NOT** stored in git.
@@ -85,9 +80,8 @@ Assets are **NOT** stored in git.
 - Containers persist via Docker volumes
 - DB stores only metadata + relative paths/keys
 
-See: `docs/developer-guide/assets-storage.md`
+See: `docs/developer-guide/assets.md`
 
----
 
 ## Documentation
 
@@ -97,10 +91,9 @@ Key docs:
 - Developer onboarding: `docs/developer-guide/getting-started.md`
 - State machine + recovery: `docs/developer-guide/state-machine-and-recovery.md`
 - API conventions: `docs/developer-guide/api.md`
-- Error catalog: `docs/developer-guide/error-catalog.md`
+- Error catalog: `docs/developer-guide/exceptions.md`
 - Logging policy: `docs/developer-guide/logging.md`
 
----
 
 ## Contributing & workflow
 
@@ -112,7 +105,6 @@ Highlights:
 - PR title format: `[feature_1234] ...` / `[bugfix_1234] ...`
 - CI must pass before merge
 
----
 
 ## Roadmap
 
@@ -122,8 +114,10 @@ Highlights:
 
 See GitHub Projects board.
 
----
 
 ## License
 
-License: currently **TBD** (see `LICENSE`). Do not redistribute commercially until a license is chosen.
+This project is proprietary software.
+All rights reserved.
+
+See the LICENSE file for details.

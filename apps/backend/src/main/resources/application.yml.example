@@ -2,7 +2,7 @@
 
 app:
   assets:
-    base-dir: ../../../data
+    base-dir: ../../data
     
 spring:
     datasource:
