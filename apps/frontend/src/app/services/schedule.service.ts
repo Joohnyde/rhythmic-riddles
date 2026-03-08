@@ -15,7 +15,7 @@ export class ScheduleService {
 
   apiUrl() {
     if (this.storage.code == '') throw new Error('Unknown room_code');
-    return `${environment.apiUrl}/api/v1/games/${this.storage.code}/schedules`;
+    return 'http://localhost:8080/api/v1/games/' + this.storage.code + '/schedules';
   }
 
   revealAnswer(scheduleId: string): Observable<void> {

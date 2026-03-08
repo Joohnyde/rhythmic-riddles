@@ -7,7 +7,6 @@ import { TeamScore } from '../../../entities/team.scores';
 import { TeamScoreboard } from '../../../components/team-scoreboard/team-scoreboard';
 import { firstValueFrom } from 'rxjs';
 import { InterruptService } from '../../../services/interrupt.service';
-import { environment } from '../../../../environments/environment';
 import {
   S2AnswerMessage,
   S2ErrorSolvedMessage,
@@ -32,8 +31,8 @@ export class TVStage2 {
   answerDuration!: number;
   lastPlayedSong!: string;
 
-  public environment = environment;
   bravo: TeamScore | undefined;
+
   scenario: number = -1;
 
   teams: TeamScore[] = [];

@@ -15,7 +15,7 @@ export class GameService {
 
   apiUrl() {
     if (this.storage.code == '') throw new Error('Unknown room_code');
-    return `${environment.apiUrl}/api/v1/games/${this.storage.code}`;
+    return 'http://localhost:8080/api/v1/games/' + this.storage.code + '';
   }
 
   changeState(id: number): Observable<void> {
