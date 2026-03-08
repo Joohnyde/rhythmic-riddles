@@ -45,7 +45,7 @@ $OUT = Join-Path $DIST "out"
 if (Test-Path $DIST) { Remove-Item -Recurse -Force $DIST }
 New-Item -ItemType Directory -Force $INPUT, $RESOURCES, $OUT | Out-Null
 
-Info "[1/5] Build Spring Boot jar (production, windows platform)…"
+Info "[1/5] Build Spring Boot jar (production, windows platform)..."
 Push-Location $BACKEND
 try {
   # Note: -Dspring.profiles.active here is only for build-time if you rely on it;
@@ -67,7 +67,7 @@ if (-not $jar) {
 }
 Info "Using jar: $($jar.FullName)"
 
-Info "[2/5] Prepare jpackage input + resources…"
+Info "[2/5] Prepare jpackage input + resources..."
 Copy-Item -Force $jar.FullName (Join-Path $INPUT "$APP_NAME.jar")
 
 if (-not (Test-Path $DATA_DIR)) {
@@ -86,7 +86,7 @@ if (Test-Path $ICON_ICO) {
   Warn "No icon found at $ICON_ICO; packaging without icon."
 }
 
-Info "[3/5] Create portable app-image (no Java required)…"
+Info "[3/5] Create .EXE portable app-image (no Java required)..."
 
 # jpackage will run: <runtime>\bin\java -jar <app>.jar plus your arguments.
 # Note: $APPDIR placeholder is expanded by jpackage at runtime (works on Windows too).
@@ -136,25 +136,32 @@ if (-not (Test-Path $readme)) {
 Info "App-image created at: $appImage"
 Info "Assets placed at:     $(Join-Path $payloadDir 'data')"
 
-Info "[4/5] Create Windows EXE installer..."
+Info "[4/5] Create Windows MSI installer..."
 try {
   & jpackage `
-    --type exe `
+    --type msi `
     --name $APP_NAME `
     --app-version $APP_VERSION `
     --app-image $appImage `
     --dest $OUT `
     @ICON_ARGS `
     --win-menu `
-    --win-shortcut
-  Info "EXE created in: $OUT"
+    --win-shortcut `
+    --win-dir-chooser `
+    --win-per-user-install
+  Info "MSI created in: $OUT"
 } catch {
-  Warn "EXE build failed; skipping installer build."
+  Warn "MSI build failed; skipping installer build."
 }
 
 Info "[5/5] Smoke test instructions:"
 Write-Host "  Run portable build:"
 Write-Host "    $OUT\$APP_NAME\$APP_NAME.exe"
+
+$MSI_PATH = Join-Path $OUT "$APP_NAME-$APP_VERSION.msi"
+
+Write-Host "  Install via .msi installer:"
+Write-Host "    $MSI_PATH"
 
 Info "Cleanup build folders (backend target/, frontend dist/)..."
 
@@ -165,3 +172,4 @@ if (Test-Path $backendTarget) { Remove-Item -Recurse -Force $backendTarget }
 # Angular build output
 $frontendDist = Join-Path $FRONTEND "dist"
 if (Test-Path $frontendDist) { Remove-Item -Recurse -Force $frontendDist }
+
