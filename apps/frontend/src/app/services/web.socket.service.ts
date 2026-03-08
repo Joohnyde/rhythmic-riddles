@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 import { Observable, shareReplay, Subscription } from 'rxjs';
 import { DefaultMessage } from '../entities/messages/default.messages';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -15,7 +16,7 @@ export class WebSocketService {
 
   constructor(@Inject('room_code') private code: string) {
     // 'code' is actually "{socketPosition}{roomCode}" (e.g., "0AKKU") to match backend handshake parsing.
-    this.socket$ = webSocket('ws://localhost:8080/ws/' + code);
+    this.socket$ = webSocket(`${environment.wsUrl}/ws/${code}`);
 
     // Share the same socket among all subscribers and cache last message
     this.messages$ = this.socket$.asObservable().pipe(
