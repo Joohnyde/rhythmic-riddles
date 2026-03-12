@@ -177,8 +177,15 @@ What it does:
   ```bash
   docker exec cestereg-dev bash -lc "cd apps/backend && mvn spring-boot:run"
   ```
+- Frees the occupied port 8080 on termination
 
+### `scripts/dev/frontend.sh`
+One-command frontend runner inside the dev environment.
 
+What it does:
+- Ensured `db` and `dev` are up
+- Executes `npm start` inside the `dev` container 
+- Frees the occupied port 4200 on termination
 
 ## Database bootstrapping and persistence
 
@@ -257,7 +264,11 @@ You run builds and services inside the `dev` container.
 ```
 
 3) Frontend:
-- Either run `ng serve` inside the `dev` container, or configure a script similar to backend.sh.
+- Option 1: 
+```bash
+./scripts/dev/frontend.sh
+```
+- Option 2: Run `ng serve` inside the `dev` container
 
 Ports:
 - Backend: http://localhost:8080
@@ -303,9 +314,11 @@ Workflow:
 Ports 8080/4200 are forwarded automatically via devcontainer.json.
 
 ### IntelliJ IDEA: Open and Run the Project in a Dev Container
-
-IntelliJ IDEA can start a Dev Container **directly from the IDE** 
-JetBrains’ flow is based on opening a project that contains `devcontainer.json`, then creating a container and connecting to it via **JetBrains Client**.
+Use the provided Run/Debug configurations:
+- Run Backend: runs `scripts/dev/backend.sh`
+- Run Frontend: runs `scripts/dev/frontend.sh`
+- Run Full Stack: A compound of `Run Backend` and `Run Frontend`
+Down Environment: downs the containers, clearing cache
 
 #### Prerequisites
 - Docker installed and running
