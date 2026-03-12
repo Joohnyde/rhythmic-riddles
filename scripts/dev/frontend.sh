@@ -7,27 +7,25 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
 cleanup() {
-  echo "Stop signal received. Shutting down backend..."
-  docker exec cestereg-dev bash -lc 'fuser -k 8080/tcp || true'
+  echo "Stop signal received. Shutting down frontend..."
+  docker exec cestereg-dev bash -lc 'fuser -k 4200/tcp || true'
 }
-
-# 2. Catch the Stop button signals
 trap cleanup SIGINT SIGTERM EXIT
 
 docker compose up -d db dev
 
-# kill whatever holds 8080 inside container (idempotent)
+# kill whatever holds 4200 inside container (idempotent)
 docker exec cestereg-dev bash -lc '
 set -euo pipefail
-if ss -lptn | grep -q ":8080"; then
-  echo "Port 8080 in use inside container. Killing listener..."
-  fuser -k 8080/tcp || true
+if ss -lptn | grep -q ":4200"; then
+  echo "Port 4200 in use inside container. Killing listener..."
+  fuser -k 4200/tcp || true
 fi
 '
 
-# run backend (no TTY allocation)
+# run frontend (no TTY allocation)
 docker exec cestereg-dev bash -lc '
 set -euo pipefail
-cd apps/backend
-mvn spring-boot:run
+cd apps/frontend
+npm start
 ' & wait $!
