@@ -104,7 +104,7 @@
         ========================= -->
 
         <!-- Library API used from code (EmbeddedPostgres) -->
-        <embedded.postgres.version>2.2.0</embedded.postgres.version>
+        <embedded.postgres.version>2.2.2</embedded.postgres.version>
 
         <!-- Version of bundled Postgres binaries artifacts (one selected per platform profile) -->
         <embedded.postgres.binaries.version>18.2.0</embedded.postgres.binaries.version>
