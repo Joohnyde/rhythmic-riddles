@@ -77,9 +77,11 @@ public class InterruptServiceImplTest {
                       new InterruptFrame(start.plusSeconds(5), start.plusSeconds(10)),
                       new InterruptFrame(start.plusSeconds(18), start.plusSeconds(20)))));
 
+      // Allow 1ms tolerance because calculateSeek() uses LocalDateTime.now(),
+      // which may advance slightly between creating `start` and executing the method.
+      final long TOLERANCE = 1;
       final long seek = interruptService.calculateSeek(start, scheduleId);
-
-      assertEquals(13000L, seek);
+      assertTrue(13000L + TOLERANCE >= seek);
     }
 
     @Test

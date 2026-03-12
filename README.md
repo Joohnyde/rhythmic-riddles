@@ -53,7 +53,7 @@ This gives you the same versions across machines and a "one click" environment:
 
 Then run:
 - `./scripts/dev/doctor.sh` (health checks)
-- `./scripts/dev/up.sh` (starts dev services)
+- `./scripts/dev/env-up.sh` (starts dev services)
 - `./scripts/dev/test-all.sh` (runs all tests)
 
 ### Option B — Local tools (without containers)

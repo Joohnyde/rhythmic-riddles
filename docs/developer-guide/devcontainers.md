@@ -1,4 +1,5 @@
 
+
 # Dev Environment and Devcontainers
 
 This document explains how the project’s **containerized dev environment** works (Dev Containers + Docker Compose), how it differs from a fully local setup, and how to run the system in both modes.
@@ -56,6 +57,36 @@ This environment is driven by:
 - **Docker Compose**: defines services (database + dev toolbox container)
 - **Dev Containers**: configures how VS Code attaches to that toolbox container
 - **Helper scripts**: one-command up/down/doctor and backend runner
+
+### Conceptual difference:  `env-*`  scripts vs  `run-*`  scripts
+The helper scripts are split into two conceptual groups.
+
+**env-* scripts**
+
+-   Manage the  **container environment lifecycle**
+-   Start or stop the dev infrastructure (database + dev toolbox container)
+
+Examples:
+
+-   `scripts/dev/env-up.sh`
+-   `scripts/dev/env-down.sh`
+
+These scripts ensure the required containers exist and are running.
+
+**run-* scripts**
+
+-   Start  **application processes inside the dev container**
+-   They rely on the environment provided by the  `dev`  container
+
+Examples:
+
+-   `scripts/dev/run-backend.sh`
+-   `scripts/dev/run-frontend.sh`
+
+This separation allows developers to either:
+
+1.  Start the environment once and manually run commands inside the container
+2.  Use the run-scripts as quick shortcuts that ensure the environment is up and start the application
 
 ### Services
 
@@ -118,7 +149,7 @@ Also note:
 - The file is named `docker-compose.yml.example` to avoid committing “real” credentials by default.
 - Developers typically copy it to `docker-compose.yml` and adjust locally.
 
-### `scripts/dev/up.sh`
+### `scripts/dev/env-up.sh`
 Starts the dev environment (`db + dev`).
 
 What it does:
@@ -133,7 +164,7 @@ What it does:
   - DB on host: `localhost:2345`
   - DB inside docker network: `db:5432`
 
-### `scripts/dev/down.sh`
+### `scripts/dev/env-down.sh`
 Stops and removes containers but **keeps volumes** (so DB data persists).
 
 Command used:
@@ -165,7 +196,7 @@ It also includes **informational checks** for:
 
 This script is the fastest way to verify a new developer machine is set up correctly.
 
-### `scripts/dev/backend.sh`
+### `scripts/dev/run-backend.sh`
 One-command backend runner inside the dev environment.
 
 What it does:
@@ -177,8 +208,21 @@ What it does:
   ```bash
   docker exec cestereg-dev bash -lc "cd apps/backend && mvn spring-boot:run"
   ```
+- Frees the occupied port 8080 on termination
 
-
+### scripts/dev/run-frontend.sh
+One-command frontend runner inside the dev environment.
+What it does:
+- Ensures `db` and `dev` are up:
+  ```bash
+  docker compose up -d db dev
+  ```
+- Installs dependencies and runs the app:
+  ```bash
+  npm install --prefer-offline
+  npm start
+  ```
+- Frees the occupied port 4200 on termination
 
 ## Database bootstrapping and persistence
 
@@ -246,24 +290,52 @@ jdbc:postgresql://127.0.0.1:2345/...
 ### Option A — Fully containerized dev workflow (recommended)
 You run builds and services inside the `dev` container.
 
-1) Start services:
+1) Run backend:
 ```bash
-./scripts/dev/up.sh
+./scripts/dev/run-backend.sh
 ```
 
-2) Run backend:
+2) Run frontend:
 ```bash
-./scripts/dev/backend.sh
+./scripts/dev/run-frontend.sh
 ```
-
-3) Frontend:
-- Either run `ng serve` inside the `dev` container, or configure a script similar to backend.sh.
 
 Ports:
 - Backend: http://localhost:8080
 - Frontend: http://localhost:4200
 
-### Option B — Hybrid workflow (DB in Docker, backend/frontend on host)
+### Option B — Manual dev container workflow
+
+Alternatively you can work directly inside the dev container.
+
+1) Start environment:
+```bash
+./scripts/dev/env-up.sh
+```
+
+2) Enter dev container:
+```
+docker compose exec dev bash
+```
+
+3) Run backend:
+```
+cd apps/backend
+mvn spring-boot:run
+```
+
+4) Run frontend:
+```
+cd apps/frontend
+npm start
+```
+
+5) Stop environment:
+```
+./scripts/dev/env-down.sh
+```
+
+### Option C — Hybrid workflow (DB in Docker, backend/frontend on host)
 You keep Postgres containerized, but run code with your local toolchain.
 
 1) Start only DB:
@@ -283,7 +355,7 @@ mvn spring-boot:run
 4) Run frontend locally:
 ```bash
 npm install
-ng serve
+npm start
 ```
 
 This is useful if you prefer native debugging and already have toolchains installed.
@@ -304,8 +376,11 @@ Ports 8080/4200 are forwarded automatically via devcontainer.json.
 
 ### IntelliJ IDEA: Open and Run the Project in a Dev Container
 
-IntelliJ IDEA can start a Dev Container **directly from the IDE** 
-JetBrains’ flow is based on opening a project that contains `devcontainer.json`, then creating a container and connecting to it via **JetBrains Client**.
+Use the provided Run/Debug configurations:
+- Run Backend: runs `scripts/dev/run-backend.sh`
+- Run Frontend: runs `scripts/dev/run-frontend.sh`
+- Run Full Stack: A compound of `Run Backend` and `Run Frontend`
+Down Environment: downs the containers, clearing cache
 
 #### Prerequisites
 - Docker installed and running
@@ -358,12 +433,12 @@ This guide explains how to create a NetBeans configuration called **`docker`** t
 #### What this achieves
 - NetBeans remains your editor.
 - The backend actually runs inside the `dev` container (consistent Java/Maven).
-- The container orchestration + boot is handled by a repo script (e.g., `scripts/dev/backend.sh`).
+- The container orchestration + boot is handled by a repo script (e.g., `scripts/dev/run-backend.sh`).
 
 #### Prerequisites
 - Docker installed and running
 - `docker compose` works on the machine
-- Repo scripts exist and are executable (especially `scripts/dev/backend.sh`)
+- Repo scripts exist and are executable (especially `scripts/dev/run-backend.sh`)
 - NetBeans is using a Maven project
 
 #### Step 1 — Create/Update the shared NetBeans configuration file
@@ -410,7 +485,7 @@ With this content:
     </goals>
     <properties>
       <exec.executable> bash</exec.executable>
-      <exec.args> ../../scripts/dev/backend.sh</exec.args>
+      <exec.args> ../../scripts/dev/run-backend.sh</exec.args>
     </properties>
   </action>
 </actions>
@@ -419,18 +494,18 @@ With this content:
 What this does:
 - Overrides the **Run** action for the `docker` configuration
 - Uses Maven’s `exec-maven-plugin` to execute `bash`
-- Calls the repo script `../../scripts/dev/backend.sh` (path is relative to the backend module)
+- Calls the repo script `../../scripts/dev/run-backend.sh` (path is relative to the backend module)
 
 #### Step 3 — Ensure the script path is correct and executable
 
 Confirm the script exists relative to the backend module:
 
-- backend module directory → `../../scripts/dev/backend.sh`
+- backend module directory → `../../scripts/dev/run-backend.sh`
 
 On Linux/macOS, ensure it is executable:
 
 ```bash
-chmod +x scripts/dev/backend.sh
+chmod +x scripts/dev/run-backend.sh
 ```
 
 #### Step 4 — Select the configuration in NetBeans
