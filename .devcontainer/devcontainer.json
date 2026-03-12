@@ -24,6 +24,7 @@
   },
   "postCreateCommand": "chmod +x scripts/dev/*.sh || true",
   "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
   "forwardPorts": [4200, 8080]
 }
 
