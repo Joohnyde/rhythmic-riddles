@@ -208,9 +208,10 @@ What it does:
   ```bash
   docker exec cestereg-dev bash -lc "cd apps/backend && mvn spring-boot:run"
   ```
+- Frees the occupied port 8080 on termination
 
 ### scripts/dev/run-frontend.sh
-Runs the frontend inside the dev container.
+One-command frontend runner inside the dev environment.
 What it does:
 - Ensures `db` and `dev` are up:
   ```bash
@@ -221,6 +222,7 @@ What it does:
   npm install --prefer-offline
   npm start
   ```
+- Frees the occupied port 4200 on termination
 
 ## Database bootstrapping and persistence
 
@@ -374,8 +376,11 @@ Ports 8080/4200 are forwarded automatically via devcontainer.json.
 
 ### IntelliJ IDEA: Open and Run the Project in a Dev Container
 
-IntelliJ IDEA can start a Dev Container **directly from the IDE** 
-JetBrains’ flow is based on opening a project that contains `devcontainer.json`, then creating a container and connecting to it via **JetBrains Client**.
+Use the provided Run/Debug configurations:
+- Run Backend: runs `scripts/dev/run-backend.sh`
+- Run Frontend: runs `scripts/dev/run-frontend.sh`
+- Run Full Stack: A compound of `Run Backend` and `Run Frontend`
+Down Environment: downs the containers, clearing cache
 
 #### Prerequisites
 - Docker installed and running
