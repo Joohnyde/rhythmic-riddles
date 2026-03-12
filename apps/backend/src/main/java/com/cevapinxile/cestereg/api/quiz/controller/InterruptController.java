@@ -9,6 +9,7 @@ import com.cevapinxile.cestereg.api.quiz.dto.request.ScenarioRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.ScheduleIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.TeamIdRequest;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
+import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -100,7 +101,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E005 - Unauthorized request\","
-                                + "\"message\":\"Provided teamId does not belong to the game identified by roomCode.\"}")))
+                                + "\"message\":\"Provided teamId does not belong to the game identified by roomCode.\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PostMapping("/interrupts")
   public ResponseEntity<?> interrupt(
@@ -112,8 +125,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 
@@ -167,7 +180,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E004 - App not reachable\","
-                                + "\"message\":\"Cannot resume because one or more apps are not reachable.\"}")))
+                                + "\"message\":\"Cannot resume because one or more apps are not reachable.\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PostMapping("/interrupts/system/resolve")
   public ResponseEntity<?> resolveErrors(
@@ -179,8 +204,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 
@@ -248,7 +273,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E004 - App not reachable\","
-                                + "\"message\":\"Cannot process answer because one or more apps are not reachable.\"}")))
+                                + "\"message\":\"Cannot process answer because one or more apps are not reachable.\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PostMapping("/interrupts/{answerId}/answer")
   public ResponseEntity<?> answer(
@@ -269,8 +306,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 
@@ -324,7 +361,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E003 - Wrong game-state\","
-                                + "\"message\":\"Saving scenario is only allowed in stage 2 (song playing).\"}")))
+                                + "\"message\":\"Saving scenario is only allowed in stage 2 (song playing).\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PutMapping("/ui/scenario")
   public ResponseEntity<?> savePreviousScenario(
@@ -336,8 +385,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 }

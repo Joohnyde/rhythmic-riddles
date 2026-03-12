@@ -5,6 +5,7 @@
 package com.cevapinxile.cestereg.api.assets.controller;
 
 import com.cevapinxile.cestereg.common.exception.DerivedException;
+import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.core.service.SongService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -112,8 +113,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 
@@ -190,8 +191,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 }

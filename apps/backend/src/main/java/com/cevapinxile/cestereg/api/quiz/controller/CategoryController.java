@@ -7,6 +7,7 @@ package com.cevapinxile.cestereg.api.quiz.controller;
 import com.cevapinxile.cestereg.api.quiz.dto.request.TeamIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
+import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -78,6 +79,18 @@ Workflow:
 }
 """))),
     @ApiResponse(
+        responseCode = "400",
+        description = "A required argument is missing.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E000 - An argument is missing\","
+                                + "\"message\":\"name, buttonCode, and image are required.\"}"))),
+    @ApiResponse(
         responseCode = "422",
         description = "Request body is missing or invalid.",
         content =
@@ -124,7 +137,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E004 - App not reachable\","
-                                + "\"message\":\"TV app is not reachable; cannot display picked category.\"}")))
+                                + "\"message\":\"TV app is not reachable; cannot display picked category.\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PutMapping("/{categoryId}/pick")
   public ResponseEntity<?> pickAlbum(
@@ -144,8 +169,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 
@@ -199,7 +224,19 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E003 - Wrong game-state\","
-                                + "\"message\":\"Starting a category is only allowed in stage 1 (album selection).\"}")))
+                                + "\"message\":\"Starting a category is only allowed in stage 1 (album selection).\"}"))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E999 - Internal Server Error\","
+                                + "\"message\":\"Unexpected internal error.\"}")))
   })
   @PostMapping("/{categoryId}/start")
   public ResponseEntity<?> start(
@@ -219,8 +256,8 @@ Workflow:
       LOG.info(ex.toString());
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.warn("Unforseen error", ex);
-      return ResponseEntity.status(500).build();
+      LOG.error("Unexpected error", ex);
+      return ResponseEntity.status(500).body(new InternalServerErrorException());
     }
   }
 }
