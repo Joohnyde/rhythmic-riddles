@@ -1,4 +1,5 @@
 
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -16,7 +17,7 @@ a SemVer-like versioning scheme will be used.
 - Build and packaging documentation for cross-platform desktop distribution (Linux, Windows, macOS).
 - Root-level README files across key directories to clarify repository structure and responsibilities.
 
-#### Desktop Packaging Architecture
+### Desktop Packaging Architecture
 - Cross‑platform desktop packaging architecture enabling fully self‑contained distribution.
 - jpackage-based builds bundling a custom Java runtime via jlink (no system Java required).
 - Platform‑specific release scripts for:
@@ -31,16 +32,50 @@ a SemVer-like versioning scheme will be used.
 - Automatic browser launch on application startup for improved desktop UX.
 - Graceful shutdown strategy via Spring Boot Actuator integration.
 
-#### Build & Release Infrastructure
-- Platform‑aware Maven profile system supporting:
-  - `production`
-  - `embeddb`
+### Build / Release
+- Documented production runtime profiles (`production`, `embeddb`) and their behavior.
+- Documented embedded vs external PostgreSQL operating modes.
+- Implemented a platform-aware Maven profile system supporting:
+  - production runtime configuration
+  - embedded database mode
   - platform selection (`linux`, `windows`, `macos`)
-- Angular frontend build integrated into Maven lifecycle using `frontend-maven-plugin`.
-- Static frontend assets embedded into Spring Boot jar during production builds.
-- Packaging scripts standardized across platforms for reproducible builds.
-- Release artifact structure defined for consistent distribution outputs.
-- Runtime configuration arguments injected via packaging scripts instead of hardcoding profiles in the jar.
+- Integrated Angular frontend builds into the Maven lifecycle using `frontend-maven-plugin`.
+- Embedded static frontend assets into the Spring Boot jar during production builds.
+- Introduced cross-platform packaging scripts for generating installers and portable distributions.
+- Formalized the release artifact structure for consistent distribution outputs across platforms.
+- Ensured platform-specific embedded PostgreSQL binaries are included only where required.
+- Injected runtime configuration arguments through packaging scripts rather than hardcoding profiles in the application jar.
+- Documented platform-specific build prerequisites, including Windows toolchain requirements (e.g., WiX).
+- Improved reproducibility of release builds through standardized packaging workflows.
+
+### DevOps / Infrastructure
+- Documented docker-compose usage for development environments.
+- Clarified container vs local development workflows.
+- Added guidance for serial hardware integration in local and packaged environments.
+- Added release documentation describing how to produce distributable artifacts for all supported platforms.
+- Prepared groundwork for future CI pipelines for automated multi-platform release builds.
+
+### Testing
+
+- Expanded the backend automated test suite with stronger coverage across service, controller, and documentation‑consistency layers.
+- Service-layer unit tests remain the primary focus of the test suite and protect the core game rules implemented in:
+  - `GameServiceImpl`
+  - `InterruptServiceImpl`
+  - `ScheduleServiceImpl`
+  - `CategoryServiceImpl`
+  - `TeamServiceImpl`
+  - `SongServiceImpl`
+- Service tests validate rule-heavy logic including stage transitions, interrupt handling and resolution, schedule progression, category selection, state reconstruction, and WebSocket broadcast side effects.
+- Added structured controller-level tests to verify the HTTP contract of REST endpoints. These tests validate:
+  - happy path responses
+  - `DerivedException` responses
+  - unexpected runtime error responses
+  - HTTP status codes, response content, and response media types
+  - rejection of malformed requests before service invocation
+- Standardized controller test organization (one test file per controller with nested suites) and removed overlapping or redundant tests.
+- Introduced consistency checks ensuring that documentation and API definitions remain aligned with the implementation, including verification of Swagger/OpenAPI documentation and error-handling conventions.
+- Added and maintained a structured test catalog (`test-catalog.md` / `test-catalog.csv`) to document backend test coverage and prevent redundant tests.
+- Improved overall test readability and maintainability through clearer naming conventions, stronger assertions, and consistent Mockito static imports.
 
 ### Changed
 - Consolidated and removed outdated documentation to align with current implementation.
@@ -49,22 +84,6 @@ a SemVer-like versioning scheme will be used.
 - Updated logging documentation to reflect SLF4J + rolling log configuration.
 - Standardized documentation navigation via `docs/index.md` as the authoritative entry point.
 - Improved project structure documentation to clarify boundaries between backend, frontend, hardware, and packaging scripts.
-
-### Build / Release
-- Documented production profiles (`production`, `embeddb`) and runtime behavior.
-- Documented embedded vs external PostgreSQL modes.
-- Formalized release packaging structure and artifact layout.
-- Clarified platform-specific build prerequisites (especially Windows toolchain requirements such as WiX).
-- Introduced cross-platform packaging scripts to generate installers and portable builds.
-- Ensured platform-specific embedded PostgreSQL binaries are included only where needed.
-- Improved reproducibility of release builds by standardizing packaging workflows.
-
-### DevOps / Infrastructure
-- Documented docker-compose usage for development environments.
-- Clarified container vs local development workflows.
-- Added guidance for serial hardware integration in local and packaged environments.
-- Added release documentation describing how to produce distributable artifacts for all supported platforms.
-- Prepared groundwork for future CI pipelines for automated multi-platform release builds.
 
 ## 0.1.0 – Initial MVP
 

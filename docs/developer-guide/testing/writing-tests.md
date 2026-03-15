@@ -145,3 +145,37 @@ Typical expectations:
 - `testing-overview.md` explains the overall strategy and purpose
 - `test-catalog.md` describes what is already covered
 - `test-catalog.csv` provides a more detailed inventory of individual tests
+
+
+## Writing controller tests
+
+Controller tests protect the HTTP contract of REST endpoints.
+
+For every endpoint, tests should normally cover:
+
+- happy path behavior
+- `DerivedException` behavior
+- unexpected exception behavior
+
+Each of these paths should verify:
+
+- HTTP status code
+- response content when applicable
+- response `Content-Type` when applicable
+
+When an endpoint returns JSON, tests should assert the `application/json`
+media type for success and controller-handled error responses.
+
+For endpoints returning binary media (for example audio snippets),
+tests should verify the success media type and ensure controller-handled
+error responses return JSON.
+
+Controller-level exception handling is centralized in
+
+`com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException`
+
+Tests should treat this response format as part of the API contract.
+
+Controller tests should also validate malformed request handling and confirm
+that service-layer methods are not called when the request is rejected at
+the controller boundary.

@@ -83,11 +83,31 @@ When adding, merging, or deleting tests:
 - keep descriptions short and behavior-focused
 - note the test suite/group where the test belongs
 
+## Controller tests
+
+Controller tests exist for the REST API layer and are organized one file per controller.
+
+These tests typically verify:
+
+- HTTP status codes
+- response body content
+- response media types
+- malformed payload handling
+- request rejection before service invocation
+- controller-managed exception responses
+
+Controller endpoints are expected to have tests covering:
+
+- happy path behavior
+- `DerivedException` behavior
+- unexpected exception behavior
+
+For JSON endpoints, tests should verify `application/json` media type for both success and controller-handled error responses.
+
 ## Future expansion
 
 This catalog should later expand to include:
 
-- controller tests
 - repository integration tests
 - frontend unit and integration tests
 - end-to-end regression tests
