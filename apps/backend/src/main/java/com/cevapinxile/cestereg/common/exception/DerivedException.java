@@ -59,6 +59,6 @@ public class DerivedException extends Exception {
    */
   @Override
   public String toString() {
-    return "{\"error\":\"E" + errorCode + " - " + title + "\" ,\"message\":\"" + message + "\"}";
+    return "{\"error\":\"E" + errorCode + " - " + title + "\", \"message\":\"" + message + "\"}";
   }
 }

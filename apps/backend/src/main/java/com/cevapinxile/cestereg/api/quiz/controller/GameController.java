@@ -4,6 +4,8 @@
  */
 package com.cevapinxile.cestereg.api.quiz.controller;
 
+import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException;
+
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.StageIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.RoomCodeResponse;
@@ -90,7 +92,7 @@ Workflow:
                             "{\"error\":\"E999 - Internal Server Error\","
                                 + "\"message\":\"Unexpected internal error.\"}")))
   })
-  @PostMapping
+  @PostMapping(produces = "application/json")
   public ResponseEntity<?> createGame(@RequestBody CreateGameRequest cgr) {
     try {
       return ResponseEntity.ok(new RoomCodeResponse(gameService.createGame(cgr)));
@@ -99,7 +101,7 @@ Workflow:
       return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
       LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return ResponseEntity.status(500).body(new InternalServerErrorException().toString());
     }
   }
 
@@ -173,12 +175,8 @@ Workflow:
     try {
       gameService.changeStage(stageId.stageId(), roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 }

@@ -4,8 +4,8 @@
  */
 package com.cevapinxile.cestereg.api.quiz.controller;
 
-import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
+import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException;
+
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -119,12 +119,8 @@ Workflow:
     try {
       scheduleService.replaySong(scheduleId, roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 
@@ -205,12 +201,8 @@ Workflow:
     try {
       scheduleService.revealAnswer(scheduleId, roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 
@@ -288,12 +280,8 @@ Workflow:
     try {
       scheduleService.progress(roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 }
