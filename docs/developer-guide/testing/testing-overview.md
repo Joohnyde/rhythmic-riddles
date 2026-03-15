@@ -16,24 +16,28 @@ The goal of the test suite is not just to prove that code works on the happy pat
 
 ## Current Test Focus
 
-The backend test suite currently focuses primarily on the service layer, with strongest coverage around the most rule-heavy services:
+The backend test suite also includes targeted verification of
+WebSocket-related behavior where it intersects with core game logic.
 
-- `GameServiceImpl`
-- `InterruptServiceImpl`
-- `ScheduleServiceImpl`
-- `CategoryServiceImpl`
-- `TeamServiceImpl`
-- `SongServiceImpl`
+Rather than testing WebSocket infrastructure directly, tests focus on
+validating that services correctly trigger broadcast side effects
+through the messaging gateway when state changes occur.
 
 Particular emphasis has been placed on:
 
-- game stage transitions
-- interrupt rules and resolution
-- schedule progression and edge cases
-- category selection rules
-- state recovery behavior
-- websocket broadcast side effects
-- `contextFetch`, which acts as the core state projection method for the application
+-   verifying that broadcasts occur when stage transitions happen
+-   ensuring interrupt and answer resolution triggers appropriate state
+    updates
+-   confirming that broadcast payloads contain correct context
+    information
+-   validating that broadcasts are suppressed when operations are
+    rejected or invalid
+-   ensuring correct ordering of persistence and broadcast side effects
+    when required
+
+These tests ensure that the real-time synchronization layer between
+Admin and TV clients remains consistent with backend state transitions
+without requiring a full WebSocket environment during unit testing.
 
 ## Why `contextFetch` matters
 
@@ -55,13 +59,24 @@ If this method becomes incorrect, the application can appear broken to clients e
 
 ### Current layers
 
-The project currently has strong backend unit/service coverage and smaller supporting test coverage for lower-level helpers.
+The project currently has strong backend service-layer unit tests and controller tests that validate the HTTP contract of REST endpoints.
+
+Controller tests verify:
+- happy path responses
+- `DerivedException` responses
+- unexpected error responses
+- response status codes
+- response body content when applicable
+- response media types
+- rejection of malformed requests before reaching service logic
+
+Controller-managed error responses are centralized through
+`com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException`, and this behavior is considered part of the API contract.
 
 ### Planned layers
 
 The following layers should be expanded after the service layer is considered stable:
 
-- controller tests
 - repository integration tests
 - frontend unit tests
 - frontend integration tests

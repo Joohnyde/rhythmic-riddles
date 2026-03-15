@@ -4,12 +4,12 @@
  */
 package com.cevapinxile.cestereg.api.quiz.controller;
 
+import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException;
+
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.ScenarioRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.ScheduleIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.TeamIdRequest;
-import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -121,12 +121,8 @@ Workflow:
     try {
       interruptService.interrupt(roomCode, tir.teamId());
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 
@@ -200,12 +196,8 @@ Workflow:
     try {
       interruptService.resolveErrors(sir.scheduleId(), roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 
@@ -302,12 +294,8 @@ Workflow:
     try {
       interruptService.answer(answerId, ar, roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 
@@ -381,12 +369,8 @@ Workflow:
     try {
       interruptService.savePreviousScenario(sr.scenario(), roomCode);
       return ResponseEntity.ok().build();
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 }

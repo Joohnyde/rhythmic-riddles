@@ -4,8 +4,8 @@
  */
 package com.cevapinxile.cestereg.api.assets.controller;
 
-import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
+import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException;
+
 import com.cevapinxile.cestereg.core.service.SongService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +19,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -108,13 +109,12 @@ Workflow:
           UUID songId) {
     try {
       final byte[] content = songService.playSnippet(songId);
-      return ResponseEntity.ok().header("Accept-Ranges", "bytes").body(content);
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
+      return ResponseEntity.ok()
+          .header("Accept-Ranges", "bytes")
+          .contentType(MediaType.valueOf("audio/mpeg"))
+          .body(content);
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 
@@ -186,13 +186,12 @@ Workflow:
           UUID songId) {
     try {
       final byte[] content = songService.playAnswer(songId);
-      return ResponseEntity.ok().header("Accept-Ranges", "bytes").body(content);
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
+      return ResponseEntity.ok()
+          .contentType(MediaType.valueOf("audio/mpeg"))
+          .header("Accept-Ranges", "bytes")
+          .body(content);
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException());
+      return handleApiException(LOG, ex);
     }
   }
 }

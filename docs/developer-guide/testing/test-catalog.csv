@@ -284,3 +284,166 @@ runtime/websocket/RuntimeWebsocketTest.java,GameCodeExtractorTest,beforeHandshak
 consistency/TestCatalogConsistencyTest.java,,testCatalogMustMatchCode,Tests and this document are consistent with each other,5
 consistency/ExceptionCatalogConsistencyTest.java,,exceptionCatalogMustMatchCode,Exceptions and exception catalog must be consistent with each other,5
 consistency/SwaggerConsistencyTest.java,,swaggerContractMustBeStructurallyConsistent,All API endpoints must be properly documented via Swagger,5
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameReturnsRoomCodeResponse,Create Game Returns Room Code Response.,9
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameReturnsBadRequestForMissingBody,Create Game Returns Bad Request For Missing Body.,7
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameReturnsBadRequestForMalformedJson,Create Game Returns Bad Request For Malformed JSON.,7
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameForwardsNullFieldsWhenPayloadOmitsParameters,Create Game Forwards Null Fields When Payload Omits Parameters.,6
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameMapsDerivedException,Create Game Maps Derived Exception.,9
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameReturnsInternalServerErrorForUnexpectedException,Create Game Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/GameControllerTest.java,CreateGameTests,createGameAddsCorsHeaderWhenOriginPresent,Create Game Adds Cors Header When Origin Present.,6
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageReturnsOkAndForwardsStageId,Change Stage Returns Ok And Forwards Stage Id.,6
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageReturnsBadRequestForMissingBody,Change Stage Returns Bad Request For Missing Body.,7
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageReturnsBadRequestForMalformedJson,Change Stage Returns Bad Request For Malformed JSON.,7
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageReturnsBadRequestWhenStageIdMissingFromPayload,Change Stage Returns Bad Request When Stage Id Missing From Payload.,9
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageDoesNotRejectInvalidRoomCodeAtControllerLevel,Change Stage Does Not Reject Invalid Room Code At Controller Level.,8
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageMapsDerivedException,Change Stage Maps Derived Exception.,9
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageReturnsInternalServerErrorForUnexpectedException,Change Stage Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/GameControllerTest.java,ChangeStageTests,changeStageAddsCorsHeaderWhenOriginPresent,Change Stage Adds Cors Header When Origin Present.,6
+api/quiz/controller/GameControllerTest.java,CreateGameContract,createGameRejectsUnsupportedMethod,Create Game Rejects Unsupported Method.,7
+api/quiz/controller/GameControllerTest.java,CreateGameContract,createGameRejectsUnsupportedMediaType,Create Game Rejects Unsupported Media Type.,7
+api/quiz/controller/GameControllerTest.java,CreateGameContract,createGamePreflightReturnsCorsHeaders,Create Game Preflight Returns Cors Headers.,6
+api/quiz/controller/GameControllerTest.java,CreateGameContract,createGameMalformedJsonDoesNotCallService,Create Game Malformed JSON Does Not Call Service.,8
+api/quiz/controller/GameControllerTest.java,ChangeStageContract,changeStageRejectsUnsupportedMethod,Change Stage Rejects Unsupported Method.,7
+api/quiz/controller/GameControllerTest.java,ChangeStageContract,changeStageRejectsUnsupportedMediaType,Change Stage Rejects Unsupported Media Type.,7
+api/quiz/controller/GameControllerTest.java,ChangeStageContract,changeStageReturnsEmptyBodyOnSuccess,Change Stage Returns Empty Body On Success.,8
+api/quiz/controller/GameControllerTest.java,ChangeStageContract,changeStagePreflightReturnsCorsHeaders,Change Stage Preflight Returns Cors Headers.,6
+api/quiz/controller/GameControllerTest.java,ChangeStageContract,changeStageMalformedJsonDoesNotCallService,Change Stage Malformed JSON Does Not Call Service.,8
+api/quiz/controller/GameControllerTest.java,CreateGameBinding,createGameRejectsStringForNumericField,Create Game Rejects String For Numeric Field.,7
+api/quiz/controller/GameControllerTest.java,CreateGameBinding,createGameAllowsNullMaxSongsAndForwardsIt,Create Game Allows Null Max Songs And Forwards It.,6
+api/quiz/controller/GameControllerTest.java,CreateGameBinding,createGameUnknownFieldBehaviorIsDocumented,Create Game Unknown Field Behavior Is Documented.,8
+api/quiz/controller/GameControllerTest.java,ChangeStageBinding,changeStageRejectsStringForStageId,Change Stage Rejects String For Stage Id.,7
+api/quiz/controller/GameControllerTest.java,ChangeStageBinding,changeStageRejectsExplicitNullStageId,Change Stage Rejects Explicit Null Stage Id.,7
+api/quiz/controller/GameControllerTest.java,ChangeStageBinding,changeStageIgnoresUnknownFieldsWhenMainPayloadIsValid,Change Stage Ignores Unknown Fields When Main Payload Is Valid.,6
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumReturnsSerializedLastCategory,Pick Album Returns Serialized Last Category.,8
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumReturnsBadRequestForMissingBody,Pick Album Returns Bad Request For Missing Body.,7
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumReturnsBadRequestForMalformedCategoryUuid,Pick Album Returns Bad Request For Malformed Category UUID.,7
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumForwardsNullTeamIdWhenPayloadOmitsIt,Pick Album Forwards Null Team Id When Payload Omits It.,6
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumDoesNotValidateRoomCodeFormatAtControllerLevel,Pick Album Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumMapsDerivedExceptions,Pick Album Maps Derived Exceptions.,9
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumReturnsInternalServerErrorForUnexpectedException,Pick Album Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/CategoryControllerTest.java,PickAlbumTests,pickAlbumAddsCorsHeaderWhenOriginPresent,Pick Album Adds Cors Header When Origin Present.,6
+api/quiz/controller/CategoryControllerTest.java,StartCategoryTests,startCategoryReturnsOk,Start Category Returns Ok.,8
+api/quiz/controller/CategoryControllerTest.java,StartCategoryTests,startCategoryDoesNotValidateRoomCodeFormatAtControllerLevel,Start Category Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/CategoryControllerTest.java,StartCategoryTests,startCategoryMapsDerivedExceptions,Start Category Maps Derived Exceptions.,9
+api/quiz/controller/CategoryControllerTest.java,StartCategoryTests,startCategoryReturnsInternalServerErrorForUnexpectedException,Start Category Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/CategoryControllerTest.java,StartCategoryTests,startCategoryAddsCorsHeaderWhenOriginPresent,Start Category Adds Cors Header When Origin Present.,6
+api/quiz/controller/CategoryControllerTest.java,PickAlbumContract,pickAlbumRejectsUnsupportedMethod,Pick Album Rejects Unsupported Method.,7
+api/quiz/controller/CategoryControllerTest.java,PickAlbumContract,pickAlbumRejectsUnsupportedMediaType,Pick Album Rejects Unsupported Media Type.,7
+api/quiz/controller/CategoryControllerTest.java,PickAlbumContract,pickAlbumMalformedJsonDoesNotCallService,Pick Album Malformed JSON Does Not Call Service.,8
+api/quiz/controller/CategoryControllerTest.java,PickAlbumContract,pickAlbumPreflightReturnsCorsHeaders,Pick Album Preflight Returns Cors Headers.,6
+api/quiz/controller/CategoryControllerTest.java,StartCategoryContract,startCategoryRejectsUnsupportedMethod,Start Category Rejects Unsupported Method.,7
+api/quiz/controller/CategoryControllerTest.java,StartCategoryContract,startCategoryPreflightReturnsCorsHeaders,Start Category Preflight Returns Cors Headers.,6
+api/quiz/controller/CategoryControllerTest.java,StartCategoryContract,malformedCategoryIdDoesNotCallService,Malformed Category Id Does Not Call Service.,8
+api/quiz/controller/CategoryControllerTest.java,PickAlbumBinding,pickAlbumRejectsNumericTeamId,Pick Album Rejects Numeric Team Id.,7
+api/quiz/controller/CategoryControllerTest.java,PickAlbumBinding,pickAlbumAllowsExplicitNullTeamIdAndForwardsIt,Pick Album Allows Explicit Null Team Id And Forwards It.,6
+api/quiz/controller/CategoryControllerTest.java,PickAlbumBinding,pickAlbumIgnoresUnknownFieldsWhenMainPayloadIsValid,Pick Album Ignores Unknown Fields When Main Payload Is Valid.,6
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptReturnsOkAndForwardsTeamId,Interrupt Returns Ok And Forwards Team Id.,6
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptAllowsSystemInterruptByForwardingNullTeamId,Interrupt Allows System Interrupt By Forwarding Null Team Id.,6
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptReturnsBadRequestForMissingBody,Interrupt Returns Bad Request For Missing Body.,7
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptDoesNotValidateRoomCodeFormatAtControllerLevel,Interrupt Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptMapsDerivedExceptions,Interrupt Maps Derived Exceptions.,9
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptReturnsInternalServerErrorForUnexpectedException,Interrupt Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/InterruptControllerTest.java,InterruptTests,interruptAddsCorsHeaderWhenOriginPresent,Interrupt Adds Cors Header When Origin Present.,6
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsTests,resolveErrorsReturnsOkAndForwardsScheduleId,Resolve Errors Returns Ok And Forwards Schedule Id.,6
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsTests,resolveErrorsReturnsBadRequestForMissingBody,Resolve Errors Returns Bad Request For Missing Body.,7
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsTests,resolveErrorsForwardsNullScheduleIdWhenPayloadOmitsIt,Resolve Errors Forwards Null Schedule Id When Payload Omits It.,6
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsTests,resolveErrorsMapsDerivedExceptions,Resolve Errors Maps Derived Exceptions.,9
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsTests,resolveErrorsReturnsInternalServerErrorForUnexpectedException,Resolve Errors Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsTests,resolveErrorsAddsCorsHeaderWhenOriginPresent,Resolve Errors Adds Cors Header When Origin Present.,6
+api/quiz/controller/InterruptControllerTest.java,AnswerTests,answerReturnsOkAndForwardsAnswerRequest,Answer Returns Ok And Forwards Answer Request.,6
+api/quiz/controller/InterruptControllerTest.java,AnswerTests,answerReturnsBadRequestForMissingBody,Answer Returns Bad Request For Missing Body.,7
+api/quiz/controller/InterruptControllerTest.java,AnswerTests,answerReturnsBadRequestWhenCorrectFlagMissingFromPayload,Answer Returns Bad Request When Correct Flag Missing From Payload.,9
+api/quiz/controller/InterruptControllerTest.java,AnswerTests,answerMapsDerivedExceptions,Answer Maps Derived Exceptions.,9
+api/quiz/controller/InterruptControllerTest.java,AnswerTests,answerReturnsInternalServerErrorForUnexpectedException,Answer Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/InterruptControllerTest.java,AnswerTests,answerAddsCorsHeaderWhenOriginPresent,Answer Adds Cors Header When Origin Present.,6
+api/quiz/controller/InterruptControllerTest.java,SavePreviousScenarioTests,savePreviousScenarioReturnsOkAndForwardsScenario,Save Previous Scenario Returns Ok And Forwards Scenario.,6
+api/quiz/controller/InterruptControllerTest.java,SavePreviousScenarioTests,savePreviousScenarioReturnsBadRequestForMissingBody,Save Previous Scenario Returns Bad Request For Missing Body.,7
+api/quiz/controller/InterruptControllerTest.java,SavePreviousScenarioTests,savePreviousScenarioReturnsBadRequestWhenScenarioMissingFromPayload,Save Previous Scenario Returns Bad Request When Scenario Missing From Payload.,9
+api/quiz/controller/InterruptControllerTest.java,SavePreviousScenarioTests,savePreviousScenarioMapsDerivedExceptions,Save Previous Scenario Maps Derived Exceptions.,9
+api/quiz/controller/InterruptControllerTest.java,SavePreviousScenarioTests,savePreviousScenarioReturnsInternalServerErrorForUnexpectedException,Save Previous Scenario Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/InterruptControllerTest.java,SavePreviousScenarioTests,savePreviousScenarioAddsCorsHeaderWhenOriginPresent,Save Previous Scenario Adds Cors Header When Origin Present.,6
+api/quiz/controller/InterruptControllerTest.java,InterruptContract,interruptRejectsUnsupportedMethod,Interrupt Rejects Unsupported Method.,7
+api/quiz/controller/InterruptControllerTest.java,InterruptContract,interruptRejectsUnsupportedMediaType,Interrupt Rejects Unsupported Media Type.,7
+api/quiz/controller/InterruptControllerTest.java,InterruptContract,interruptMalformedJsonDoesNotCallService,Interrupt Malformed JSON Does Not Call Service.,8
+api/quiz/controller/InterruptControllerTest.java,InterruptContract,interruptPreflightReturnsCorsHeaders,Interrupt Preflight Returns Cors Headers.,6
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsContract,resolveErrorsRejectsUnsupportedMethod,Resolve Errors Rejects Unsupported Method.,7
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsContract,resolveErrorsRejectsUnsupportedMediaType,Resolve Errors Rejects Unsupported Media Type.,7
+api/quiz/controller/InterruptControllerTest.java,ResolveErrorsContract,resolveErrorsMalformedJsonDoesNotCallService,Resolve Errors Malformed JSON Does Not Call Service.,8
+api/quiz/controller/InterruptControllerTest.java,AnswerContract,answerRejectsUnsupportedMethod,Answer Rejects Unsupported Method.,7
+api/quiz/controller/InterruptControllerTest.java,AnswerContract,answerRejectsUnsupportedMediaType,Answer Rejects Unsupported Media Type.,7
+api/quiz/controller/InterruptControllerTest.java,AnswerContract,answerMalformedJsonDoesNotCallService,Answer Malformed JSON Does Not Call Service.,8
+api/quiz/controller/InterruptControllerTest.java,AnswerContract,malformedAnswerIdDoesNotCallService,Malformed Answer Id Does Not Call Service.,8
+api/quiz/controller/InterruptControllerTest.java,SaveScenarioContract,saveScenarioRejectsUnsupportedMethod,Save Scenario Rejects Unsupported Method.,7
+api/quiz/controller/InterruptControllerTest.java,SaveScenarioContract,saveScenarioRejectsUnsupportedMediaType,Save Scenario Rejects Unsupported Media Type.,7
+api/quiz/controller/InterruptControllerTest.java,SaveScenarioContract,saveScenarioMalformedJsonDoesNotCallService,Save Scenario Malformed JSON Does Not Call Service.,8
+api/quiz/controller/InterruptControllerTest.java,InterruptBinding,interruptRejectsNumericTeamIdIfEndpointRequiresUuidOrStringShape,Interrupt Rejects Numeric Team Id If Endpoint Requires UUID Or String Shape.,7
+api/quiz/controller/InterruptControllerTest.java,InterruptBinding,interruptAllowsExplicitNullTeamIdAndForwardsIt,Interrupt Allows Explicit Null Team Id And Forwards It.,6
+api/quiz/controller/InterruptControllerTest.java,ResolveBinding,resolveErrorsRejectsWrongJsonTypeForScheduleId,Resolve Errors Rejects Wrong JSON Type For Schedule Id.,7
+api/quiz/controller/InterruptControllerTest.java,ResolveBinding,resolveErrorsAllowsExplicitNullScheduleIdAndForwardsIt,Resolve Errors Allows Explicit Null Schedule Id And Forwards It.,6
+api/quiz/controller/InterruptControllerTest.java,AnswerBinding,answerRejectsStringForBooleanField,Answer Rejects String For Boolean Field.,7
+api/quiz/controller/InterruptControllerTest.java,AnswerBinding,answerRejectsExplicitNullBooleanField,Answer Rejects Explicit Null Boolean Field.,7
+api/quiz/controller/InterruptControllerTest.java,AnswerBinding,answerIgnoresUnknownFieldsWhenMainPayloadIsValid,Answer Ignores Unknown Fields When Main Payload Is Valid.,6
+api/quiz/controller/InterruptControllerTest.java,ScenarioBinding,savePreviousScenarioRejectsStringForNumericField,Save Previous Scenario Rejects String For Numeric Field.,7
+api/quiz/controller/InterruptControllerTest.java,ScenarioBinding,savePreviousScenarioRejectsExplicitNullScenario,Save Previous Scenario Rejects Explicit Null Scenario.,7
+api/quiz/controller/InterruptControllerTest.java,ScenarioBinding,savePreviousScenarioIgnoresUnknownFieldsWhenMainPayloadIsValid,Save Previous Scenario Ignores Unknown Fields When Main Payload Is Valid.,6
+api/quiz/controller/ScheduleControllerTest.java,ReplaySongTests,replaySongReturnsOk,Replay Song Returns Ok.,8
+api/quiz/controller/ScheduleControllerTest.java,ReplaySongTests,replaySongDoesNotValidateRoomCodeFormatAtControllerLevel,Replay Song Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/ScheduleControllerTest.java,ReplaySongTests,replaySongMapsDerivedExceptions,Replay Song Maps Derived Exceptions.,9
+api/quiz/controller/ScheduleControllerTest.java,ReplaySongTests,replaySongReturnsInternalServerErrorForUnexpectedException,Replay Song Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/ScheduleControllerTest.java,ReplaySongTests,replaySongAddsCorsHeaderWhenOriginPresent,Replay Song Adds Cors Header When Origin Present.,6
+api/quiz/controller/ScheduleControllerTest.java,RevealAnswerTests,revealAnswerReturnsOk,Reveal Answer Returns Ok.,8
+api/quiz/controller/ScheduleControllerTest.java,RevealAnswerTests,revealAnswerReturnsBadRequestForMalformedScheduleUuid,Reveal Answer Returns Bad Request For Malformed Schedule UUID.,7
+api/quiz/controller/ScheduleControllerTest.java,RevealAnswerTests,revealAnswerMapsDerivedExceptions,Reveal Answer Maps Derived Exceptions.,9
+api/quiz/controller/ScheduleControllerTest.java,RevealAnswerTests,revealAnswerReturnsInternalServerErrorForUnexpectedException,Reveal Answer Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/ScheduleControllerTest.java,RevealAnswerTests,revealAnswerAddsCorsHeaderWhenOriginPresent,Reveal Answer Adds Cors Header When Origin Present.,6
+api/quiz/controller/ScheduleControllerTest.java,NextTests,nextReturnsOk,Next Returns Ok.,8
+api/quiz/controller/ScheduleControllerTest.java,NextTests,nextDoesNotValidateRoomCodeFormatAtControllerLevel,Next Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/ScheduleControllerTest.java,NextTests,nextMapsDerivedExceptions,Next Maps Derived Exceptions.,9
+api/quiz/controller/ScheduleControllerTest.java,NextTests,nextReturnsInternalServerErrorForUnexpectedException,Next Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/ScheduleControllerTest.java,NextTests,nextAddsCorsHeaderWhenOriginPresent,Next Adds Cors Header When Origin Present.,6
+api/quiz/controller/ScheduleControllerTest.java,ReplayContract,replayRejectsUnsupportedMethod,Replay Rejects Unsupported Method.,7
+api/quiz/controller/ScheduleControllerTest.java,ReplayContract,replayPreflightReturnsCorsHeaders,Replay Preflight Returns Cors Headers.,6
+api/quiz/controller/ScheduleControllerTest.java,ReplayContract,malformedScheduleIdDoesNotCallReplayService,Malformed Schedule Id Does Not Call Replay Service.,8
+api/quiz/controller/ScheduleControllerTest.java,RevealContract,revealRejectsUnsupportedMethod,Reveal Rejects Unsupported Method.,7
+api/quiz/controller/ScheduleControllerTest.java,RevealContract,revealPreflightReturnsCorsHeaders,Reveal Preflight Returns Cors Headers.,6
+api/quiz/controller/ScheduleControllerTest.java,NextContract,nextRejectsUnsupportedMethod,Next Rejects Unsupported Method.,7
+api/quiz/controller/ScheduleControllerTest.java,NextContract,nextReturnsEmptyBodyOnSuccess,Next Returns Empty Body On Success.,8
+api/quiz/controller/ScheduleControllerTest.java,NextContract,nextPreflightReturnsCorsHeaders,Next Preflight Returns Cors Headers.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamReturnsSerializedResponse,Create Team Returns Serialized Response.,9
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamReturnsBadRequestForMissingBody,Create Team Returns Bad Request For Missing Body.,7
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamForwardsNullFieldsWhenPayloadOmitsParameters,Create Team Forwards Null Fields When Payload Omits Parameters.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamDoesNotValidateRoomCodeFormatAtControllerLevel,Create Team Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamMapsDerivedExceptions,Create Team Maps Derived Exceptions.,9
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamReturnsInternalServerErrorForUnexpectedException,Create Team Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/TeamControllerTest.java,CreateTeamTests,createTeamAddsCorsHeaderWhenOriginPresent,Create Team Adds Cors Header When Origin Present.,6
+api/quiz/controller/TeamControllerTest.java,KickTeamTests,kickTeamReturnsOkAndForwardsIds,Kick Team Returns Ok And Forwards Ids.,6
+api/quiz/controller/TeamControllerTest.java,KickTeamTests,kickTeamDoesNotValidateTeamIdFormatAtControllerLevel,Kick Team Does Not Validate Team Id Format At Controller Level.,6
+api/quiz/controller/TeamControllerTest.java,KickTeamTests,kickTeamDoesNotValidateRoomCodeFormatAtControllerLevel,Kick Team Does Not Validate Room Code Format At Controller Level.,6
+api/quiz/controller/TeamControllerTest.java,KickTeamTests,kickTeamMapsDerivedExceptions,Kick Team Maps Derived Exceptions.,9
+api/quiz/controller/TeamControllerTest.java,KickTeamTests,kickTeamReturnsInternalServerErrorForUnexpectedException,Kick Team Returns Internal Server Error For Unexpected Exception.,9
+api/quiz/controller/TeamControllerTest.java,KickTeamTests,kickTeamAddsCorsHeaderWhenOriginPresent,Kick Team Adds Cors Header When Origin Present.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamContract,createTeamRejectsUnsupportedMethod,Create Team Rejects Unsupported Method.,7
+api/quiz/controller/TeamControllerTest.java,CreateTeamContract,createTeamRejectsUnsupportedMediaType,Create Team Rejects Unsupported Media Type.,7
+api/quiz/controller/TeamControllerTest.java,CreateTeamContract,createTeamPreflightReturnsCorsHeaders,Create Team Preflight Returns Cors Headers.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamContract,createTeamMalformedJsonDoesNotCallService,Create Team Malformed JSON Does Not Call Service.,8
+api/quiz/controller/TeamControllerTest.java,KickTeamContract,kickTeamRejectsUnsupportedMethod,Kick Team Rejects Unsupported Method.,7
+api/quiz/controller/TeamControllerTest.java,KickTeamContract,kickTeamReturnsEmptyBodyOnSuccess,Kick Team Returns Empty Body On Success.,8
+api/quiz/controller/TeamControllerTest.java,KickTeamContract,kickTeamPreflightReturnsCorsHeaders,Kick Team Preflight Returns Cors Headers.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamBinding,createTeamCoercesNumericNameToStringAndForwardsIt,Create Team Coerces Numeric Name To String And Forwards It.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamBinding,createTeamAllowsNullNameAndForwardsItToService,Create Team Allows Null Name And Forwards It To Service.,6
+api/quiz/controller/TeamControllerTest.java,CreateTeamBinding,createTeamUnknownFieldsAreIgnoredWhenMainPayloadIsValid,Create Team Unknown Fields Are Ignored When Main Payload Is Valid.,8
+api/assets/controller/AudioAssetControllerTest.java,,playSnippetReturnsAudioBytesAndRangeHeader,Play Snippet Returns Audio Bytes And Range Header.,8
+api/assets/controller/AudioAssetControllerTest.java,,playSnippetMapsDerivedExceptionStatusAndBody,Play Snippet Maps Derived Exception Status And Body.,9
+api/assets/controller/AudioAssetControllerTest.java,,playSnippetReturnsInternalServerErrorForUnexpectedException,Play Snippet Returns Internal Server Error For Unexpected Exception.,9
+api/assets/controller/AudioAssetControllerTest.java,,playSnippetAddsCorsHeaderWhenOriginPresent,Play Snippet Adds Cors Header When Origin Present.,6
+api/assets/controller/AudioAssetControllerTest.java,,playAnswerReturnsAudioBytesAndRangeHeader,Play Answer Returns Audio Bytes And Range Header.,8
+api/assets/controller/AudioAssetControllerTest.java,,playAnswerMapsDerivedExceptionStatusAndBody,Play Answer Maps Derived Exception Status And Body.,9
+api/assets/controller/AudioAssetControllerTest.java,,playAnswerReturnsInternalServerErrorForUnexpectedException,Play Answer Returns Internal Server Error For Unexpected Exception.,9
+api/assets/controller/AudioAssetControllerTest.java,,playAnswerAddsCorsHeaderWhenOriginPresent,Play Answer Adds Cors Header When Origin Present.,6
+api/assets/controller/AudioAssetControllerTest.java,,snippetRejectsUnsupportedHttpMethod,Snippet Rejects Unsupported Http Method.,7
+api/assets/controller/AudioAssetControllerTest.java,,answerRejectsUnsupportedHttpMethod,Answer Rejects Unsupported Http Method.,7
+api/assets/controller/AudioAssetControllerTest.java,,snippetOptionsPreflightIncludesCorsHeaders,Snippet Options Preflight Includes Cors Headers.,6
+api/assets/controller/AudioAssetControllerTest.java,,answerOptionsPreflightIncludesCorsHeaders,Answer Options Preflight Includes Cors Headers.,6
+api/assets/controller/AudioAssetControllerTest.java,,snippetResponseDoesNotPretendToBeJson,Snippet Response Does Not Pretend To Be JSON.,8
+api/assets/controller/AudioAssetControllerTest.java,,malformedSnippetUuidDoesNotCallService,Malformed Snippet UUID Does Not Call Service.,8
+api/assets/controller/AudioAssetControllerTest.java,,malformedAnswerUuidDoesNotCallService,Malformed Answer UUID Does Not Call Service.,8
