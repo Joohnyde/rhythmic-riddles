@@ -72,7 +72,14 @@ a SemVer-like versioning scheme will be used.
   - unexpected runtime error responses
   - HTTP status codes, response content, and response media types
   - rejection of malformed requests before service invocation
-- Standardized controller test organization (one test file per controller with nested suites) and removed overlapping or redundant tests.
+- Added comprehensive WebSocket tests covering connection lifecycle, audience routing, and broadcast delivery:
+  - Introduced stage-2 transition and recovery tests across interrupt, pause, replay, reveal, and next-song flows.
+  - Added reconnect and recovery tests ensuring correct state reconstruction and no stale or duplicate emissions.
+  - Implemented concurrency and race-condition tests (multi-threaded) for connects, interrupts, stale closes, and reconnect churn.
+  - Verified session registry behavior under concurrency, including collision handling, stale-session protection, and room isolation.
+  - Added WebSocket broadcast isolation tests to prevent cross-room or cross-audience message leakage.
+  - Introduced JSON contract locking tests for all critical WebSocket frames and recovery payloads.
+  - Enforced field presence, forbidden fields, and type stability to prevent frontend-breaking payload drift.
 - Introduced consistency checks ensuring that documentation and API definitions remain aligned with the implementation, including verification of Swagger/OpenAPI documentation and error-handling conventions.
 - Added and maintained a structured test catalog (`test-catalog.md` / `test-catalog.csv`) to document backend test coverage and prevent redundant tests.
 - Improved overall test readability and maintainability through clearer naming conventions, stronger assertions, and consistent Mockito static imports.

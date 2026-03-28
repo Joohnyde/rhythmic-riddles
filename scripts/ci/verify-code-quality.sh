@@ -30,7 +30,7 @@ if [ -d "$BACKEND_DIR" ]; then
   mvn -B -ntp spotless:check
 
   echo "Running Checkstyle..."
-  mvn -B -ntp -Pci checkstyle:check
+  mvn -B -ntp checkstyle:check
 
   cd "$ROOT_DIR"
 else

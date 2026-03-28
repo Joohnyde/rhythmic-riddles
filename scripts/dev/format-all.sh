@@ -33,7 +33,7 @@ run_backend() {
 
   # Checkstyle should be configured in a CI profile (so local build/run is not blocked)
   # If you used a different profile name, change -Pci accordingly.
-  (cd "${dir}" && mvn -B -ntp -Pci checkstyle:check)
+  (cd "${dir}" && mvn -B -ntp checkstyle:check)
 
   echo
 }
