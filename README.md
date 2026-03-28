@@ -9,7 +9,7 @@ This repository is an **"enterprise-around-the-code"** setup: documentation, dev
 ## System overview
 
 **Clients**
-- **TV app (public)**: shows only the information needed for players (no answers).
+- **TV app (public)**: shows only the information needed for players.
 - **Admin app (private)**: controls the game (teams, albums, playback, scoring, recovery actions).
 - **Players (physical)**: 433MHz RF button transmitter (no software UI).
 

@@ -1,3 +1,4 @@
+
 # Testing Overview
 
 ## Purpose
@@ -16,28 +17,11 @@ The goal of the test suite is not just to prove that code works on the happy pat
 
 ## Current Test Focus
 
-The backend test suite also includes targeted verification of
-WebSocket-related behavior where it intersects with core game logic.
+The current focus is shifting toward integration-level validation of the system:
 
-Rather than testing WebSocket infrastructure directly, tests focus on
-validating that services correctly trigger broadcast side effects
-through the messaging gateway when state changes occur.
-
-Particular emphasis has been placed on:
-
--   verifying that broadcasts occur when stage transitions happen
--   ensuring interrupt and answer resolution triggers appropriate state
-    updates
--   confirming that broadcast payloads contain correct context
-    information
--   validating that broadcasts are suppressed when operations are
-    rejected or invalid
--   ensuring correct ordering of persistence and broadcast side effects
-    when required
-
-These tests ensure that the real-time synchronization layer between
-Admin and TV clients remains consistent with backend state transitions
-without requiring a full WebSocket environment during unit testing.
+- real WebSocket integration tests using full Spring context and real clients to validate on-the-wire behavior, delivery, and serialization
+- database-backed recovery integration tests to verify reconnect state reconstruction across key recovery scenarios
+- repository/query integration tests covering ordering, stage-aware lookups, and other recovery-critical data access behavior
 
 ## Why `contextFetch` matters
 
@@ -59,7 +43,7 @@ If this method becomes incorrect, the application can appear broken to clients e
 
 ### Current layers
 
-The project currently has strong backend service-layer unit tests and controller tests that validate the HTTP contract of REST endpoints.
+The project currently has strong backend service-layer unit tests, controller tests that validate the HTTP contract of REST endpoints, and focused WebSocket-oriented tests that validate backend-driven real-time behavior.
 
 Controller tests verify:
 - happy path responses
@@ -73,11 +57,19 @@ Controller tests verify:
 Controller-managed error responses are centralized through
 `com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException`, and this behavior is considered part of the API contract.
 
+WebSocket-focused tests verify:
+- connection lifecycle and session-registry behavior
+- Admin / TV audience routing and room isolation
+- broadcast delivery and suppression rules
+- stage-2 transition and recovery behavior
+- reconnect, stale-close, and race-condition handling
+- JSON contract stability for critical broadcast and recovery payloads
+
+These tests protect the real-time synchronization layer without requiring a full WebSocket environment during unit testing.
+
 ### Planned layers
 
-The following layers should be expanded after the service layer is considered stable:
-
-- repository integration tests
+Further layers should be expanded after these are stable:
 - frontend unit tests
 - frontend integration tests
 - end-to-end regression tests

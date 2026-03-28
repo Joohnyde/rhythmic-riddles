@@ -100,7 +100,8 @@ public class TestCatalogConsistencyTest {
     Pattern classPattern = Pattern.compile("\\bclass\\s+([A-Za-z0-9_]+)\\b");
     Pattern methodPattern =
         Pattern.compile(
-            "(?:public|protected|private)?\\s*(?:static\\s+)?(?:final\\s+)?(?:<[^>]+>\\s*)?[A-Za-z0-9_<>\\[\\], ?]+\\s+([A-Za-z0-9_]+)\\s*\\(");
+            "\\b([A-Za-z0-9_]+)\\s*\\(" // method name before "("
+            );
 
     for (int i = 0; i < lines.size(); i++) {
       String rawLine = lines.get(i);
@@ -140,26 +141,24 @@ public class TestCatalogConsistencyTest {
   }
 
   private String findNextMethodName(List<String> lines, int startIndex, Pattern methodPattern) {
+    StringBuilder candidate = new StringBuilder();
+
     for (int i = startIndex; i < lines.size(); i++) {
       String line = lines.get(i).trim();
 
-      if (line.isBlank()) {
-        continue;
-      }
+      if (line.isBlank() || line.startsWith("//")) continue;
 
-      if (line.startsWith("@")) {
-        continue;
-      }
+      // skip annotations
+      if (line.startsWith("@")) continue;
 
-      if (line.startsWith("//")) {
-        continue;
-      }
+      candidate.append(line).append(" ");
 
-      Matcher methodMatcher = methodPattern.matcher(line);
+      Matcher methodMatcher = methodPattern.matcher(candidate.toString());
       if (methodMatcher.find()) {
         return methodMatcher.group(1);
       }
 
+      // stop if we hit something that clearly isn't a method
       if (line.contains(";")) {
         return null;
       }

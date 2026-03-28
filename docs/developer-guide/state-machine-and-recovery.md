@@ -1,5 +1,3 @@
-
-
 # State Machine & Reconstruction 
 
 This document explains how the backend reconstructs the **current state** when an app reconnects (Admin or TV),
@@ -59,7 +57,7 @@ Stage 1 has two UI sub-states, determined by the “last chosen category” reco
 A new selection is needed if:
 
 - `lastChosenCategory == null`, OR
-- `lastChosenCategory.isStarted() == true` AND `lastChosenCategory.ordinalNumber != game.maxAlbums` 
+- `lastChosenCategory.isDone() == true` AND `lastChosenCategory.ordinalNumber != game.maxAlbums` 
 
 *(In other words: there is no last selection yet, or the last selection was already started and we haven’t reached the configured album limit.)*
 
@@ -77,7 +75,7 @@ A new selection is needed if:
 ### Sub-state B: Album picked but not started yet (choice display)
 
 #### Condition
-- `lastChosenCategory != null` AND `lastChosenCategory.isStarted() == false` 
+- `lastChosenCategory != null` AND `lastChosenCategory.isDone() == false` 
 
 #### Snapshot fields
 - `stage: "albums"`
