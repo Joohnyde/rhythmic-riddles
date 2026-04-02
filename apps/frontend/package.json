@@ -40,7 +40,7 @@
     "@angular-eslint/eslint-plugin": "^21.3.1",
     "@angular-eslint/eslint-plugin-template": "^21.3.1",
     "@angular-eslint/template-parser": "^21.3.1",
-    "@angular/build": "^21.2.5",
+    "@angular/build": "^21.2.6",
     "@angular/cli": "^21.2.5",
     "@angular/compiler-cli": "^21.2.6",
     "@eslint/js": "^10.0.1",
