@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/kick_team.schema.json",
+  "title": "WebSocket kick_team frame",
+  "description": "Team removed, TV should remove team by UUID.",
+  "x-recipients": [
+    "tv"
+  ],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": [
+    "type",
+    "uuid"
+  ],
+  "properties": {
+    "type": {
+      "const": "kick_team"
+    },
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    }
+  },
+  "additionalProperties": false
+}

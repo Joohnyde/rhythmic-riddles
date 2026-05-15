@@ -1,0 +1,18 @@
+{
+  "type": "welcome",
+  "stage": "songs",
+  "songId": "c41f1c21-0fec-463a-b409-e1e7ab9d2229",
+  "question": "Prepoznaj ovu pjesmu!",
+  "answer": "Answer",
+  "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9",
+  "answerDuration": 8.0,
+  "scores": [
+    {
+      "id": "e94c5243-6954-452b-8fd2-f94210fcc13b",
+      "name": "Team A",
+      "points": 10
+    }
+  ],
+  "seek": 1.0,
+  "remaining": 14.0
+}

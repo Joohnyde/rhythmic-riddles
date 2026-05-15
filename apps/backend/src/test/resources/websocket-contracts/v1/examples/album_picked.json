@@ -1,0 +1,8 @@
+{
+  "type": "album_picked",
+  "selected": {
+    "categoryId": "cat-1",
+    "started": false,
+    "ordinalNumber": 1
+  }
+}

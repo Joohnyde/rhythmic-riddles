@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/song_reveal.schema.json",
+  "title": "WebSocket song_reveal frame",
+  "description": "Reveal current answer.",
+  "x-recipients": [
+    "admin",
+    "tv"
+  ],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": [
+    "type"
+  ],
+  "properties": {
+    "type": {
+      "const": "song_reveal"
+    }
+  },
+  "additionalProperties": false
+}

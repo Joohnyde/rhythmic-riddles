@@ -10,6 +10,7 @@
 - [Architecture](developer-guide/architecture.md)
 - [Database](developer-guide/database.md)
 - [API](developer-guide/api.md)
+- [WebSockets](developer-guide/websockets.md)
 - [State machine & recovery](developer-guide/state-machine-and-recovery.md)
 - [Recovery queries](developer-guide/recovery-queries.md)
 - [Assets](developer-guide/assets.md)

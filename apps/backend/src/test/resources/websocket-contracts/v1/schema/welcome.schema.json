@@ -1,0 +1,391 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/welcome.schema.json",
+  "title": "WebSocket welcome/context snapshot frame",
+  "description": "Initial/recovery context snapshot. Covers current integration recovery shape plus documented lobby/albums/songs/winner snapshots.",
+  "x-recipients": [
+    "admin",
+    "tv"
+  ],
+  "x-replaySafe": true,
+  "oneOf": [
+    {
+      "type": "object",
+      "description": "Minimal recovery welcome used by current runtime integration tests.",
+      "required": [
+        "type",
+        "roomCode",
+        "stage",
+        "recovery"
+      ],
+      "properties": {
+        "type": {
+          "const": "welcome"
+        },
+        "roomCode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "recovery": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "stage",
+        "teams"
+      ],
+      "properties": {
+        "type": {
+          "const": "welcome"
+        },
+        "stage": {
+          "const": "lobby"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "image": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "stage",
+        "albums",
+        "team"
+      ],
+      "properties": {
+        "type": {
+          "const": "welcome"
+        },
+        "stage": {
+          "const": "albums"
+        },
+        "albums": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "team": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "id",
+                "name"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "image": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "stage",
+        "selected"
+      ],
+      "properties": {
+        "type": {
+          "const": "welcome"
+        },
+        "stage": {
+          "const": "albums"
+        },
+        "selected": {
+          "type": "object",
+          "required": [
+            "started"
+          ],
+          "properties": {
+            "categoryId": {
+              "type": "string"
+            },
+            "chosenCategoryPreview": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "pickedByTeam": {
+              "type": "object",
+              "required": [
+                "id",
+                "name"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "image": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "additionalProperties": true
+            },
+            "started": {
+              "type": "boolean"
+            },
+            "ordinalNumber": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "stage",
+        "songId",
+        "question",
+        "answer",
+        "scheduleId",
+        "answerDuration",
+        "scores"
+      ],
+      "properties": {
+        "type": {
+          "const": "welcome"
+        },
+        "stage": {
+          "const": "songs"
+        },
+        "songId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "question": {
+          "type": "string"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "scheduleId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "answerDuration": {
+          "type": "number",
+          "minimum": 0
+        },
+        "scores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "image": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "points": {
+                "type": "number"
+              },
+              "score": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "revealed": {
+          "type": "boolean"
+        },
+        "bravo": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            },
+            {
+              "const": "null"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seek": {
+          "type": "number",
+          "minimum": 0
+        },
+        "remaining": {
+          "type": "number",
+          "minimum": 0
+        },
+        "answeringTeam": {
+          "type": "object",
+          "required": [
+            "id",
+            "name"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "image": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": true
+        },
+        "interruptId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "error": {
+          "type": "boolean"
+        }
+      },
+      "dependentRequired": {
+        "answeringTeam": [
+          "interruptId"
+        ],
+        "interruptId": [
+          "answeringTeam"
+        ]
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "type",
+        "stage",
+        "scores"
+      ],
+      "properties": {
+        "type": {
+          "const": "welcome"
+        },
+        "stage": {
+          "const": "winner"
+        },
+        "scores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              },
+              "name": {
+                "type": "string"
+              },
+              "image": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "points": {
+                "type": "number"
+              },
+              "score": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
+}
