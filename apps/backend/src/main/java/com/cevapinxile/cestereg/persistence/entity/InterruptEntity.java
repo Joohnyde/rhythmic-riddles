@@ -23,7 +23,7 @@ import java.util.UUID;
  * @author denijal
  */
 @Entity
-@Table(schema = "public", name = "interrupt")
+@Table(name = "interrupt")
 @NamedQueries({
   @NamedQuery(name = "InterruptEntity.findAll", query = "SELECT i FROM InterruptEntity i"),
   @NamedQuery(

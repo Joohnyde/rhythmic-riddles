@@ -768,5 +768,50 @@
                 </plugins>
             </build>
         </profile>
+        <!--
+          E2E profile:
+          - prepares isolated PostgreSQL e2e schema
+          - automatically activates Spring e2e profile
+          - intended for Playwright/browser integration testing
+        -->
+        <profile>
+            <id>e2e</id>
+            <properties>
+                <spring-boot.run.profiles>e2e</spring-boot.run.profiles>
+                <e2e.clean>false</e2e.clean>
+            </properties>
+            <build>
+                <plugins>
+                    <!--
+                      Executes schema preparation script before Spring Boot startup.
+                      The script:
+                      - optionally drops existing e2e schema
+                      - recreates e2e schema
+                      - clones public schema structure/data into e2e
+                    -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-e2e-schema</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/../../scripts/dev/setup-e2e-schema.sh</argument>
+                                        <argument>${project.basedir}/src/main/resources/application-e2e.yml</argument>
+                                        <argument>${e2e.clean}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

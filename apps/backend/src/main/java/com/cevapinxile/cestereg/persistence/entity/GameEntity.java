@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * @author denijal
  */
 @Entity
-@Table(schema = "public", name = "game")
+@Table(name = "game")
 @NamedQueries({
   @NamedQuery(name = "GameEntity.findAll", query = "SELECT g FROM GameEntity g"),
   @NamedQuery(

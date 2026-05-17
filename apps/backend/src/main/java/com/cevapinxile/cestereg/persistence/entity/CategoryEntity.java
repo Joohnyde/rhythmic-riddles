@@ -25,7 +25,7 @@ import java.util.UUID;
  * @author denijal
  */
 @Entity
-@Table(schema = "public", name = "category")
+@Table(name = "category")
 @NamedQueries({
   @NamedQuery(name = "CategoryEntity.findAll", query = "SELECT c FROM CategoryEntity c"),
   @NamedQuery(

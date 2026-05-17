@@ -5,12 +5,15 @@ app:
     base-dir: ../../data
     
 spring:
-    datasource:
-        url: jdbc:postgresql://localhost:5432/rhytmicriddles #MOCK
-        username: rhytmicriddles #MOCK
-        password: change_me #MOCK
+  jpa:
+    properties:
+      hibernate:
+        default_schema: public
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rhytmicriddles #MOCK
+    username: rhytmicriddles #MOCK
+    password: change_me #MOCK
     
-
 springdoc:
   swagger-ui:
     path: /swagger
