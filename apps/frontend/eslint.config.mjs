@@ -80,11 +80,11 @@ export default [
             // Selector conventions (adjust prefixes to your project)
             '@angular-eslint/component-selector': [
                 'error',
-                { type: 'element', prefix: ['app', 'comp'], style: 'kebab-case' },
+                { type: 'element', prefix: ['app', 'rr', 'comp'], style: 'kebab-case' },
             ],
             '@angular-eslint/directive-selector': [
                 'error',
-                { type: 'attribute', prefix: ['app', 'cestereg'], style: 'camelCase' },
+                { type: 'attribute', prefix: ['app', 'rr', 'cestereg'], style: 'camelCase' },
             ],
         },
     },

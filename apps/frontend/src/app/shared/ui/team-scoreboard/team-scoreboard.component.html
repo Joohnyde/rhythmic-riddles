@@ -1,0 +1,18 @@
+<section class="card" data-testid="scoreboard">
+  <div class="kicker">Scoreboard</div>
+  <div class="grid">
+    @for (team of teams; track team.teamId) {
+      <article
+        class="score-row"
+        [class.correct]="isAnsweredCorrect(team)"
+        [class.wrong]="isAnsweredWrong(team)"
+        [attr.data-testid]="'scoreboard-team-row-' + team.teamId"
+      >
+        <span [attr.data-testid]="'scoreboard-team-name-' + team.teamId">{{ team.name }}</span>
+        <strong [attr.data-testid]="'scoreboard-team-score-' + team.teamId">{{
+          team.score
+        }}</strong>
+      </article>
+    }
+  </div>
+</section>

@@ -1,0 +1,60 @@
+<main class="page shell" data-testid="admin-lobby-page">
+  @let vm = store.vm();
+
+  <header class="header">
+    <div>
+      <p class="kicker">Stage 0</p>
+      <h1 class="title">Lobby</h1>
+    </div>
+    <button
+      data-testid="admin-start-game-button"
+      [disabled]="vm.inTransit"
+      (click)="store.startAdminGame()"
+    >
+      Start
+    </button>
+  </header>
+  <section class="grid two">
+    <form class="card grid" (ngSubmit)="createTeam()" data-testid="admin-create-team-form">
+      <input
+        name="name"
+        placeholder="Team name"
+        [ngModel]="form().name"
+        (ngModelChange)="form.update((f) => ({ ...f, name: $event }))"
+        data-testid="admin-create-team-name-input"
+      />
+      <input
+        name="image"
+        placeholder="Image URL"
+        [ngModel]="form().image"
+        (ngModelChange)="form.update((f) => ({ ...f, image: $event }))"
+        data-testid="admin-create-team-image-input"
+      />
+      <input
+        name="buttonCode"
+        placeholder="Button code"
+        [ngModel]="form().buttonCode"
+        (ngModelChange)="form.update((f) => ({ ...f, buttonCode: $event }))"
+        data-testid="admin-create-team-button-code-input"
+      />
+      <button type="submit" [disabled]="vm.inTransit" data-testid="admin-create-team-button">
+        Create team
+      </button>
+    </form>
+    <section class="card grid" data-testid="admin-team-list">
+      @for (team of vm.teams; track team.id) {
+        <article class="header" [attr.data-testid]="'admin-team-row-' + team.id">
+          <span [attr.data-testid]="'admin-team-name-' + team.id">{{ team.name }}</span>
+          <img [src]="team.image" width="64" />
+          <button
+            class="danger"
+            [attr.data-testid]="'admin-kick-team-button-' + team.id"
+            (click)="store.kickTeam(team.id)"
+          >
+            Kick
+          </button>
+        </article>
+      }
+    </section>
+  </section>
+</main>

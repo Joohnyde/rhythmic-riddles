@@ -1,0 +1,19 @@
+<section class="card" data-testid="song-revealed-panel">
+  <div class="kicker">Answer</div>
+
+  @if (answerAudioSrc && answerDuration !== null) {
+    <rr-audio-player
+      data-testid="song-answer-audio"
+      [src]="answerAudioSrc"
+      [seek]="0"
+      [remaining]="answerDuration"
+      (completed)="answerCompleted.emit()"
+    />
+  }
+
+  <h2 data-testid="song-answer">{{ answer }}</h2>
+
+  @if (bravo) {
+    <p data-testid="song-bravo-team">Bravo {{ bravo.name }}: {{ bravo.score }}</p>
+  }
+</section>
