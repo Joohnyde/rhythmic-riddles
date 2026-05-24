@@ -1,26 +1,26 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subscription, shareReplay } from 'rxjs';
-import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
+import { Observable, shareReplay, Subscription } from 'rxjs';
+import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { environment } from '../../../environments/environment';
-import { DefaultMessage } from '../../domain/game/messages/default.messages';
+import { GameServerMessage } from '../../domain/game/messages/game-server-message.types';
+import { CLIENT_POSITION, ClientSurface } from '../../domain/game/models/client-surface.model';
 
-export type ClientSurface = 'admin' | 'tv';
 export interface GameSocketContext {
   roomCode: string;
   surface: ClientSurface;
 }
-const CLIENT_POSITION: Record<ClientSurface, number> = { admin: 0, tv: 1 };
 
 @Injectable({ providedIn: 'root' })
 export class GameRealtimeService {
-  private socket?: WebSocketSubject<DefaultMessage>;
+  private socket?: WebSocketSubject<GameServerMessage>;
   private keepAliveSub?: Subscription;
-  private messages?: Observable<DefaultMessage>;
+  private messages?: Observable<GameServerMessage>;
 
-  connect(context: GameSocketContext): Observable<DefaultMessage> {
+  connect(context: GameSocketContext): Observable<GameServerMessage> {
     this.disconnect();
+
     const handshakeCode = `${CLIENT_POSITION[context.surface]}${context.roomCode}`;
-    this.socket = webSocket<DefaultMessage>(`${environment.wsUrl}/ws/${handshakeCode}`);
+    this.socket = webSocket<GameServerMessage>(`${environment.wsUrl}/ws/${handshakeCode}`);
     this.messages = this.socket
       .asObservable()
       .pipe(shareReplay({ bufferSize: 1, refCount: false }));
@@ -28,6 +28,7 @@ export class GameRealtimeService {
       error: () => undefined,
       complete: () => undefined,
     });
+
     return this.messages;
   }
 

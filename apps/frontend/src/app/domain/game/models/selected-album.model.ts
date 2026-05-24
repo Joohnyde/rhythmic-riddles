@@ -1,12 +1,18 @@
 import { Team } from './team.model';
-export class CategoryPreview {
-  title!: string;
-  image!: string;
+
+export interface CategoryPreview {
+  title: string;
+  image: string;
 }
-export class LastCategory {
-  categoryId!: string;
-  chosenCategoryPreview!: CategoryPreview;
-  pickedByTeam!: Team;
-  started!: boolean;
-  ordinalNumber!: number;
+
+/**
+ * Backend selected album/category DTO.
+ * Keep these field names aligned with backend JSON. Do not rename them unless the backend changes.
+ */
+export interface LastCategory {
+  categoryId: string;
+  chosenCategoryPreview: CategoryPreview;
+  pickedByTeam: Team | null;
+  started: boolean;
+  ordinalNumber: number | null;
 }

@@ -7,7 +7,7 @@ import { TeamScore } from '../../../domain/game/models/team-score.model';
 })
 export class TeamScoreboardComponent {
   @Input() bravo: TeamScore | null = null;
-  @Input() teams: TeamScore[] = [];
+  @Input() teams: readonly TeamScore[] = [];
   @Input() currentScheduleId: string | null = null;
   isAnsweredWrong(team: TeamScore): boolean {
     return this.bravo !== team && team.scheduleId === this.currentScheduleId;

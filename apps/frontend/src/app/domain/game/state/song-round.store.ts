@@ -1,10 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom, Observable, Subscription } from 'rxjs';
-import { ClientSurface } from '../../../core/realtime/game-realtime.service';
 import { InterruptApiService } from '../data-access/interrupt-api.service';
 import { ScheduleApiService } from '../data-access/schedule-api.service';
 import { DefaultMessage } from '../messages/default.messages';
+import { GameServerMessage } from '../messages/game-server-message.types';
 import {
   S2AnswerMessage,
   S2ErrorSolvedMessage,
@@ -12,69 +12,101 @@ import {
   S2SongRepeatMessage,
   S2WelcomeMessage,
 } from '../messages/stage2.messages';
+import { ClientSurface } from '../models/client-surface.model';
+import { routeForStage } from '../models/game-stage.model';
 import { TeamScore } from '../models/team-score.model';
-import { Team } from '../models/team.model';
+import { Team, teamFromScore } from '../models/team.model';
 import { coerceSongScenario, SongScenario } from './song-scenario';
 
 export interface SongRoundState {
-  songId: string | null;
-  question: string | null;
-  answer: string | null;
-  answeringTeam: Team | null;
-  interruptId: string | null;
-  seek: number | null;
-  remaining: number | null;
-  answerDuration: number | null;
-  lastPlayedSong: string | null;
-  scenario: SongScenario;
-  teams: TeamScore[];
-  bravo: TeamScore | null;
-  inTransit: boolean;
+  readonly songId: string | null;
+  readonly question: string | null;
+  readonly answer: string | null;
+  readonly answeringTeam: Team | null;
+  readonly interruptId: string | null;
+  readonly seek: number | null;
+  readonly remaining: number | null;
+  readonly answerDuration: number | null;
+  readonly lastPlayedSong: string | null;
+  readonly scenario: SongScenario;
+  readonly teams: readonly TeamScore[];
+  readonly bravo: TeamScore | null;
+  readonly inTransit: boolean;
 }
-const initialState: SongRoundState = {
-  songId: null,
-  question: null,
-  answer: null,
-  answeringTeam: null,
-  interruptId: null,
-  seek: null,
-  remaining: null,
-  answerDuration: null,
-  lastPlayedSong: null,
-  scenario: SongScenario.Loading,
-  teams: [],
-  bravo: null,
-  inTransit: false,
-};
+
+export interface SongRoundVm extends SongRoundState {
+  readonly isPlaying: boolean;
+  readonly isRevealed: boolean;
+  readonly isFinishedUnrevealed: boolean;
+  readonly isTeamAnswering: boolean;
+  readonly isSystemError: boolean;
+  readonly canShowScoreboard: boolean;
+  readonly canRevealAnswer: boolean;
+  readonly canResolveError: boolean;
+}
+
+function createInitialSongRoundState(): SongRoundState {
+  return {
+    songId: null,
+    question: null,
+    answer: null,
+    answeringTeam: null,
+    interruptId: null,
+    seek: null,
+    remaining: null,
+    answerDuration: null,
+    lastPlayedSong: null,
+    scenario: SongScenario.Loading,
+    teams: [],
+    bravo: null,
+    inTransit: false,
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class SongRoundStore {
   private readonly router = inject(Router);
   private readonly interruptApi = inject(InterruptApiService);
   private readonly scheduleApi = inject(ScheduleApiService);
+  private readonly state = signal<SongRoundState>(createInitialSongRoundState());
   private sub?: Subscription;
-  private readonly state = signal<SongRoundState>(initialState);
-  readonly vm = computed(() => this.state());
-  connect(messages$: Observable<DefaultMessage>, surface: ClientSurface): void {
+
+  readonly vm = computed<SongRoundVm>(() => {
+    const state = this.state();
+    return {
+      ...state,
+      isPlaying: state.scenario === SongScenario.Playing,
+      isRevealed: state.scenario === SongScenario.Revealed,
+      isFinishedUnrevealed: state.scenario === SongScenario.FinishedUnrevealed,
+      isTeamAnswering: state.scenario === SongScenario.TeamAnswering,
+      isSystemError: state.scenario === SongScenario.SystemError,
+      canShowScoreboard: state.teams.length > 0 && state.lastPlayedSong !== null,
+      canRevealAnswer: state.scenario === SongScenario.FinishedUnrevealed && !state.inTransit,
+      canResolveError: state.scenario === SongScenario.SystemError && !state.inTransit,
+    };
+  });
+
+  connect(messages$: Observable<GameServerMessage>, surface: ClientSurface): void {
     this.sub?.unsubscribe();
-    this.sub = messages$.subscribe((m) => void this.handleMessage(m, surface));
+    this.sub = messages$.subscribe((message) => void this.handleMessage(message, surface));
   }
+
   disconnect(): void {
     this.sub?.unsubscribe();
     this.sub = undefined;
   }
-  reset(): void {
-    this.state.set(initialState);
+
+  private patchState(patch: Partial<SongRoundState>): void {
+    this.state.update((state) => ({ ...state, ...patch }));
   }
-  private patch(p: Partial<SongRoundState>) {
-    this.state.update((s) => ({ ...s, ...p }));
-  }
+
   private async handleMessage(message: DefaultMessage, surface: ClientSurface): Promise<void> {
     switch (message.type) {
       case 'song_next':
         this.handleSongNext(message as S2WelcomeMessage);
         break;
       case 'song_reveal':
-        this.patch({ scenario: SongScenario.Revealed });
+        this.patchState({ scenario: SongScenario.Revealed });
         break;
       case 'song_repeat':
         this.handleSongRepeat(message as S2SongRepeatMessage);
@@ -93,8 +125,9 @@ export class SongRoundStore {
         break;
     }
   }
+
   private handleSongNext(message: S2WelcomeMessage): void {
-    this.patch({
+    this.patchState({
       songId: message.songId,
       question: message.question,
       answer: message.answer,
@@ -108,9 +141,15 @@ export class SongRoundStore {
       interruptId: null,
     });
   }
+
   private handleSongRepeat(message: S2SongRepeatMessage): void {
-    this.patch({ seek: 0, remaining: message.remaining, scenario: SongScenario.Playing });
+    this.patchState({
+      seek: 0,
+      remaining: message.remaining,
+      scenario: SongScenario.Playing,
+    });
   }
+
   private handleAnswer(message: S2AnswerMessage): void {
     const teams = this.state().teams.map((team) =>
       team.teamId === message.teamId
@@ -122,46 +161,58 @@ export class SongRoundStore {
         : team,
     );
     const answeredTeam = teams.find((team) => team.teamId === message.teamId) ?? null;
-    this.patch({
+
+    this.patchState({
       teams,
       bravo: message.correct ? answeredTeam : null,
       scenario: message.correct ? SongScenario.Revealed : SongScenario.Playing,
     });
   }
+
   private handleErrorSolved(message: S2ErrorSolvedMessage): void {
-    if (this.state().scenario === SongScenario.SystemError)
-      this.patch({ scenario: coerceSongScenario(message.previousScenario) });
+    if (this.state().scenario === SongScenario.SystemError) {
+      this.patchState({ scenario: coerceSongScenario(message.previousScenario) });
+    }
   }
+
   private async handlePause(message: S2PauseMessage): Promise<void> {
-    if (this.state().scenario === SongScenario.TeamAnswering) return;
+    if (this.state().scenario === SongScenario.TeamAnswering) {
+      return;
+    }
+
     if (message.answeringTeamId === 'null') {
       await this.handleSystemPause();
       return;
     }
-    const item = this.state().teams.find((x) => x.teamId === message.answeringTeamId);
-    this.patch({
-      answeringTeam: item ? new Team(item) : null,
+
+    const item = this.state().teams.find((team) => team.teamId === message.answeringTeamId);
+    this.patchState({
+      answeringTeam: item ? teamFromScore(item) : null,
       interruptId: message.interruptId,
       scenario: SongScenario.TeamAnswering,
     });
   }
+
   private async handleSystemPause(): Promise<void> {
     const previous = this.state().scenario;
     if (previous !== SongScenario.SystemError) {
       try {
         await firstValueFrom(this.interruptApi.savePrevScenario(previous));
       } catch {
-        /* TODO: toast */
+        // TODO: replace with user-facing toast/error state when backend error handling is standardized.
       }
     }
-    this.patch({ scenario: SongScenario.SystemError });
+
+    this.patchState({ scenario: SongScenario.SystemError });
   }
+
   private handleWelcome(message: S2WelcomeMessage, surface: ClientSurface): void {
     if (message.stage !== 'songs') {
       this.disconnect();
-      this.router.navigate(surface === 'admin' ? ['admin', message.stage] : [message.stage]);
+      void this.router.navigate(routeForStage(surface, message.stage));
       return;
     }
+
     const base: Partial<SongRoundState> = {
       songId: message.songId,
       question: message.question,
@@ -170,18 +221,20 @@ export class SongRoundStore {
       teams: message.scores,
       answerDuration: message.answerDuration,
     };
+
     if (message.revealed != null) {
-      this.patch({
+      this.patchState({
         ...base,
         bravo: message.revealed
-          ? (message.scores.find((t) => t.teamId === message.bravo) ?? null)
+          ? (message.scores.find((team) => team.teamId === message.bravo) ?? null)
           : null,
         scenario: message.revealed ? SongScenario.Revealed : SongScenario.FinishedUnrevealed,
       });
       return;
     }
+
     if (message.answeringTeam != null) {
-      this.patch({
+      this.patchState({
         ...base,
         seek: message.seek ?? null,
         remaining: message.remaining ?? null,
@@ -191,8 +244,9 @@ export class SongRoundStore {
       });
       return;
     }
+
     if (message.error != null) {
-      this.patch({
+      this.patchState({
         ...base,
         seek: message.seek ?? null,
         remaining: message.remaining ?? null,
@@ -200,66 +254,92 @@ export class SongRoundStore {
       });
       return;
     }
-    this.patch({
+
+    this.patchState({
       ...base,
       seek: message.seek ?? null,
       remaining: message.remaining ?? null,
       scenario: SongScenario.Playing,
     });
   }
+
   onTrackFinished(): void {
-    if (this.state().scenario === SongScenario.Playing)
-      this.patch({ scenario: SongScenario.FinishedUnrevealed });
+    if (this.state().scenario === SongScenario.Playing) {
+      this.patchState({ scenario: SongScenario.FinishedUnrevealed });
+    }
   }
+
   onAnswerAudioFinished(): void {
-    /* original TV behavior does not change stage after answer audio ends */
+    // Original TV behavior does not change stage after answer audio ends.
   }
+
   savePlaybackState(state: { seek: number; remaining: number }): void {
-    this.patch({ seek: state.seek, remaining: state.remaining });
+    this.patchState({
+      seek: state.seek,
+      remaining: state.remaining,
+    });
   }
+
   async resolveError(): Promise<void> {
     const scheduleId = this.state().lastPlayedSong;
-    if (!scheduleId || this.state().inTransit) return;
-    this.patch({ inTransit: true });
+    if (!scheduleId || this.state().inTransit) {
+      return;
+    }
+
+    this.patchState({ inTransit: true });
     try {
       await firstValueFrom(this.interruptApi.resolveErrors(scheduleId));
     } finally {
-      this.patch({ inTransit: false });
+      this.patchState({ inTransit: false });
     }
   }
+
   async teamAnswered(correct: boolean): Promise<void> {
     const interruptId = this.state().interruptId;
-    if (!interruptId || this.state().inTransit) return;
-    this.patch({ inTransit: true });
+    if (!interruptId || this.state().inTransit) {
+      return;
+    }
+
+    this.patchState({ inTransit: true });
     try {
       await firstValueFrom(this.interruptApi.answer(interruptId, correct));
     } finally {
-      this.patch({ inTransit: false });
+      this.patchState({ inTransit: false });
     }
   }
+
   async advanceGame(repeatSong: boolean): Promise<void> {
     const scheduleId = this.state().lastPlayedSong;
     if (
       this.state().scenario !== SongScenario.FinishedUnrevealed ||
       this.state().inTransit ||
       !scheduleId
-    )
+    ) {
       return;
-    this.patch({ inTransit: true });
+    }
+
+    this.patchState({ inTransit: true });
     try {
-      if (repeatSong) await firstValueFrom(this.scheduleApi.replaySong(scheduleId));
-      else await firstValueFrom(this.scheduleApi.revealAnswer(scheduleId));
+      if (repeatSong) {
+        await firstValueFrom(this.scheduleApi.replaySong(scheduleId));
+      } else {
+        await firstValueFrom(this.scheduleApi.revealAnswer(scheduleId));
+      }
     } finally {
-      this.patch({ inTransit: false });
+      this.patchState({ inTransit: false });
     }
   }
+
   async nextSong(): Promise<void> {
-    if (this.state().inTransit) return;
-    this.patch({ inTransit: true });
+    if (this.state().inTransit) {
+      return;
+    }
+
+    this.patchState({ inTransit: true });
     try {
       await firstValueFrom(this.scheduleApi.next());
     } finally {
-      this.patch({ inTransit: false });
+      this.patchState({ inTransit: false });
     }
   }
 }

@@ -6,8 +6,16 @@ export enum SongScenario {
   SystemError = 3,
   Playing = 4,
 }
+
+const SONG_SCENARIO_VALUES = new Set<number>([
+  SongScenario.Loading,
+  SongScenario.Revealed,
+  SongScenario.FinishedUnrevealed,
+  SongScenario.TeamAnswering,
+  SongScenario.SystemError,
+  SongScenario.Playing,
+]);
+
 export function coerceSongScenario(value: number): SongScenario {
-  return Object.values(SongScenario).includes(value as SongScenario)
-    ? (value as SongScenario)
-    : SongScenario.Loading;
+  return SONG_SCENARIO_VALUES.has(value) ? (value as SongScenario) : SongScenario.Loading;
 }

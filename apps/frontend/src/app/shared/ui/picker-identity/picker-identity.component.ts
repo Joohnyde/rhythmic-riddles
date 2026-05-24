@@ -9,6 +9,6 @@ import { Team } from '../../../domain/game/models/team.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PickerIdentityComponent {
-  readonly team = input<Team | null | undefined>(null);
-  readonly showLabel = input(true);
+  readonly team = input<Team | null>(null);
+  readonly showLabel = input<boolean>(true);
 }
