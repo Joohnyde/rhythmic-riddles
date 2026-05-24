@@ -1,0 +1,13 @@
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface-soft);
+}
+.correct {
+  outline: 2px solid var(--success);
+}
+.wrong {
+  outline: 2px solid var(--danger);
+}

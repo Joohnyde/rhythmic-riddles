@@ -1,0 +1,17 @@
+.picker-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.picker-identity__image {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.picker-identity__name,
+.picker-identity__admin {
+  font-weight: 700;
+}

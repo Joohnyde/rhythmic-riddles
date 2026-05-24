@@ -1,0 +1,16 @@
+<main class="page shell" data-testid="tv-lobby-page">
+  @let vm = store.vm();
+
+  <header>
+    <p class="kicker">Lobby</p>
+    <h1 class="title">Teams</h1>
+  </header>
+  <section class="grid two">
+    @for (team of vm.teams; track team.id) {
+      <article class="card" [attr.data-testid]="'tv-team-card-' + team.id">
+        <img [src]="team.image" width="64" />
+        <h2 [attr.data-testid]="'tv-team-name-' + team.id">{{ team.name }}</h2>
+      </article>
+    }
+  </section>
+</main>
