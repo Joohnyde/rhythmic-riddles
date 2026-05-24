@@ -1,0 +1,16 @@
+<main class="page shell" data-testid="admin-winner-page">
+  @let vm = store.vm();
+
+  <header>
+    <p class="kicker">Final</p>
+    <h1 class="title">Winner</h1>
+  </header>
+  <section class="grid">
+    @for (score of vm.scores; track score.teamId) {
+      <article class="card header" [attr.data-testid]="'admin-winner-team-row-' + score.teamId">
+        <strong>{{ score.name }}</strong
+        ><span>{{ score.score }}</span>
+      </article>
+    }
+  </section>
+</main>

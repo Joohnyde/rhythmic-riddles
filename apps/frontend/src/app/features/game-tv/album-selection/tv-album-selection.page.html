@@ -1,0 +1,37 @@
+<main class="page shell" data-testid="tv-albums-page">
+  @let vm = store.vm();
+
+  <header>
+    <p class="kicker">Stage 1</p>
+    <h1 class="title">Albums</h1>
+  </header>
+  @if (!vm.loaded) {
+    <section class="card" data-testid="tv-albums-loading">Loading albums...</section>
+  } @else if (vm.selectedAlbum) {
+    <section class="card" data-testid="tv-selected-album">
+      <h2>{{ vm.selectedAlbum.chosenCategoryPreview.title }}</h2>
+      <p>
+        Picked by
+        <rr-picker-identity [team]="vm.pickedByTeam" />
+      </p>
+    </section>
+  } @else {
+    <p>
+      Now picking
+      <rr-picker-identity [team]="vm.pickedByTeam" />
+    </p>
+    <section class="grid two" data-testid="tv-album-list">
+      @for (album of vm.albums; track album.id) {
+        <article
+          class="card"
+          [class.card--disabled]="album.ordinalNumber !== null"
+          [attr.data-testid]="'tv-album-card-' + album.id"
+        >
+          <h2>{{ album.name }}</h2>
+
+          <img [src]="album.pickedByTeam" width="64" />
+        </article>
+      }
+    </section>
+  }
+</main>

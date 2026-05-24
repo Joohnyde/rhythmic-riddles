@@ -1,0 +1,27 @@
+<div class="card seek-timer" data-testid="song-seek-timer">
+  <div class="kicker">Snippet timer</div>
+
+  @if (showDebug) {
+    <div class="timer-row">
+      <span>Remaining</span>
+      <strong data-testid="song-seek-timer-remaining">
+        {{ remainingTime() | number: '1.1-1' }}s
+      </strong>
+    </div>
+
+    <progress
+      max="100"
+      [value]="progress() * 100"
+      data-testid="song-seek-timer-progress"
+    ></progress>
+
+    <div class="timer-meta">
+      <span data-testid="song-seek-timer-elapsed">
+        Elapsed: {{ currentTime() | number: '1.1-1' }}s
+      </span>
+      <span data-testid="song-seek-timer-total">
+        Total: {{ durationValue() | number: '1.1-1' }}s
+      </span>
+    </div>
+  }
+</div>

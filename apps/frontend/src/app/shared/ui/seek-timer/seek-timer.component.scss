@@ -1,0 +1,26 @@
+.seek-timer {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.timer-row,
+.timer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.timer-row strong {
+  font-size: 2rem;
+}
+
+progress {
+  width: 100%;
+  height: 1rem;
+}
+
+.timer-meta {
+  opacity: 0.75;
+  font-size: 0.875rem;
+}

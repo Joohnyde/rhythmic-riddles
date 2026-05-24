@@ -1,0 +1,18 @@
+<span class="picker-identity">
+  @if (team()) {
+    <img
+      class="picker-identity__image"
+      [src]="team()?.image"
+      [alt]="team()?.name ?? 'Team'"
+      data-testid="picker-identity-image"
+    />
+
+    @if (showLabel()) {
+      <span class="picker-identity__name" data-testid="picker-identity-name">
+        {{ team()?.name }}
+      </span>
+    }
+  } @else {
+    <span class="picker-identity__admin" data-testid="picker-identity-admin"> Admin </span>
+  }
+</span>

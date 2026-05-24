@@ -1,0 +1,63 @@
+<main class="page shell" data-testid="tv-song-round-page">
+  @let vm = store.vm();
+
+  <header>
+    <p class="kicker">Stage 2</p>
+    @if (vm.question) {
+      <h1 class="title" data-testid="tv-song-question">{{ vm.question }}</h1>
+    }
+  </header>
+
+  <section class="grid two">
+    <div>
+      @switch (vm.scenario) {
+        @case (SongScenario.Revealed) {
+          <rr-song-revealed-panel
+            [answer]="vm.answer"
+            [bravo]="vm.bravo"
+            [answerAudioSrc]="vm.songId ? audioUrls.answerUrl(vm.songId) : null"
+            [answerDuration]="vm.answerDuration"
+            (answerCompleted)="store.onAnswerAudioFinished()"
+          />
+        }
+
+        @case (SongScenario.FinishedUnrevealed) {
+          <rr-song-finished-panel />
+        }
+
+        @case (SongScenario.TeamAnswering) {
+          <rr-team-answering-panel [team]="vm.answeringTeam" />
+        }
+
+        @case (SongScenario.SystemError) {
+          <rr-system-error-panel />
+        }
+
+        @case (SongScenario.Playing) {
+          @if (vm.songId && vm.remaining !== null) {
+            <rr-audio-player
+              data-testid="tv-snippet-audio"
+              [src]="audioUrls.snippetUrl(vm.songId)"
+              [seek]="vm.seek ?? 0"
+              [remaining]="vm.remaining"
+              (completed)="store.onTrackFinished()"
+              (stateOut)="store.savePlaybackState($event)"
+            />
+          }
+        }
+
+        @default {
+          <rr-song-loading-panel />
+        }
+      }
+    </div>
+
+    @if (vm.teams.length && vm.lastPlayedSong && vm.scenario !== SongScenario.Revealed) {
+      <rr-team-scoreboard
+        [teams]="vm.teams"
+        [bravo]="vm.bravo"
+        [currentScheduleId]="vm.lastPlayedSong"
+      />
+    }
+  </section>
+</main>

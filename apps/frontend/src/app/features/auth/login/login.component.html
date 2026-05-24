@@ -1,0 +1,18 @@
+<form class="card grid" (ngSubmit)="login()" [attr.data-testid]="surface + '-login-form'">
+  <label class="grid">
+    <span class="kicker">Room code</span>
+    <input
+      name="roomCode"
+      [ngModel]="roomCode()"
+      (ngModelChange)="roomCode.set($event)"
+      [attr.data-testid]="surface + '-room-code-input'"
+      autocomplete="off"
+    />
+  </label>
+  @if (error()) {
+    <p class="muted" [attr.data-testid]="surface + '-login-error'">{{ error() }}</p>
+  }
+  <button type="submit" [disabled]="inTransit()" [attr.data-testid]="surface + '-login-button'">
+    Log in
+  </button>
+</form>

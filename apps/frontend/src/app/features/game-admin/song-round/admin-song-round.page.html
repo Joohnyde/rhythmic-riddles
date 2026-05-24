@@ -1,0 +1,114 @@
+<main class="page shell" data-testid="admin-song-round-page">
+  @let vm = store.vm();
+
+  <header class="header">
+    <div>
+      <p class="kicker">Stage 2</p>
+      <h1 class="title" data-testid="admin-song-question">{{ vm.question || 'Song round' }}</h1>
+    </div>
+  </header>
+
+  <section class="grid two">
+    <div>
+      @switch (vm.scenario) {
+        @case (SongScenario.Revealed) {
+          <rr-song-revealed-panel [answer]="vm.answer" [bravo]="vm.bravo" />
+
+          <div class="card actions">
+            <button
+              data-testid="admin-next-song-after-reveal-button"
+              [disabled]="vm.inTransit"
+              (click)="store.nextSong()"
+            >
+              Dalje
+            </button>
+          </div>
+        }
+
+        @case (SongScenario.FinishedUnrevealed) {
+          <rr-song-finished-panel />
+
+          <div class="card actions">
+            <button
+              data-testid="admin-repeat-song-button"
+              [disabled]="vm.inTransit"
+              (click)="store.advanceGame(true)"
+            >
+              Refresh
+            </button>
+
+            <button
+              data-testid="admin-reveal-answer-button"
+              [disabled]="vm.inTransit"
+              (click)="store.advanceGame(false)"
+            >
+              Reveal
+            </button>
+          </div>
+        }
+
+        @case (SongScenario.TeamAnswering) {
+          <rr-team-answering-panel [team]="vm.answeringTeam" />
+
+          <div class="card actions">
+            <button
+              class="success"
+              data-testid="admin-answer-correct-button"
+              [disabled]="vm.inTransit"
+              (click)="store.teamAnswered(true)"
+            >
+              Tacno
+            </button>
+
+            <button
+              class="danger"
+              data-testid="admin-answer-wrong-button"
+              [disabled]="vm.inTransit"
+              (click)="store.teamAnswered(false)"
+            >
+              Netacno
+            </button>
+          </div>
+        }
+
+        @case (SongScenario.SystemError) {
+          <rr-system-error-panel />
+
+          <div class="card actions">
+            <button
+              data-testid="admin-resolve-error-button"
+              [disabled]="vm.inTransit"
+              (click)="store.resolveError()"
+            >
+              Nastavi
+            </button>
+          </div>
+        }
+
+        @case (SongScenario.Playing) {
+          @if (vm.remaining !== null) {
+            <rr-seek-timer
+              [duration]="(vm.seek ?? 0) + vm.remaining"
+              [seek]="vm.seek ?? 0"
+              [showDebug]="true"
+              (completed)="store.onTrackFinished()"
+              (stateOut)="store.savePlaybackState($event)"
+            />
+          }
+        }
+
+        @default {
+          <rr-song-loading-panel />
+        }
+      }
+    </div>
+
+    @if (vm.teams.length && vm.lastPlayedSong) {
+      <rr-team-scoreboard
+        [teams]="vm.teams"
+        [bravo]="vm.bravo"
+        [currentScheduleId]="vm.lastPlayedSong"
+      />
+    }
+  </section>
+</main>
