@@ -5,6 +5,7 @@
 package com.cevapinxile.cestereg.persistence.entity;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateTeamRequest;
+import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -95,6 +96,13 @@ public class TeamEntity implements Serializable {
     this.image = ctr.image();
     this.name = ctr.name();
     this.buttonCode = ctr.buttonCode();
+  }
+  
+  public TeamEntity(E2eGameFixtureRequest.Team teamFixture){
+      this.id = teamFixture.id();
+      this.name = teamFixture.name();
+      this.buttonCode = teamFixture.buttonCode();
+      this.image = teamFixture.image();
   }
 
   public UUID getId() {

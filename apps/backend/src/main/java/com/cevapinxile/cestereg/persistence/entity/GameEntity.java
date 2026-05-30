@@ -5,6 +5,7 @@
 package com.cevapinxile.cestereg.persistence.entity;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
+import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -123,6 +124,15 @@ public class GameEntity implements Serializable {
             .ints(4, (int) 'A', (int) 'Z' + 1)
             .mapToObj(i -> "" + (char) i)
             .collect(Collectors.joining());
+  }
+  
+  public GameEntity(E2eGameFixtureRequest gameFixture){
+      this.id = gameFixture.id();
+      this.date = LocalDateTime.now();
+      this.maxAlbums = gameFixture.maxAlbums();
+      this.maxSongs = gameFixture.maxSongs();
+      this.stage = gameFixture.stage();
+      this.code = gameFixture.roomCode();
   }
 
   public UUID getId() {

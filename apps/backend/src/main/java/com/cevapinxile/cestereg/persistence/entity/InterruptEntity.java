@@ -4,6 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
+import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -156,6 +157,18 @@ public class InterruptEntity implements Serializable {
   public InterruptEntity(UUID id) {
     this.id = id;
   }
+
+    public InterruptEntity(E2eGameFixtureRequest.Interrupt interrupt) {
+        this.id = interrupt.id();
+        this.arrivedAt = interrupt.arrivedAt();
+        this.resolvedAt = interrupt.resolvedAt();
+        this.isCorrect = interrupt.correct();
+        if(interrupt.scenario()!= null)
+            this.scoreOrScenarioId = interrupt.scenario();
+        if(interrupt.score() != null)
+            this.scoreOrScenarioId = interrupt.score();
+        this.teamId = new TeamEntity(interrupt.teamId());
+    }
 
   public UUID getId() {
     return id;
