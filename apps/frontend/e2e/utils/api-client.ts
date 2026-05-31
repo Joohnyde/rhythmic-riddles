@@ -1,34 +1,26 @@
 import { APIRequestContext, expect } from '@playwright/test';
 import { BACKEND_URL } from './env';
 
+export type Team = { id: string; name: string; image?: string; buttonCode?: string };
+
 export async function createRoom(request: APIRequestContext): Promise<string> {
   const response = await request.post(`${BACKEND_URL}/api/v1/games`, {
     data: { maxSongs: 10, maxAlbums: 10 },
   });
-
-  expect(response.ok(), `create room failed: ${response.status()} ${await response.text()}`).toBeTruthy();
-
+  expect(
+    response.ok(),
+    `create room failed: ${response.status()} ${await response.text()}`,
+  ).toBeTruthy();
   const body = (await response.json()) as { roomCode?: string };
-  expect(body.roomCode, 'create room response should include roomCode').toBeTruthy();
+  expect(body.roomCode).toBeTruthy();
   return body.roomCode!;
-}
-
-export async function changeStage(
-  request: APIRequestContext,
-  roomCode: string,
-  stageId: number,
-): Promise<number> {
-  const response = await request.put(`${BACKEND_URL}/api/v1/games/${roomCode}/stage`, {
-    data: { stageId },
-  });
-  return response.status();
 }
 
 export async function createTeam(
   request: APIRequestContext,
   roomCode: string,
   name = `Team ${Date.now()}`,
-): Promise<{ id: string; name: string; image?: string }> {
+): Promise<Team> {
   const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/teams`, {
     data: {
       name,
@@ -36,9 +28,11 @@ export async function createTeam(
       image: `https://example.com/${Date.now()}.png`,
     },
   });
-
-  expect(response.ok(), `create team failed: ${response.status()} ${await response.text()}`).toBeTruthy();
-  return (await response.json()) as { id: string; name: string; image?: string };
+  expect(
+    response.ok(),
+    `create team failed: ${response.status()} ${await response.text()}`,
+  ).toBeTruthy();
+  return (await response.json()) as Team;
 }
 
 export async function deleteTeam(
@@ -47,7 +41,10 @@ export async function deleteTeam(
   teamId: string,
 ): Promise<void> {
   const response = await request.delete(`${BACKEND_URL}/api/v1/games/${roomCode}/teams/${teamId}`);
-  expect(response.ok(), `delete team failed: ${response.status()} ${await response.text()}`).toBeTruthy();
+  expect(
+    response.ok(),
+    `delete team failed: ${response.status()} ${await response.text()}`,
+  ).toBeTruthy();
 }
 
 export async function tryCreateInvalidTeam(
@@ -65,22 +62,23 @@ export async function pickAlbum(
   roomCode: string,
   categoryId: string,
   teamId: string | null,
-): Promise<{ categoryId: string; pickedByTeam?: unknown; started?: boolean }> {
-  const response = await request.put(`${BACKEND_URL}/api/v1/games/${roomCode}/categories/${categoryId}/pick`, {
-    data: { teamId },
-  });
-
-  expect(response.ok(), `pick album failed: ${response.status()} ${await response.text()}`).toBeTruthy();
-  return (await response.json()) as { categoryId: string; pickedByTeam?: unknown; started?: boolean };
+): Promise<number> {
+  const response = await request.put(
+    `${BACKEND_URL}/api/v1/games/${roomCode}/categories/${categoryId}/pick`,
+    { data: { teamId } },
+  );
+  return response.status();
 }
 
 export async function startCategory(
   request: APIRequestContext,
   roomCode: string,
   categoryId: string,
-): Promise<void> {
-  const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/categories/${categoryId}/start`);
-  expect(response.ok(), `start category failed: ${response.status()} ${await response.text()}`).toBeTruthy();
+): Promise<number> {
+  const response = await request.post(
+    `${BACKEND_URL}/api/v1/games/${roomCode}/categories/${categoryId}/start`,
+  );
+  return response.status();
 }
 
 export async function createInterrupt(
@@ -100,9 +98,10 @@ export async function answerInterrupt(
   answerId: string,
   correct: boolean,
 ): Promise<number> {
-  const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/interrupts/${answerId}/answer`, {
-    data: { correct },
-  });
+  const response = await request.post(
+    `${BACKEND_URL}/api/v1/games/${roomCode}/interrupts/${answerId}/answer`,
+    { data: { correct } },
+  );
   return response.status();
 }
 
@@ -111,9 +110,10 @@ export async function resolveSystemInterrupt(
   roomCode: string,
   scheduleId: string,
 ): Promise<number> {
-  const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/interrupts/system/resolve`, {
-    data: { scheduleId },
-  });
+  const response = await request.post(
+    `${BACKEND_URL}/api/v1/games/${roomCode}/interrupts/system/resolve`,
+    { data: { scheduleId } },
+  );
   return response.status();
 }
 
@@ -122,7 +122,9 @@ export async function replaySchedule(
   roomCode: string,
   scheduleId: string,
 ): Promise<number> {
-  const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/schedules/${scheduleId}/replay`);
+  const response = await request.post(
+    `${BACKEND_URL}/api/v1/games/${roomCode}/schedules/${scheduleId}/replay`,
+  );
   return response.status();
 }
 
@@ -131,14 +133,13 @@ export async function revealSchedule(
   roomCode: string,
   scheduleId: string,
 ): Promise<number> {
-  const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/schedules/${scheduleId}/reveal`);
+  const response = await request.post(
+    `${BACKEND_URL}/api/v1/games/${roomCode}/schedules/${scheduleId}/reveal`,
+  );
   return response.status();
 }
 
-export async function nextSchedule(
-  request: APIRequestContext,
-  roomCode: string,
-): Promise<number> {
+export async function nextSchedule(request: APIRequestContext, roomCode: string): Promise<number> {
   const response = await request.post(`${BACKEND_URL}/api/v1/games/${roomCode}/schedules/next`);
   return response.status();
 }

@@ -1,22 +1,19 @@
 import { expect, Page } from '@playwright/test';
-import { TV_CONNECTED_ROUTE } from '../utils/env';
+import { selectors } from '../utils/selectors';
 
 export class TvPage {
   constructor(private readonly page: Page) {}
 
-  async expectConnectedAwayFromLogin(): Promise<void> {
-    await expect(this.page).toHaveURL(TV_CONNECTED_ROUTE);
+  async expectLobby(): Promise<void> {
+    await expect(selectors.tvLobbyPage(this.page)).toBeVisible();
   }
-
-  async expectQuestionVisible(): Promise<void> {
-    await expect(this.page.getByTestId('tv-current-question')).toBeVisible();
+  async expectAlbums(): Promise<void> {
+    await expect(selectors.tvAlbumsPage(this.page)).toBeVisible();
   }
-
-  async expectAnswerVisible(): Promise<void> {
-    await expect(this.page.getByTestId('tv-answer-visible').or(this.page.getByTestId('tv-current-answer'))).toBeVisible();
+  async expectSongs(): Promise<void> {
+    await expect(selectors.tvSongsPage(this.page)).toBeVisible();
   }
-
-  async expectSystemErrorVisible(): Promise<void> {
-    await expect(this.page.getByTestId('tv-system-error')).toBeVisible();
+  async expectWinner(): Promise<void> {
+    await expect(selectors.tvWinnerPage(this.page)).toBeVisible();
   }
 }

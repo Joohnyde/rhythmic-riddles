@@ -12,10 +12,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "e2e": "playwright test",
-    "e2e:ws": "playwright test e2e/specs/ws-*.spec.ts",
+    "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\"",
     "e2e:headed": "playwright test --headed",
     "e2e:debug": "playwright test --debug",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "test:catalog:playwright": "playwright test --config=playwright.catalog.config.ts"
   },
   "prettier": {
     "printWidth": 100,

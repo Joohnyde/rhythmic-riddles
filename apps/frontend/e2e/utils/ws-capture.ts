@@ -12,7 +12,9 @@ export type CapturedWsFrame = {
 function parseJson(payload: string): Record<string, unknown> | undefined {
   try {
     const parsed = JSON.parse(payload);
-    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
+    return typeof parsed === 'object' && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : undefined;
   } catch {
     return undefined;
   }
@@ -37,7 +39,6 @@ export function captureWebSocketFrames(page: Page): CapturedWsFrame[] {
         timestamp: Date.now(),
       });
     });
-
     ws.on('framereceived', (event) => {
       frames.push({
         url: ws.url(),
@@ -59,30 +60,31 @@ export function backendWebSocketFrames(frames: CapturedWsFrame[]): CapturedWsFra
   return frames.filter((frame) => frame.url.startsWith(prefix));
 }
 
-export function backendApplicationFrames(frames: CapturedWsFrame[]): CapturedWsFrame[] {
+export function backendReceivedApplicationFrames(frames: CapturedWsFrame[]): CapturedWsFrame[] {
   return backendWebSocketFrames(frames).filter(
-    (frame) =>
-      frame.direction === 'received' &&
-      frame.json &&
-      typeof frame.json.type === 'string',
+    (frame) => frame.direction === 'received' && frame.json && typeof frame.json.type === 'string',
   );
 }
 
 export function backendSentApplicationFrames(frames: CapturedWsFrame[]): CapturedWsFrame[] {
   return backendWebSocketFrames(frames).filter(
-    (frame) =>
-      frame.direction === 'sent' &&
-      frame.json &&
-      typeof frame.json.type === 'string',
+    (frame) => frame.direction === 'sent' && frame.json && typeof frame.json.type === 'string',
   );
 }
 
 export function backendFramesOfType(frames: CapturedWsFrame[], type: string): CapturedWsFrame[] {
-  return backendApplicationFrames(frames).filter((frame) => frame.json?.type === type);
+  return backendReceivedApplicationFrames(frames).filter((frame) => frame.json?.type === type);
 }
 
 export function countBackendWsFramesOfType(frames: CapturedWsFrame[], type: string): number {
   return backendFramesOfType(frames, type).length;
+}
+
+export function lastFrameOfType(
+  frames: CapturedWsFrame[],
+  type: string,
+): CapturedWsFrame | undefined {
+  return backendFramesOfType(frames, type).at(-1);
 }
 
 export async function expectBackendWsFrameType(
@@ -93,36 +95,45 @@ export async function expectBackendWsFrameType(
   await expect
     .poll(() => countBackendWsFramesOfType(frames, type), {
       timeout,
-      message: `expected backend websocket frame of type ${type}`,
+      message: `expected backend websocket frame ${type}`,
     })
     .toBeGreaterThanOrEqual(1);
+}
+
+export async function expectBackendWsFrameTypeAfter(
+  frames: CapturedWsFrame[],
+  type: string,
+  previousCount: number,
+  timeout = 10_000,
+): Promise<void> {
+  await expect
+    .poll(() => countBackendWsFramesOfType(frames, type), {
+      timeout,
+      message: `expected new backend websocket frame ${type}`,
+    })
+    .toBe(previousCount + 1);
 }
 
 export async function expectNoAdditionalFramesOfType(
   frames: CapturedWsFrame[],
   type: string,
-  baseline: number,
-  settleMillis = 750,
+  previousCount: number,
+  settleMs = 750,
 ): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, settleMillis));
-  expect(countBackendWsFramesOfType(frames, type)).toBe(baseline);
+  await new Promise((resolve) => setTimeout(resolve, settleMs));
+  expect(countBackendWsFramesOfType(frames, type)).toBe(previousCount);
 }
 
-export function backendWsUrls(frames: CapturedWsFrame[]): string[] {
-  return [...new Set(backendWebSocketFrames(frames).map((frame) => frame.url))];
-}
-
-export function hasExpectedRoleWsUrl(frames: CapturedWsFrame[], role: Role, roomCode: string): boolean {
-  return backendWsUrls(frames).includes(wsUrlFor(role, roomCode));
+export function hasExpectedRoleWsUrl(
+  frames: CapturedWsFrame[],
+  role: Role,
+  roomCode: string,
+): boolean {
+  return backendWebSocketFrames(frames).some((frame) => frame.url === wsUrlFor(role, roomCode));
 }
 
 export function observedBackendTypes(frames: CapturedWsFrame[]): string[] {
-  return backendApplicationFrames(frames).map((frame) => String(frame.json!.type));
-}
-
-export function lastFrameOfType(frames: CapturedWsFrame[], type: string): CapturedWsFrame | undefined {
-  const matches = backendFramesOfType(frames, type);
-  return matches[matches.length - 1];
+  return backendReceivedApplicationFrames(frames).map((frame) => String(frame.json!.type));
 }
 
 export async function settle(ms = 750): Promise<void> {
