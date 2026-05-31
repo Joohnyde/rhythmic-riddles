@@ -9,8 +9,6 @@ import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiEx
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.request.StageIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.RoomCodeResponse;
-import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.GameService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -96,12 +94,8 @@ Workflow:
   public ResponseEntity<?> createGame(@RequestBody CreateGameRequest cgr) {
     try {
       return ResponseEntity.ok(new RoomCodeResponse(gameService.createGame(cgr)));
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException().toString());
+      return handleApiException(LOG, ex);
     }
   }
 

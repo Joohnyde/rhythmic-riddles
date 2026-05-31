@@ -19,7 +19,8 @@ import org.springframework.web.socket.CloseStatus;
 class WebSocketSoakChaosIntegrationTest extends AbstractWebSocketIntegrationTestSupport {
 
   @Test
-  void scaledReconnectSoakLeavesRegistryReusableAndDoesNotDuplicateFinalBroadcast() throws Exception {
+  void scaledReconnectSoakLeavesRegistryReusableAndDoesNotDuplicateFinalBroadcast()
+      throws Exception {
     final SocketProbe admin = connectAdmin(ROOM_A);
     admin.readJson();
 
@@ -47,7 +48,8 @@ class WebSocketSoakChaosIntegrationTest extends AbstractWebSocketIntegrationTest
     tv.readJson();
 
     for (int i = 0; i < 5; i++) {
-      broadcastGateway.broadcast(ROOM_A, "{\"type\":\"before_forced_close\",\"sequence\":" + i + "}");
+      broadcastGateway.broadcast(
+          ROOM_A, "{\"type\":\"before_forced_close\",\"sequence\":" + i + "}");
     }
     tv.close(CloseStatus.GOING_AWAY);
     assertEventuallyFalse(() -> sessionRegistry.isTvPresent(ROOM_A));
@@ -121,11 +123,13 @@ class WebSocketSoakChaosIntegrationTest extends AbstractWebSocketIntegrationTest
 
       final String maybeDelivered = admin.pollFrame(700);
       if (maybeDelivered != null) {
-        assertEquals("after_large_ignored_payload", mapper.readValue(maybeDelivered, Map.class).get("type"));
+        assertEquals(
+            "after_large_ignored_payload", mapper.readValue(maybeDelivered, Map.class).get("type"));
         return;
       }
 
-      // The close can happen asynchronously after isOpen() was checked, so fall through to recovery.
+      // The close can happen asynchronously after isOpen() was checked, so fall through to
+      // recovery.
       admin.close(CloseStatus.GOING_AWAY);
       closeRegistrySession(ROOM_A, true);
     }

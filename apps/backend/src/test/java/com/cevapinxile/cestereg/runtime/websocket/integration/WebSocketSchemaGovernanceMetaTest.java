@@ -48,7 +48,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
   @Test
   void everyPublishedAngularMessageTypeHasExactlyOneSchemaAndExactlyOneExample() throws Exception {
     assertEquals(PUBLISHED_FRAME_TYPES, catalogTypes());
-    assertEquals(PUBLISHED_FRAME_TYPES, resourceNames("/websocket-contracts/v1/schema", ".schema.json"));
+    assertEquals(
+        PUBLISHED_FRAME_TYPES, resourceNames("/websocket-contracts/v1/schema", ".schema.json"));
     assertEquals(PUBLISHED_FRAME_TYPES, resourceNames("/websocket-contracts/v1/examples", ".json"));
   }
 
@@ -58,10 +59,14 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
     for (String type : PUBLISHED_FRAME_TYPES) {
       final JsonNode schema = readJson("/websocket-contracts/v1/schema/" + type + ".schema.json");
       assertEquals("implicit-v1", schema.path("x-protocolVersion").asText());
-      assertFalse(schema.path("title").asText().isBlank(), "schema must have a reviewable title: " + type);
-      assertFalse(schema.path("x-recipients").isMissingNode(), "schema must declare recipients: " + type);
-      assertTrue(schema.path("x-replaySafe").isBoolean(), "schema must declare replay safety: " + type);
-      assertContainsTypeConst(schema, type, type + " schema must constrain the top-level type field");
+      assertFalse(
+          schema.path("title").asText().isBlank(), "schema must have a reviewable title: " + type);
+      assertFalse(
+          schema.path("x-recipients").isMissingNode(), "schema must declare recipients: " + type);
+      assertTrue(
+          schema.path("x-replaySafe").isBoolean(), "schema must declare replay safety: " + type);
+      assertContainsTypeConst(
+          schema, type, type + " schema must constrain the top-level type field");
       assertRootAdditionalPropertiesFalse(schema, type);
     }
   }
@@ -71,7 +76,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
       throws Exception {
     for (String type : PUBLISHED_FRAME_TYPES) {
       final JsonNode payload = readJson("/websocket-contracts/v1/examples/" + type + ".json");
-      assertEquals(type, payload.path("type").asText(), "example type discriminator must match filename");
+      assertEquals(
+          type, payload.path("type").asText(), "example type discriminator must match filename");
       assertValid(type, payload);
 
       for (String other : PUBLISHED_FRAME_TYPES) {
@@ -92,9 +98,13 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
       entry.path("recipients").forEach(node -> recipients.add(node.asText()));
 
       if (Set.of("new_team", "kick_team", "album_picked").contains(type)) {
-        assertEquals(List.of("tv"), recipients, type + " should stay TV-only unless Angular/admin handling changes");
+        assertEquals(
+            List.of("tv"),
+            recipients,
+            type + " should stay TV-only unless Angular/admin handling changes");
       } else {
-        assertEquals(List.of("admin", "tv"), recipients, type + " should be consumed by both admin and TV");
+        assertEquals(
+            List.of("admin", "tv"), recipients, type + " should be consumed by both admin and TV");
       }
     }
   }
@@ -106,9 +116,13 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
     for (JsonNode entry : catalog.path("frameTypes")) {
       final String type = entry.path("type").asText();
       if ("welcome".equals(type)) {
-        assertTrue(entry.path("replaySafe").asBoolean(), "welcome is a state snapshot and should remain replay-safe");
+        assertTrue(
+            entry.path("replaySafe").asBoolean(),
+            "welcome is a state snapshot and should remain replay-safe");
       } else {
-        assertFalse(entry.path("replaySafe").asBoolean(), type + " is an event/command and should not be replay-safe");
+        assertFalse(
+            entry.path("replaySafe").asBoolean(),
+            type + " is an event/command and should not be replay-safe");
       }
     }
   }
@@ -125,7 +139,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
 
   private JsonSchema schema(final String type) {
     try {
-      return schemaFactory.getSchema(readJson("/websocket-contracts/v1/schema/" + type + ".schema.json"));
+      return schemaFactory.getSchema(
+          readJson("/websocket-contracts/v1/schema/" + type + ".schema.json"));
     } catch (Exception ex) {
       throw new IllegalStateException(ex);
     }
@@ -139,7 +154,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
     return types;
   }
 
-  private List<String> resourceNames(final String resourceDir, final String suffix) throws Exception {
+  private List<String> resourceNames(final String resourceDir, final String suffix)
+      throws Exception {
     final URI uri = getClass().getResource(resourceDir).toURI();
     final Path dir = Path.of(uri);
     final List<String> names = new ArrayList<>();
@@ -166,7 +182,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
     }
   }
 
-  private static void assertContainsTypeConst(final JsonNode node, final String type, final String message) {
+  private static void assertContainsTypeConst(
+      final JsonNode node, final String type, final String message) {
     if (node.isObject()) {
       if (node.path("const").asText(null) != null && type.equals(node.path("const").asText())) {
         return;
@@ -206,7 +223,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
     return false;
   }
 
-  private static void assertRootAdditionalPropertiesFalse(final JsonNode schema, final String type) {
+  private static void assertRootAdditionalPropertiesFalse(
+      final JsonNode schema, final String type) {
     if (schema.has("oneOf")) {
       for (JsonNode variant : schema.path("oneOf")) {
         assertTrue(

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
@@ -53,7 +52,8 @@ class RealWebSocketIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     final Map<?, ?> recovery = reconnected.readJson();
     assertEquals("welcome", recovery.get("type"));
     assertEquals(ROOM_A, recovery.get("roomCode"));
-    assertNull(reconnected.pollFrame(250), "reconnected admin should receive one recovery welcome only");
+    assertNull(
+        reconnected.pollFrame(250), "reconnected admin should receive one recovery welcome only");
   }
 
   @Test
@@ -64,14 +64,16 @@ class RealWebSocketIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
 
     connectPossiblyRejected(0, ROOM_A, duplicate);
 
-    assertNull(duplicate.pollFrame(300), "duplicate client must not receive a recovery/welcome frame");
+    assertNull(
+        duplicate.pollFrame(300), "duplicate client must not receive a recovery/welcome frame");
     assertTrue(sessionRegistry.isAdminPresent(ROOM_A));
     broadcastGateway.toAdmin(ROOM_A, "{\"type\":\"still_original\"}");
     assertEquals("still_original", first.readJson().get("type"));
   }
 
   @Test
-  void existingTvDoesNotReceiveDuplicateRecoveryFrameWhenDuplicateTvAttemptsToConnect() throws Exception {
+  void existingTvDoesNotReceiveDuplicateRecoveryFrameWhenDuplicateTvAttemptsToConnect()
+      throws Exception {
     final SocketProbe tv = connectTv(ROOM_A);
     assertEquals("welcome", tv.readJson().get("type"));
     final SocketProbe duplicateTv = new SocketProbe();
@@ -176,7 +178,8 @@ class RealWebSocketIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     final SocketProbe queryOnly = new SocketProbe();
     final SocketProbe missingPathPayload = new SocketProbe();
 
-    assertFalse(connectUrlPossiblyRejected("ws://localhost:" + port + "/ws?room=" + ROOM_A, queryOnly));
+    assertFalse(
+        connectUrlPossiblyRejected("ws://localhost:" + port + "/ws?room=" + ROOM_A, queryOnly));
     assertFalse(connectUrlPossiblyRejected("ws://localhost:" + port + "/ws/", missingPathPayload));
 
     assertNull(queryOnly.pollFrame(250));
@@ -192,7 +195,8 @@ class RealWebSocketIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     admin.send("{this-is-not-json");
 
     assertNull(admin.pollFrame(300), "malformed inbound client JSON must not create server noise");
-    assertTrue(admin.isOpen(), "server should not kill an otherwise valid socket for ignored input");
+    assertTrue(
+        admin.isOpen(), "server should not kill an otherwise valid socket for ignored input");
     broadcastGateway.toAdmin(ROOM_A, "{\"type\":\"after_malformed\"}");
     assertEquals("after_malformed", admin.readJson().get("type"));
   }
@@ -204,7 +208,8 @@ class RealWebSocketIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
 
     tv.send("{\"type\":\"unsupported_admin_command\",\"payload\":{\"x\":1}}");
 
-    assertNull(tv.pollFrame(300), "unsupported inbound message type must not be echoed or broadcast");
+    assertNull(
+        tv.pollFrame(300), "unsupported inbound message type must not be echoed or broadcast");
     assertTrue(tv.isOpen());
     broadcastGateway.toTv(ROOM_A, "{\"type\":\"after_unsupported\"}");
     assertEquals("after_unsupported", tv.readJson().get("type"));
@@ -230,7 +235,8 @@ class RealWebSocketIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     assertPause(tv.readJson(), fixture.team().getId());
 
     interruptService.answer(fixture.teamInterrupt().getId(), new AnswerRequest(false), ROOM_A);
-    assertAnswer(admin.readJson(), fixture.team().getId(), fixture.currentSchedule().getId(), false);
+    assertAnswer(
+        admin.readJson(), fixture.team().getId(), fixture.currentSchedule().getId(), false);
     assertAnswer(tv.readJson(), fixture.team().getId(), fixture.currentSchedule().getId(), false);
 
     scheduleService.revealAnswer(fixture.currentSchedule().getId(), ROOM_A);

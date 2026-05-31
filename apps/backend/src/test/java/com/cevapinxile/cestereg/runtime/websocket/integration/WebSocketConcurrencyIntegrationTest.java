@@ -63,8 +63,7 @@ class WebSocketConcurrencyIntegrationTest extends AbstractWebSocketIntegrationTe
       }
 
       assertTrue(
-          welcomeFrames <= 1,
-          "concurrent admin joins must never create duplicate welcome winners");
+          welcomeFrames <= 1, "concurrent admin joins must never create duplicate welcome winners");
       assertTrue(
           sessionRegistry.isAdminPresent(ROOM_A) || welcomeFrames == 0,
           "race may reject all transient sockets, but must not register duplicate admin state");
@@ -73,8 +72,10 @@ class WebSocketConcurrencyIntegrationTest extends AbstractWebSocketIntegrationTe
       for (SocketProbe probe : probes) {
         probe.close(CloseStatus.NORMAL);
       }
-      // Some containers leave the winning racing session registered briefly even after client-side close.
-      // Explicitly close the registry session: the invariant is no duplicate winner, not timing of async cleanup.
+      // Some containers leave the winning racing session registered briefly even after client-side
+      // close.
+      // Explicitly close the registry session: the invariant is no duplicate winner, not timing of
+      // async cleanup.
       closeRegistrySession(ROOM_A, true);
     }
 
@@ -168,7 +169,8 @@ class WebSocketConcurrencyIntegrationTest extends AbstractWebSocketIntegrationTe
     try {
       final Future<?> removeRoom = executor.submit(() -> gamesByCode.remove(ROOM_A));
       final Future<?> broadcastRoomA =
-          executor.submit(() -> broadcastGateway.broadcast(ROOM_A, "{\"type\":\"during_room_removal\"}"));
+          executor.submit(
+              () -> broadcastGateway.broadcast(ROOM_A, "{\"type\":\"during_room_removal\"}"));
       removeRoom.get(3, TimeUnit.SECONDS);
       broadcastRoomA.get(3, TimeUnit.SECONDS);
     } finally {

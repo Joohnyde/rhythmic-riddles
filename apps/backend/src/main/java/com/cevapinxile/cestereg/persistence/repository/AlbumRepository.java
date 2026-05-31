@@ -9,9 +9,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- *
  * @author denijal
  */
-public interface AlbumRepository extends JpaRepository<AlbumEntity, UUID> {
-    
-}
+public interface AlbumRepository extends JpaRepository<AlbumEntity, UUID> {}

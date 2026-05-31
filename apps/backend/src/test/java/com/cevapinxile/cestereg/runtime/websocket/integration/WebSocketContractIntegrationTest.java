@@ -67,7 +67,8 @@ class WebSocketContractIntegrationTest extends AbstractWebSocketIntegrationTestS
     tv.send("{\"type\":\"song_next\"}");
 
     assertNull(admin.pollFrame(350), "TV-originated privileged command JSON must not reach admin");
-    assertNull(tv.pollFrame(350), "server must not echo or accept TV-originated privileged commands");
+    assertNull(
+        tv.pollFrame(350), "server must not echo or accept TV-originated privileged commands");
     assertTrue(sessionRegistry.areBothPresent(ROOM_A));
   }
 }

@@ -4,7 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
-import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -75,13 +75,13 @@ public class AlbumEntity implements Serializable {
     this.name = name;
   }
 
-  public AlbumEntity(E2eGameFixtureRequest.Album albumFixture){
-      this.id = albumFixture.id();
-      this.name = albumFixture.name();
-      this.customQuestion = albumFixture.customQuestion();
-      this.categoryList = new ArrayList<>();
+  public AlbumEntity(E2eGameFixtureRequest.Album albumFixture) {
+    this.id = albumFixture.id();
+    this.name = albumFixture.name();
+    this.customQuestion = albumFixture.customQuestion();
+    this.categoryList = new ArrayList<>();
   }
-  
+
   public UUID getId() {
     return id;
   }

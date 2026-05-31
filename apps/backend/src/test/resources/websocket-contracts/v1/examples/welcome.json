@@ -8,11 +8,14 @@
   "answerDuration": 8.0,
   "scores": [
     {
-      "id": "e94c5243-6954-452b-8fd2-f94210fcc13b",
+      "teamId": "e94c5243-6954-452b-8fd2-f94210fcc13b",
+      "image": "team.png",
       "name": "Team A",
-      "points": 10
+      "score": 10,
+      "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9"
     }
   ],
   "seek": 1.0,
-  "remaining": 14.0
+  "remaining": 14.0,
+  "revealed": false
 }

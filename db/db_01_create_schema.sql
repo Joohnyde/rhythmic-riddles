@@ -218,7 +218,7 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_interrupt_team') THEN
     ALTER TABLE ONLY public.interrupt
-      ADD CONSTRAINT fk_interrupt_team FOREIGN KEY (team_id) REFERENCES public.team(id);
+      ADD CONSTRAINT fk_interrupt_team FOREIGN KEY (team_id) REFERENCES public.team(id) ON DELETE CASCADE;
   END IF;
 END $$;
 

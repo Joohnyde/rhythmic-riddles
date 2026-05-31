@@ -4,7 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
-import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -107,12 +107,17 @@ public class ScheduleEntity implements Serializable {
     this.ordinalNumber = ordinalNumber;
   }
 
-    public ScheduleEntity(E2eGameFixtureRequest.Schedule schedule) {
-        this.id = schedule.id();
-        this.ordinalNumber = schedule.ordinalNumber();
-        this.startedAt = schedule.startedAt();
-        this.revealedAt = schedule.revealedAt();
-    }
+  public ScheduleEntity(
+      E2eGameFixtureRequest.Schedule scheduleFixture,
+      CategoryEntity newCategory,
+      TrackEntity newTrack) {
+    this.id = scheduleFixture.id();
+    this.ordinalNumber = scheduleFixture.ordinalNumber();
+    this.startedAt = scheduleFixture.startedAt();
+    this.revealedAt = scheduleFixture.revealedAt();
+    this.categoryId = newCategory;
+    this.trackId = newTrack;
+  }
 
   public UUID getId() {
     return id;

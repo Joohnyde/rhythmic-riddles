@@ -182,7 +182,7 @@ public class TestCatalogConsistencyTest {
                 .setHeader()
                 .setSkipHeaderRecord(true)
                 .setIgnoreSurroundingSpaces(true)
-                .build()
+                .get()
                 .parse(reader)) {
 
       Map<String, Integer> headerMap = parser.getHeaderMap();
@@ -190,11 +190,17 @@ public class TestCatalogConsistencyTest {
         fail("Could not read CSV header from: " + TEST_CATALOG.toAbsolutePath());
       }
 
+      requireCsvHeader(headerMap, "framework");
       requireCsvHeader(headerMap, "file");
       requireCsvHeader(headerMap, "suite");
       requireCsvHeader(headerMap, "test_name");
 
       for (org.apache.commons.csv.CSVRecord record : parser) {
+        String framework = getCsvValue(record, "framework");
+        if (!"junit".equalsIgnoreCase(framework)) {
+          continue;
+        }
+
         String file = getCsvValue(record, "file");
         if (file.contains("/")) file = file.substring(file.lastIndexOf('/') + 1);
         String suite = getCsvValue(record, "suite");
@@ -206,7 +212,7 @@ public class TestCatalogConsistencyTest {
           fail(
               "Malformed row in test-catalog.csv at CSV record "
                   + record.getRecordNumber()
-                  + ". Required columns: file, test_name");
+                  + ". Required columns for junit rows: framework, file, test_name");
         }
 
         TestKey key = new TestKey(file, suite == null ? "" : suite.trim(), testName);

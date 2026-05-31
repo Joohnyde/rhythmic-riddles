@@ -96,7 +96,8 @@ class WebSocketResourceLeakIntegrationTest extends AbstractWebSocketIntegrationT
       final SocketProbe duplicate = new SocketProbe();
       duplicates.add(duplicate);
       connectPossiblyRejected(i % 2, ROOM_A, duplicate);
-      assertNull(duplicate.pollFrame(100), "duplicate slot contender must not receive application frames");
+      assertNull(
+          duplicate.pollFrame(100), "duplicate slot contender must not receive application frames");
       duplicate.close(CloseStatus.NORMAL);
     }
 

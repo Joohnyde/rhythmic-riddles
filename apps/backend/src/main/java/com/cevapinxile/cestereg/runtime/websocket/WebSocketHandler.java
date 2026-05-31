@@ -11,6 +11,7 @@ import com.cevapinxile.cestereg.runtime.broadcast.WebSocketBroadcastGateway;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -96,6 +97,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
         interruptService.interrupt(roomCode, null);
       } catch (DerivedException ex) {
         LOG.info("How do I return this?", ex);
+      } catch (DataIntegrityViolationException ignored) {
+        // Expected after E2E room cleanup; referenced game no longer exists.
       }
     }
   }

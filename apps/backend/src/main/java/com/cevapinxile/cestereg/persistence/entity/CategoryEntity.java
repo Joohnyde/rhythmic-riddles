@@ -4,7 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
-import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,29 +28,29 @@ import java.util.UUID;
 @Entity
 @Table(name = "category")
 @NamedQueries({
-    @NamedQuery(name = "CategoryEntity.findAll", query = "SELECT c FROM CategoryEntity c"),
-    @NamedQuery(
-            name = "CategoryEntity.findByOrdinalNumber",
-            query = "SELECT c FROM CategoryEntity c WHERE c.ordinalNumber = :ordinalNumber"),
-    @NamedQuery(
-            name = "CategoryEntity.findByIsDone",
-            query = "SELECT c FROM CategoryEntity c WHERE c.isDone = :isDone"),
-    @NamedQuery(
-            name = "CategoryEntity.findByGameId",
-            query
-            = """
+  @NamedQuery(name = "CategoryEntity.findAll", query = "SELECT c FROM CategoryEntity c"),
+  @NamedQuery(
+      name = "CategoryEntity.findByOrdinalNumber",
+      query = "SELECT c FROM CategoryEntity c WHERE c.ordinalNumber = :ordinalNumber"),
+  @NamedQuery(
+      name = "CategoryEntity.findByIsDone",
+      query = "SELECT c FROM CategoryEntity c WHERE c.isDone = :isDone"),
+  @NamedQuery(
+      name = "CategoryEntity.findByGameId",
+      query =
+          """
               SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CategorySimple(c)
               FROM   CategoryEntity c
               WHERE  c.gameId.id = :gameId
               """),
-    @NamedQuery(
-            name = "CategoryEntity.findNextId",
-            query
-            = "SELECT COALESCE(MAX(c.ordinalNumber), 0)+1 FROM CategoryEntity c WHERE c.gameId.id = :gameId"),
-    @NamedQuery(
-            name = "CategoryEntity.findLastCategory",
-            query
-            = """
+  @NamedQuery(
+      name = "CategoryEntity.findNextId",
+      query =
+          "SELECT COALESCE(MAX(c.ordinalNumber), 0)+1 FROM CategoryEntity c WHERE c.gameId.id = :gameId"),
+  @NamedQuery(
+      name = "CategoryEntity.findLastCategory",
+      query =
+          """
               SELECT   NEW com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory(c)
               FROM     CategoryEntity c
               WHERE    c.gameId.id = :gameId
@@ -60,110 +60,112 @@ import java.util.UUID;
 })
 public class CategoryEntity implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    @Id
-    @Basic(optional = false)
-    @NotNull
-    @Lob
-    @Column(name = "id")
-    private UUID id;
+  @Id
+  @Basic(optional = false)
+  @NotNull
+  @Lob
+  @Column(name = "id")
+  private UUID id;
 
-    @Column(name = "ordinal_number")
-    private Integer ordinalNumber;
+  @Column(name = "ordinal_number")
+  private Integer ordinalNumber;
 
-    @Column(name = "is_done")
-    private Boolean isDone;
+  @Column(name = "is_done")
+  private Boolean isDone;
 
-    @OneToMany(mappedBy = "categoryId")
-    private List<ScheduleEntity> scheduleList;
+  @OneToMany(mappedBy = "categoryId")
+  private List<ScheduleEntity> scheduleList;
 
-    @JoinColumn(name = "album_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
-    private AlbumEntity albumId;
+  @JoinColumn(name = "album_id", referencedColumnName = "id")
+  @ManyToOne(optional = false)
+  private AlbumEntity albumId;
 
-    @JoinColumn(name = "game_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
-    private GameEntity gameId;
+  @JoinColumn(name = "game_id", referencedColumnName = "id")
+  @ManyToOne(optional = false)
+  private GameEntity gameId;
 
-    @JoinColumn(name = "picked_by_team_id", referencedColumnName = "id")
-    @ManyToOne
-    private TeamEntity pickedByTeamId;
+  @JoinColumn(name = "picked_by_team_id", referencedColumnName = "id")
+  @ManyToOne
+  private TeamEntity pickedByTeamId;
 
-    public CategoryEntity() {
+  public CategoryEntity() {}
+
+  public CategoryEntity(UUID id) {
+    this.id = id;
+  }
+
+  public CategoryEntity(E2eGameFixtureRequest.Category categoryFixture, GameEntity newGame) {
+    this.id = categoryFixture.id();
+    this.ordinalNumber = categoryFixture.ordinalNumber();
+    this.isDone = categoryFixture.done();
+    if (categoryFixture.pickedByTeamId() != null) {
+      this.pickedByTeamId = new TeamEntity(categoryFixture.pickedByTeamId());
     }
+    this.gameId = newGame;
+    this.albumId = new AlbumEntity(categoryFixture.album());
+  }
 
-    public CategoryEntity(UUID id) {
-        this.id = id;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public CategoryEntity(E2eGameFixtureRequest.Category categoryFixture) {
-        this.id = categoryFixture.id();
-        this.ordinalNumber = categoryFixture.ordinalNumber();
-        this.isDone = categoryFixture.done();
-        if(categoryFixture.pickedByTeamId() != null)
-            this.pickedByTeamId = new TeamEntity(categoryFixture.pickedByTeamId());
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    public UUID getId() {
-        return id;
-    }
+  public Integer getOrdinalNumber() {
+    return ordinalNumber;
+  }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  public void setOrdinalNumber(Integer ordinalNumber) {
+    this.ordinalNumber = ordinalNumber;
+  }
 
-    public Integer getOrdinalNumber() {
-        return ordinalNumber;
-    }
+  public Boolean isDone() {
+    return isDone;
+  }
 
-    public void setOrdinalNumber(Integer ordinalNumber) {
-        this.ordinalNumber = ordinalNumber;
-    }
+  public void setDone(Boolean done) {
+    this.isDone = done;
+  }
 
-    public Boolean isDone() {
-        return isDone;
-    }
+  @XmlTransient
+  public List<ScheduleEntity> getScheduleList() {
+    return scheduleList;
+  }
 
-    public void setDone(Boolean done) {
-        this.isDone = done;
-    }
+  public void setScheduleList(List<ScheduleEntity> scheduleList) {
+    this.scheduleList = scheduleList;
+  }
 
-    @XmlTransient
-    public List<ScheduleEntity> getScheduleList() {
-        return scheduleList;
-    }
+  public AlbumEntity getAlbumId() {
+    return albumId;
+  }
 
-    public void setScheduleList(List<ScheduleEntity> scheduleList) {
-        this.scheduleList = scheduleList;
-    }
+  public void setAlbumId(AlbumEntity albumId) {
+    this.albumId = albumId;
+  }
 
-    public AlbumEntity getAlbumId() {
-        return albumId;
-    }
+  public GameEntity getGameId() {
+    return gameId;
+  }
 
-    public void setAlbumId(AlbumEntity albumId) {
-        this.albumId = albumId;
-    }
+  public void setGameId(GameEntity gameId) {
+    this.gameId = gameId;
+  }
 
-    public GameEntity getGameId() {
-        return gameId;
-    }
+  public TeamEntity getPickedByTeamId() {
+    return pickedByTeamId;
+  }
 
-    public void setGameId(GameEntity gameId) {
-        this.gameId = gameId;
-    }
+  public void setPickedByTeamId(TeamEntity pickedByTeamId) {
+    this.pickedByTeamId = pickedByTeamId;
+  }
 
-    public TeamEntity getPickedByTeamId() {
-        return pickedByTeamId;
-    }
-
-    public void setPickedByTeamId(TeamEntity pickedByTeamId) {
-        this.pickedByTeamId = pickedByTeamId;
-    }
-
-    @Override
-    public String toString() {
-        return "com.cevapinxile.cestereg.persistence.entity.Category[ id=" + id + " ]";
-    }
+  @Override
+  public String toString() {
+    return "com.cevapinxile.cestereg.persistence.entity.Category[ id=" + id + " ]";
+  }
 }

@@ -34,8 +34,7 @@ class WebSocketSecurityIntegrationTest extends AbstractWebSocketIntegrationTestS
     assertFalse(connectPossiblyRejected(0, "NOPE", unknown));
     assertFalse(
         connectUrlPossiblyRejected(
-            "ws://localhost:" + port + "/ws/0" + ROOM_A + "%2F..%2F" + ROOM_B,
-            encodedTraversal));
+            "ws://localhost:" + port + "/ws/0" + ROOM_A + "%2F..%2F" + ROOM_B, encodedTraversal));
 
     assertNull(unknown.pollFrame(250));
     assertNull(encodedTraversal.pollFrame(250));
@@ -56,9 +55,11 @@ class WebSocketSecurityIntegrationTest extends AbstractWebSocketIntegrationTestS
     adminA.send("{\"type\":\"song_next\",\"roomCode\":\"" + ROOM_B + "\",\"force\":true}");
     tvA.send("{\"type\":\"pause\",\"roomCode\":\"" + ROOM_B + "\",\"answeringTeamId\":\"evil\"}");
 
-    assertNull(adminA.pollFrame(300), "client-originated room hijack payload must not echo to room A");
+    assertNull(
+        adminA.pollFrame(300), "client-originated room hijack payload must not echo to room A");
     assertNull(tvA.pollFrame(300), "client-originated room hijack payload must not echo to TV");
-    assertNull(adminB.pollFrame(300), "room B must not receive command injection from room A clients");
+    assertNull(
+        adminB.pollFrame(300), "room B must not receive command injection from room A clients");
     assertTrue(sessionRegistry.areBothPresent(ROOM_A));
     assertTrue(sessionRegistry.isAdminPresent(ROOM_B));
   }
@@ -110,7 +111,8 @@ class WebSocketSecurityIntegrationTest extends AbstractWebSocketIntegrationTestS
     final SocketProbe admin = connectAdmin(ROOM_A);
     assertContract(admin.readJson(), "welcome");
 
-    final StringBuilder payload = new StringBuilder("{\"type\":\"oversized_ignored\",\"payload\":\"");
+    final StringBuilder payload =
+        new StringBuilder("{\"type\":\"oversized_ignored\",\"payload\":\"");
     payload.append("x".repeat(96 * 1024));
     payload.append("\"}");
 
@@ -126,7 +128,8 @@ class WebSocketSecurityIntegrationTest extends AbstractWebSocketIntegrationTestS
 
       final String maybeDelivered = admin.pollFrame(700);
       if (maybeDelivered != null) {
-        assertEquals("after_oversized_payload", mapper.readValue(maybeDelivered, Map.class).get("type"));
+        assertEquals(
+            "after_oversized_payload", mapper.readValue(maybeDelivered, Map.class).get("type"));
         admin.close(CloseStatus.NORMAL);
       } else {
         // The close can happen asynchronously after isOpen() was checked.

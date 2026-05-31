@@ -1,5 +1,6 @@
 
 
+
 # WebSocket API
 
 This document describes the runtime WebSocket contract between the backend, Admin app, and TV app.
@@ -139,19 +140,17 @@ Example when albums are available for choosing:
   "albums": [
     {
       "id": "329144f2-2f14-4c92-97aa-ef20acfdc561",
-      "title": "YU Rock",
+      "name": "YU Rock",
       "image": "https://example.com/yu-rock.png",
-      "chosenBy": null
+      "pickedByTeam": null,
+      "ordinalNumber": null,
     },
     {
       "id": "4a59084a-6d64-4583-b56a-e7016ad5939d",
       "title": "Eurovision",
-      "image": "https://example.com/eurovision.png",
-      "chosenBy": {
-        "id": "1a8f01ef-77c8-41e5-a561-3061ee2216c1",
-        "name": "Team Cyan",
-        "image": "https://example.com/team-cyan.png"
-      }
+      "name": "https://example.com/eurovision.png",
+      "pickedByTeam": "https://example.com/team-cyan.png",
+      "ordinalNumber": 1,      
     }
   ],
   "team": null
@@ -170,14 +169,15 @@ Album/category object:
 | Field | Type | Meaning |
 |---|---|---|
 | `id` | UUID string | Album/category id |
-| `title` | string | Display name |
-| `image` | string/null | Cover image |
-| `chosenBy` | object/null | Team that already chose this album; `null` means it can still be chosen |
+| `name` | string | Display name |
+| `image` | string | Cover image |
+| `pickedByTeam` | string/null | Icon of the team that already chose this album; `null` means the admin chose it |
+| `ordinalNumber` | number/null | Ordinal number of the choice; `null` means it can still be chosen |
 
 Important rules:
 
-- `chosenBy = null` means the album/category is still available.
-- `chosenBy = { ... }` means it was already selected by that team.
+- `ordinalNumber = null` means the album/category is still available.
+- `pickedByTeam = null` means it was selected by an admin.
 - `team = null` means it is Admin's choice.
 - `team = { ... }` means that team currently has the right to choose.
 
@@ -199,14 +199,15 @@ Example when an album has already been picked but not started:
   }
 }
 ```
+Selected object:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `selected.categoryId` | UUID string | Picked album/category id |
-| `selected.chosenCategoryPreview` | object | Small display object for the picked album/category |
-| `selected.pickedByTeam` | object/null | Team that picked it; `null` means Admin picked it |
-| `selected.started` | boolean | Whether the category already started |
-| `selected.ordinalNumber` | number | Display order/round number |
+| `categoryId` | UUID string | Picked album/category id |
+| `chosenCategoryPreview` | object | Small display object for the picked album/category |
+| `pickedByTeam` | object/null | Team that picked it; `null` means Admin picked it |
+| `started` | boolean | Whether the category already started |
+| `ordinalNumber` | number | Display order/round number |
 
 
 
@@ -217,23 +218,26 @@ The songs stage is the active gameplay stage. This snapshot tells the frontend w
 Basic example:
 
 ```json
-{
-  "type": "welcome",
-  "stage": "songs",
-  "songId": "57ce7e23-229b-48a2-89d1-810bb74b0001",
-  "question": "Prepoznaj ovu pjesmu!",
-  "answer": "Song Name",
-  "scheduleId": "0aa1d4fa-2bc3-4c72-a532-3343538cda92",
-  "answerDuration": 8,
-  "remaining": 14.5,
-  "scores": [
-    {
-      "teamId": "1a8f01ef-77c8-41e5-a561-3061ee2216c1",
-      "teamName": "Team Cyan",
-      "points": 10
-    }
-  ],
-  "revealed": false
+{  
+  "type": "welcome",  
+  "stage": "songs",  
+  "songId": "c41f1c21-0fec-463a-b409-e1e7ab9d2229",  
+  "question": "Prepoznaj ovu pjesmu!",  
+  "answer": "Answer",  
+  "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9",  
+  "answerDuration": 8.0,  
+  "scores": [  
+    {  
+      "teamId": "e94c5243-6954-452b-8fd2-f94210fcc13b",  
+      "image": "team.png",  
+      "name": "Team A",  
+      "score": 10,  
+      "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9"  
+    }  
+  ],  
+  "seek": 1.0,  
+  "remaining": 14.0,  
+  "revealed": false  
 }
 ```
 
@@ -246,9 +250,19 @@ Basic example:
 | `answer` | string | Correct answer, already known to frontend for reveal/recovery |
 | `scheduleId` | UUID string | Current schedule entry id |
 | `answerDuration` | number | How long answer phase lasts |
-| `remaining` | number | Remaining snippet seconds, when snippet is still playing |
 | `scores` | array | Current score table |
+| `seek` | number | Seek seconds, when snippet is still playing |
+| `remaining` | number | Remaining snippet seconds, when snippet is still playing |
 | `revealed` | boolean | Whether answer is already revealed |
+Scores object:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `teamId` | UUID string | ID of the team |
+| `image` | string | Icon of the team |
+| `name` | string | Name of the team |
+| `score` | number | Current score of the team |
+| `scheduleId` | UUID/null | ID of the last schedule when the team buzzed in |
 
 ### Song still playing
 
@@ -339,8 +353,10 @@ Example:
   "scores": [
     {
       "teamId": "1a8f01ef-77c8-41e5-a561-3061ee2216c1",
-      "teamName": "Team Cyan",
-      "points": 42
+      "image": "team.png",
+      "name": "Team A",
+      "score": 10,
+      "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9"
     }
   ]
 }
@@ -420,8 +436,6 @@ Sent to TV when an album/category is picked.
 |---|---|---|
 | `type` | string | Always `album_picked` |
 | `selected` | object | Selected album/category details |
-| `selected.pickedByTeam` | object/null | Team that picked it; `null` means Admin picked it |
-| `selected.started` | boolean | Whether category playback has started |
 
 
 
@@ -580,14 +594,16 @@ src/test/resources/websocket-contracts/v1/schema/
 Example files:
 
 ```text
-welcome.schema.json
-song-next.schema.json
-pause.schema.json
+album_picked.schema.json
 answer.schema.json
-song-repeat.schema.json
-song-reveal.schema.json
-song-next.schema.json
-error-solved.schema.json
+error_solved.schema.json
+kick_team.schema.json
+new_team.schema.json
+pause.schema.json
+song_next.schema.json
+song_repeat.schema.json
+song_reveal.schema.json
+welcome.schema.json
 ```
 
 These schemas are used by tests to validate real WebSocket frames.

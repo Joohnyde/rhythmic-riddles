@@ -12,34 +12,6 @@
   "oneOf": [
     {
       "type": "object",
-      "description": "Minimal recovery welcome used by current runtime integration tests.",
-      "required": [
-        "type",
-        "roomCode",
-        "stage",
-        "recovery"
-      ],
-      "properties": {
-        "type": {
-          "const": "welcome"
-        },
-        "roomCode": {
-          "type": "string",
-          "minLength": 1
-        },
-        "stage": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 3
-        },
-        "recovery": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
       "required": [
         "type",
         "stage",
@@ -55,28 +27,7 @@
         "teams": {
           "type": "array",
           "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "name"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-              },
-              "name": {
-                "type": "string",
-                "minLength": 1
-              },
-              "image": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            },
-            "additionalProperties": true
+            "$ref": "#/$defs/team"
           }
         }
       },
@@ -86,121 +37,140 @@
       "type": "object",
       "required": [
         "type",
-        "stage",
-        "albums",
-        "team"
+        "stage"
       ],
+      "additionalProperties": false,
       "properties": {
         "type": {
           "const": "welcome"
         },
         "stage": {
           "const": "albums"
-        },
-        "albums": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        },
-        "team": {
-          "oneOf": [
-            {
-              "type": "object",
-              "required": [
-                "id",
-                "name"
-              ],
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-                },
-                "name": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "image": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              },
-              "additionalProperties": true
-            },
-            {
-              "type": "null"
-            }
-          ]
         }
       },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "type",
-        "stage",
-        "selected"
-      ],
-      "properties": {
-        "type": {
-          "const": "welcome"
-        },
-        "stage": {
-          "const": "albums"
-        },
-        "selected": {
-          "type": "object",
+      "oneOf": [
+        {
           "required": [
-            "started"
+            "albums",
+            "team"
           ],
           "properties": {
-            "categoryId": {
-              "type": "string"
+            "albums": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "name",
+                  "image",
+                  "pickedByTeam",
+                  "ordinalNumber"
+                ],
+                "properties": {
+                  "id": {
+                    "$ref": "#/$defs/uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pickedByTeam": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ordinalNumber": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": true
+              }
             },
-            "chosenCategoryPreview": {
-              "type": "object",
-              "additionalProperties": true
-            },
-            "pickedByTeam": {
+            "team": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/team"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": [
+            "selected"
+          ],
+          "properties": {
+            "selected": {
               "type": "object",
               "required": [
-                "id",
-                "name"
+                "categoryId",
+                "chosenCategoryPreview",
+                "pickedByTeam",
+                "started",
+                "ordinalNumber"
               ],
               "properties": {
-                "id": {
-                  "type": "string",
-                  "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                "categoryId": {
+                  "$ref": "#/$defs/uuid"
                 },
-                "name": {
-                  "type": "string",
-                  "minLength": 1
+                "chosenCategoryPreview": {
+                  "type": "object",
+                  "required": [
+                    "title",
+                    "image"
+                  ],
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "image": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
                 },
-                "image": {
+                "pickedByTeam": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/$defs/team"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "started": {
+                  "type": "boolean"
+                },
+                "ordinalNumber": {
                   "type": [
-                    "string",
+                    "integer",
                     "null"
                   ]
                 }
               },
-              "additionalProperties": true
-            },
-            "started": {
-              "type": "boolean"
-            },
-            "ordinalNumber": {
-              "type": "integer",
-              "minimum": 1
+              "additionalProperties": false
             }
           },
-          "additionalProperties": true
+          "additionalProperties": false
         }
-      },
-      "additionalProperties": false
+      ]
     },
     {
       "type": "object",
@@ -222,8 +192,7 @@
           "const": "songs"
         },
         "songId": {
-          "type": "string",
-          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          "$ref": "#/$defs/uuid"
         },
         "question": {
           "type": "string"
@@ -232,44 +201,14 @@
           "type": "string"
         },
         "scheduleId": {
-          "type": "string",
-          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          "$ref": "#/$defs/uuid"
         },
         "answerDuration": {
           "type": "number",
           "minimum": 0
         },
         "scores": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "name"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "image": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "points": {
-                "type": "number"
-              },
-              "score": {
-                "type": "number"
-              }
-            },
-            "additionalProperties": true
-          }
+          "$ref": "#/$defs/teamScores"
         },
         "revealed": {
           "type": "boolean"
@@ -277,8 +216,7 @@
         "bravo": {
           "oneOf": [
             {
-              "type": "string",
-              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+              "$ref": "#/$defs/uuid"
             },
             {
               "const": "null"
@@ -297,32 +235,10 @@
           "minimum": 0
         },
         "answeringTeam": {
-          "type": "object",
-          "required": [
-            "id",
-            "name"
-          ],
-          "properties": {
-            "id": {
-              "type": "string",
-              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-            },
-            "name": {
-              "type": "string",
-              "minLength": 1
-            },
-            "image": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          "additionalProperties": true
+          "$ref": "#/$defs/team"
         },
         "interruptId": {
-          "type": "string",
-          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          "$ref": "#/$defs/uuid"
         },
         "error": {
           "type": "boolean"
@@ -353,39 +269,81 @@
           "const": "winner"
         },
         "scores": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "name"
-            ],
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-              },
-              "name": {
-                "type": "string"
-              },
-              "image": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "points": {
-                "type": "number"
-              },
-              "score": {
-                "type": "number"
-              }
-            },
-            "additionalProperties": true
-          }
+          "$ref": "#/$defs/teamScores"
         }
       },
       "additionalProperties": false
     }
-  ]
+  ],
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "team": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "image"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "teamScore": {
+      "type": "object",
+      "required": [
+        "teamId",
+        "image",
+        "name",
+        "score",
+        "scheduleId"
+      ],
+      "properties": {
+        "teamId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        },
+        "scheduleId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "teamScores": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/teamScore"
+      }
+    }
+  }
 }

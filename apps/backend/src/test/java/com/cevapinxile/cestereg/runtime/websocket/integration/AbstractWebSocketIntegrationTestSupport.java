@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
 import com.cevapinxile.cestereg.config.WebSocketConfig;
 import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
@@ -37,7 +36,6 @@ import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -117,7 +115,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
         .thenAnswer(invocation -> gamesByCode.get(invocation.getArgument(0)));
     when(gameService.findByCode(anyString(), any()))
         .thenAnswer(invocation -> gamesByCode.get(invocation.getArgument(0)));
-    when(gameService.contextFetch(anyString())).thenAnswer(invocation -> welcome(invocation.getArgument(0)));
+    when(gameService.contextFetch(anyString()))
+        .thenAnswer(invocation -> welcome(invocation.getArgument(0)));
   }
 
   @AfterEach
@@ -242,7 +241,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
     when(scheduleRepository.findLastPlayed(gameA.getId())).thenReturn(fixture.currentSchedule());
     when(scheduleRepository.findById(fixture.currentSchedule().getId()))
         .thenReturn(Optional.of(fixture.currentSchedule()));
-    when(scheduleRepository.findNext(gameA.getId())).thenReturn(Optional.of(fixture.nextSchedule()));
+    when(scheduleRepository.findNext(gameA.getId()))
+        .thenReturn(Optional.of(fixture.nextSchedule()));
     when(teamService.findById(fixture.team().getId())).thenReturn(Optional.of(fixture.team()));
     when(teamService.getTeamPoints(fixture.team().getId(), ROOM_A)).thenReturn(10);
     when(interruptRepository.findById(fixture.teamInterrupt().getId()))
@@ -250,7 +250,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
     when(interruptRepository.findInterrupts(any(), any())).thenReturn(new ArrayList<>());
     when(interruptRepository.findLastAnswer(any(), any())).thenReturn(null);
     when(interruptRepository.findLastPause(any(), any())).thenReturn(null);
-    when(interruptRepository.findPreviousScenarioId(fixture.currentSchedule().getId())).thenReturn(4);
+    when(interruptRepository.findPreviousScenarioId(fixture.currentSchedule().getId()))
+        .thenReturn(4);
     when(interruptRepository.saveAndFlush(any(InterruptEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(interruptRepository.save(any(InterruptEntity.class)))
@@ -315,7 +316,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
       }
       case "pause" -> {
         assertExactKeys(frame, "type", "answeringTeamId", "interruptId");
-        assertValueMatchesContract("answeringTeamId", frame.get("answeringTeamId"), "uuid-or-literal-null");
+        assertValueMatchesContract(
+            "answeringTeamId", frame.get("answeringTeamId"), "uuid-or-literal-null");
         assertValueMatchesContract("interruptId", frame.get("interruptId"), "uuid");
       }
       case "answer" -> {
@@ -350,7 +352,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
         assertValueMatchesContract("remaining", frame.get("remaining"), "number");
         assertValueMatchesContract("answerDuration", frame.get("answerDuration"), "number");
       }
-      default -> throw new AssertionError("No websocket contract registered for type " + expectedType);
+      default ->
+          throw new AssertionError("No websocket contract registered for type " + expectedType);
     }
   }
 
@@ -367,7 +370,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
   }
 
   protected static void assertExactKeys(final Map<?, ?> frame, final String... keys) {
-    assertEquals(Set.of(keys), frame.keySet(), "websocket contract changed: unexpected/missing JSON fields");
+    assertEquals(
+        Set.of(keys), frame.keySet(), "websocket contract changed: unexpected/missing JSON fields");
   }
 
   protected static void assertUuid(final Object value) {
@@ -376,14 +380,15 @@ abstract class AbstractWebSocketIntegrationTestSupport {
   }
 
   protected static void assertUuidOrLiteralNull(final Object value) {
-    assertTrue(value instanceof String, "expected UUID string or literal null string but got " + value);
+    assertTrue(
+        value instanceof String, "expected UUID string or literal null string but got " + value);
     if (!"null".equals(value)) {
       UUID.fromString((String) value);
     }
   }
 
-  protected void assertLoadBurst(final String roomCode, final int burstSize, final SocketProbe probe)
-      throws Exception {
+  protected void assertLoadBurst(
+      final String roomCode, final int burstSize, final SocketProbe probe) throws Exception {
     for (int i = 0; i < burstSize; i++) {
       final Map<?, ?> frame = probe.readJson();
       assertEquals("load_probe", frame.get("type"));
@@ -394,7 +399,8 @@ abstract class AbstractWebSocketIntegrationTestSupport {
   }
 
   protected int countFramesOfType(
-      final SocketProbe probe, final String expectedType, final long totalWaitMillis) throws Exception {
+      final SocketProbe probe, final String expectedType, final long totalWaitMillis)
+      throws Exception {
     int count = 0;
     final long deadline = System.currentTimeMillis() + totalWaitMillis;
 

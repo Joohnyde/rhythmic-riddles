@@ -54,7 +54,8 @@ class WebSocketLoadIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     for (String roomCode : roomCodes) {
       assertLoadBurst(roomCode, burstSize, admins.get(roomCode));
       assertLoadBurst(roomCode, burstSize, tvs.get(roomCode));
-      assertNull(admins.get(roomCode).pollFrame(250), "admin must not receive duplicate burst frames");
+      assertNull(
+          admins.get(roomCode).pollFrame(250), "admin must not receive duplicate burst frames");
       assertNull(tvs.get(roomCode).pollFrame(250), "TV must not receive duplicate burst frames");
     }
   }
@@ -68,7 +69,8 @@ class WebSocketLoadIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     final int burstSize = 40;
 
     for (int i = 0; i < burstSize; i++) {
-      broadcastGateway.broadcast(ROOM_A, "{\"type\":\"slow_consumer_probe\",\"sequence\":" + i + "}");
+      broadcastGateway.broadcast(
+          ROOM_A, "{\"type\":\"slow_consumer_probe\",\"sequence\":" + i + "}");
     }
 
     for (int i = 0; i < burstSize; i++) {
@@ -89,7 +91,8 @@ class WebSocketLoadIntegrationTest extends AbstractWebSocketIntegrationTestSuppo
     assertEventuallyFalse(() -> sessionRegistry.isTvPresent(ROOM_A));
 
     for (int i = 0; i < 20; i++) {
-      broadcastGateway.broadcast(ROOM_A, "{\"type\":\"admin_survives_disconnect\",\"sequence\":" + i + "}");
+      broadcastGateway.broadcast(
+          ROOM_A, "{\"type\":\"admin_survives_disconnect\",\"sequence\":" + i + "}");
     }
 
     for (int i = 0; i < 20; i++) {

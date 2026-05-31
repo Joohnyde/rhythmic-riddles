@@ -4,7 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
-import com.cevapinxile.cestereg.e2e.dto.E2eGameFixtureRequest;
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,7 +39,8 @@ import java.util.UUID;
 public class TrackEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
-  private static final SongEntity E2E_SONG = new SongEntity(UUID.fromString("c041398e-8e63-40ed-8f17-d7f1ca8ca405"));
+  private static final SongEntity E2E_SONG =
+      new SongEntity(UUID.fromString("c041398e-8e63-40ed-8f17-d7f1ca8ca405"));
 
   @Id
   @Basic(optional = false)
@@ -69,11 +70,12 @@ public class TrackEntity implements Serializable {
     this.id = id;
   }
 
-    public TrackEntity(E2eGameFixtureRequest.Track song) {
-        this.id = UUID.randomUUID();
-        this.customAnswer = song.customAnswer();
-        this.songId = E2E_SONG;
-    }
+  public TrackEntity(E2eGameFixtureRequest.Track trackFixture, AlbumEntity newAlbum) {
+    this.id = UUID.randomUUID();
+    this.customAnswer = trackFixture.customAnswer();
+    this.songId = E2E_SONG;
+    this.albumId = newAlbum;
+  }
 
   public UUID getId() {
     return id;

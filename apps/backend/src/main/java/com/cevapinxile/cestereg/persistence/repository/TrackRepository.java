@@ -9,9 +9,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- *
  * @author denijal
  */
-public interface TrackRepository extends JpaRepository<TrackEntity, UUID> {
-    
-}
+public interface TrackRepository extends JpaRepository<TrackEntity, UUID> {}
