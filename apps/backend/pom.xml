@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.6</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -216,7 +216,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.2</version>
+            <version>3.0.3</version>
         </dependency>
 
         <!-- Utility library -->
@@ -228,6 +228,12 @@
         <!-- =========================
         Test-only starters
         ========================= -->
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>1.5.6</version>
+            <scope>test</scope>
+        </dependency>
 
         <!--
           Boot provides *-test starters for convenient testing dependencies.
@@ -298,7 +304,7 @@
         <dependency>
             <groupId>com.github.javaparser</groupId>
             <artifactId>javaparser-core</artifactId>
-            <version>3.28.0</version>
+            <version>3.28.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -319,7 +325,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.6.0</version>
                 <configuration>
                     <java>
                         <googleJavaFormat version="1.22.0"/>
@@ -755,6 +761,51 @@
                                     <target>
                                         <delete dir="${project.basedir}/src/main/resources/pg-client" quiet="true"/>
                                     </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!--
+          E2E profile:
+          - prepares isolated PostgreSQL e2e schema
+          - automatically activates Spring e2e profile
+          - intended for Playwright/browser integration testing
+        -->
+        <profile>
+            <id>e2e</id>
+            <properties>
+                <spring-boot.run.profiles>e2e</spring-boot.run.profiles>
+                <e2e.clean>false</e2e.clean>
+            </properties>
+            <build>
+                <plugins>
+                    <!--
+                      Executes schema preparation script before Spring Boot startup.
+                      The script:
+                      - optionally drops existing e2e schema
+                      - recreates e2e schema
+                      - clones public schema structure/data into e2e
+                    -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-e2e-schema</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/../../scripts/dev/setup-e2e-schema.sh</argument>
+                                        <argument>${project.basedir}/src/main/resources/application-e2e.yml</argument>
+                                        <argument>${e2e.clean}</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>

@@ -1,0 +1,9 @@
+{
+  "type": "song_next",
+  "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9",
+  "songId": "c41f1c21-0fec-463a-b409-e1e7ab9d2229",
+  "question": "Prepoznaj ovu pjesmu!",
+  "answer": "Answer",
+  "remaining": 15.0,
+  "answerDuration": 8.0
+}

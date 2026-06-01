@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/answer.schema.json",
+  "title": "WebSocket answer frame",
+  "description": "Admin resolved a team answer.",
+  "x-recipients": ["admin", "tv"],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": ["type", "teamId", "scheduleId", "correct"],
+  "properties": {
+    "type": {
+      "const": "answer"
+    },
+    "teamId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "scheduleId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "correct": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

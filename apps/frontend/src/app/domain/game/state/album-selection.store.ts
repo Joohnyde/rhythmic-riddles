@@ -108,7 +108,6 @@ export class AlbumSelectionStore {
 
   private applyPickedAlbum(message: S1AlbumPickedMessage): void {
     this.patchState({
-      albums: message.albums ?? this.state().albums,
       selectedAlbum: message.selected ?? null,
       pickedByTeam: message.selected?.pickedByTeam ?? null,
       loaded: true,

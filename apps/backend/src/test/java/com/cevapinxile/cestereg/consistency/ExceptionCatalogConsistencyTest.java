@@ -34,7 +34,7 @@ public class ExceptionCatalogConsistencyTest {
       StringBuilder error = new StringBuilder("\nException catalog consistency check failed.\n");
 
       if (!missingInCatalog.isEmpty()) {
-        error.append("\nExceptions missing in exception-catalog.md:\n");
+        error.append("\nExceptions missing in exceptions.md:\n");
         missingInCatalog.forEach(e -> error.append(" - ").append(e).append("\n"));
       }
 

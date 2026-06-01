@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/_published-frame-registry.schema.json",
+  "title": "Published WebSocket frame schema registry",
+  "type": "object",
+  "required": ["publishedFrameTypes"],
+  "properties": {
+    "publishedFrameTypes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "welcome",
+          "new_team",
+          "kick_team",
+          "album_picked",
+          "song_next",
+          "song_repeat",
+          "song_reveal",
+          "pause",
+          "answer",
+          "error_solved"
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}

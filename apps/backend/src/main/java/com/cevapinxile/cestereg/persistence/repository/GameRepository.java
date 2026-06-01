@@ -11,6 +11,9 @@ import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /*
  * @author denijal
@@ -64,4 +67,8 @@ public interface GameRepository extends JpaRepository<GameEntity, UUID> {
     }
     return game;
   }
+
+  @Modifying
+  @Query(value = "DELETE FROM game WHERE code = :roomCode", nativeQuery = true)
+  void deleteByCode(@Param("roomCode") String roomCode);
 }

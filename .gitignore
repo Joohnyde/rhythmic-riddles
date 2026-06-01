@@ -85,6 +85,11 @@ coverage/
 .tmp/
 .cache/
 
+# Tests
+playwright-report/
+test-results/
+
+
 ############################################
 # Environment files
 ############################################

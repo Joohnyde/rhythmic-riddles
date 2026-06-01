@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/album_picked.schema.json",
+  "title": "WebSocket album_picked frame",
+  "description": "Album/category picked. selected is LastCategory payload.",
+  "x-recipients": ["tv"],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": ["type", "selected"],
+  "properties": {
+    "type": {
+      "const": "album_picked"
+    },
+    "selected": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

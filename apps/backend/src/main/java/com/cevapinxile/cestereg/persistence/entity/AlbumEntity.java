@@ -4,6 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -18,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +27,7 @@ import java.util.UUID;
  * @author denijal
  */
 @Entity
-@Table(schema = "public", name = "album")
+@Table(name = "album")
 @NamedQueries({
   @NamedQuery(name = "AlbumEntity.findAll", query = "SELECT a FROM AlbumEntity a"),
   @NamedQuery(
@@ -71,6 +73,13 @@ public class AlbumEntity implements Serializable {
   public AlbumEntity(UUID id, String name) {
     this.id = id;
     this.name = name;
+  }
+
+  public AlbumEntity(E2eGameFixtureRequest.Album albumFixture) {
+    this.id = albumFixture.id();
+    this.name = albumFixture.name();
+    this.customQuestion = albumFixture.customQuestion();
+    this.categoryList = new ArrayList<>();
   }
 
   public UUID getId() {

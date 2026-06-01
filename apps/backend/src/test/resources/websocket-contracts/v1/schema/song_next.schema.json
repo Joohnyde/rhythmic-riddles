@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/song_next.schema.json",
+  "title": "WebSocket song_next frame",
+  "description": "Next scheduled song/question started.",
+  "x-recipients": [
+    "admin",
+    "tv"
+  ],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": [
+    "type",
+    "scheduleId",
+    "songId",
+    "question",
+    "answer",
+    "remaining",
+    "answerDuration"
+  ],
+  "properties": {
+    "type": {
+      "const": "song_next"
+    },
+    "scheduleId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "songId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "question": {
+      "type": "string"
+    },
+    "answer": {
+      "type": "string"
+    },
+    "remaining": {
+      "type": "number",
+      "minimum": 0
+    },
+    "answerDuration": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}

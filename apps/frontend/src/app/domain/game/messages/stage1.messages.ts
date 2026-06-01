@@ -10,7 +10,6 @@ export interface S1WelcomeMessage extends WelcomeMessage<'welcome'> {
 }
 
 export interface S1AlbumPickedMessage extends WelcomeMessage<'album_picked'> {
-  albums?: CategorySimple[];
   team?: Team;
   selected?: LastCategory;
 }

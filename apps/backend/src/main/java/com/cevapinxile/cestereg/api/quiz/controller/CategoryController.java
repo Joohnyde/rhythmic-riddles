@@ -8,8 +8,6 @@ import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiEx
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.TeamIdRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory;
-import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.cevapinxile.cestereg.common.exception.InternalServerErrorException;
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
 import com.cevapinxile.cestereg.core.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -167,12 +165,8 @@ Workflow:
       @RequestBody TeamIdRequest par) {
     try {
       return ResponseEntity.ok(categoryService.pickAlbum(categoryId, par, roomCode));
-    } catch (DerivedException ex) {
-      LOG.info(ex.toString());
-      return ResponseEntity.status(ex.httpCode).body(ex.toString());
     } catch (Exception ex) {
-      LOG.error("Unexpected error", ex);
-      return ResponseEntity.status(500).body(new InternalServerErrorException().toString());
+      return handleApiException(LOG, ex);
     }
   }
 

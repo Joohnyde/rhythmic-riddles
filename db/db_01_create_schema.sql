@@ -169,7 +169,7 @@ BEGIN
   -- team -> game
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_team_game') THEN
     ALTER TABLE ONLY public.team
-      ADD CONSTRAINT fk_team_game FOREIGN KEY (game_id) REFERENCES public.game(id);
+      ADD CONSTRAINT fk_team_game FOREIGN KEY (game_id) REFERENCES public.game(id) ON DELETE CASCADE;
   END IF;
 
   -- track -> album, song
@@ -191,7 +191,7 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_category_game') THEN
     ALTER TABLE ONLY public.category
-      ADD CONSTRAINT fk_category_game FOREIGN KEY (game_id) REFERENCES public.game(id);
+      ADD CONSTRAINT fk_category_game FOREIGN KEY (game_id) REFERENCES public.game(id) ON DELETE CASCADE;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_category_team') THEN
@@ -202,7 +202,7 @@ BEGIN
   -- schedule -> category, track
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_schedule_category') THEN
     ALTER TABLE ONLY public.schedule
-      ADD CONSTRAINT fk_schedule_category FOREIGN KEY (category_id) REFERENCES public.category(id);
+      ADD CONSTRAINT fk_schedule_category FOREIGN KEY (category_id) REFERENCES public.category(id) ON DELETE CASCADE;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_schedule_track') THEN
@@ -213,12 +213,12 @@ BEGIN
   -- interrupt -> schedule, team
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_interrupt_schedule') THEN
     ALTER TABLE ONLY public.interrupt
-      ADD CONSTRAINT fk_interrupt_schedule FOREIGN KEY (schedule_id) REFERENCES public.schedule(id);
+      ADD CONSTRAINT fk_interrupt_schedule FOREIGN KEY (schedule_id) REFERENCES public.schedule(id) ON DELETE CASCADE;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_interrupt_team') THEN
     ALTER TABLE ONLY public.interrupt
-      ADD CONSTRAINT fk_interrupt_team FOREIGN KEY (team_id) REFERENCES public.team(id);
+      ADD CONSTRAINT fk_interrupt_team FOREIGN KEY (team_id) REFERENCES public.team(id) ON DELETE CASCADE;
   END IF;
 END $$;
 

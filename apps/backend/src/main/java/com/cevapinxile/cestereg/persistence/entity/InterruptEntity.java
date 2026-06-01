@@ -4,6 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,7 +24,7 @@ import java.util.UUID;
  * @author denijal
  */
 @Entity
-@Table(schema = "public", name = "interrupt")
+@Table(name = "interrupt")
 @NamedQueries({
   @NamedQuery(name = "InterruptEntity.findAll", query = "SELECT i FROM InterruptEntity i"),
   @NamedQuery(
@@ -155,6 +156,24 @@ public class InterruptEntity implements Serializable {
 
   public InterruptEntity(UUID id) {
     this.id = id;
+  }
+
+  public InterruptEntity(
+      E2eGameFixtureRequest.Interrupt interruptFixture,
+      ScheduleEntity newSchedule,
+      TeamEntity newTeam) {
+    this.id = interruptFixture.id();
+    this.arrivedAt = interruptFixture.arrivedAt();
+    this.resolvedAt = interruptFixture.resolvedAt();
+    this.isCorrect = interruptFixture.correct();
+    if (interruptFixture.scenario() != null) {
+      this.scoreOrScenarioId = interruptFixture.scenario();
+    }
+    if (interruptFixture.score() != null) {
+      this.scoreOrScenarioId = interruptFixture.score();
+    }
+    this.teamId = newTeam;
+    this.scheduleId = newSchedule;
   }
 
   public UUID getId() {

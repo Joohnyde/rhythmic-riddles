@@ -4,6 +4,7 @@
  */
 package com.cevapinxile.cestereg.persistence.entity;
 
+import com.cevapinxile.cestereg.e2e.E2eGameFixtureRequest;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +26,7 @@ import java.util.UUID;
  * @author denijal
  */
 @Entity
-@Table(schema = "public", name = "category")
+@Table(name = "category")
 @NamedQueries({
   @NamedQuery(name = "CategoryEntity.findAll", query = "SELECT c FROM CategoryEntity c"),
   @NamedQuery(
@@ -93,6 +94,17 @@ public class CategoryEntity implements Serializable {
 
   public CategoryEntity(UUID id) {
     this.id = id;
+  }
+
+  public CategoryEntity(E2eGameFixtureRequest.Category categoryFixture, GameEntity newGame) {
+    this.id = categoryFixture.id();
+    this.ordinalNumber = categoryFixture.ordinalNumber();
+    this.isDone = categoryFixture.done();
+    if (categoryFixture.pickedByTeamId() != null) {
+      this.pickedByTeamId = new TeamEntity(categoryFixture.pickedByTeamId());
+    }
+    this.gameId = newGame;
+    this.albumId = new AlbumEntity(categoryFixture.album());
   }
 
   public UUID getId() {

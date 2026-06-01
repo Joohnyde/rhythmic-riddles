@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/pause.schema.json",
+  "title": "WebSocket pause frame",
+  "description": "Team or system pause. System pause uses literal string null.",
+  "x-recipients": ["admin", "tv"],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": ["type", "answeringTeamId", "interruptId"],
+  "properties": {
+    "type": {
+      "const": "pause"
+    },
+    "answeringTeamId": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        {
+          "const": "null"
+        }
+      ]
+    },
+    "interruptId": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    }
+  },
+  "additionalProperties": false
+}
