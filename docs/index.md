@@ -16,13 +16,14 @@
 - [Assets](developer-guide/assets.md)
 - [Exceptions](developer-guide/exceptions.md)
 - [Security model](developer-guide/security.md)
-- [Devcontaiers](developer-guide/devcontainers.md)
+- [Devcontainers](developer-guide/devcontainers.md)
 - [EditorConfig](developer-guide/editorconfig.md)
 - [Logging](developer-guide/logging.md)
 - [Release builds](developer-guide/release-builds.md)
 
 ## Testing docs
 - [Testing overview](developer-guide/testing/testing-overview.md)
+- [E2E / seeded WebSocket testing](developer-guide/testing/e2e.md)
 - [Writing tests](developer-guide/testing/writing-tests.md)
 - [Test catalog](developer-guide/testing/test-catalog.md)
 - [Unit testing](developer-guide/testing/unit-testing.md)

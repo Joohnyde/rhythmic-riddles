@@ -1,3 +1,4 @@
+
 # Writing Tests
 
 ## Purpose
@@ -179,3 +180,72 @@ Tests should treat this response format as part of the API contract.
 Controller tests should also validate malformed request handling and confirm
 that service-layer methods are not called when the request is rejected at
 the controller boundary.
+
+
+## How to add a new WebSocket integration test
+
+1. Decide whether the behavior is truly WebSocket integration.
+2. Choose the smallest fixture that creates the required backend state.
+3. Use `withGameFixture` for normal stage fixtures.
+4. Use `withDeterministicFixture` for precise Stage-2 interrupt/seek state.
+5. Connect only the required browser clients.
+6. Trigger one action through REST or browser UI.
+7. Assert browser-observed frames:
+   - type
+   - routing
+   - ordering
+   - exact count when important
+   - semantic payload fields
+   - contract validity when the state is reachable
+8. Clean up through the fixture helper.
+
+Example shape:
+
+```ts
+await withGameFixture(request, 'SONGS_LISTENING', async (seed) => {
+  const clients = await connectAdminAndTv(browser, seed.roomCode);
+
+  try {
+    const before = countBackendWsFramesOfType(clients.tv.frames, 'song_reveal');
+
+    expect(await revealSchedule(request, seed.roomCode, seed.currentScheduleId!)).toBeLessThan(400);
+
+    await expectBackendWsFrameTypeAfter(clients.tv.frames, 'song_reveal', before);
+  } finally {
+    await clients.close();
+  }
+});
+```
+
+## Writing deterministic fixtures
+
+Use deterministic fixtures for states that are hard to create through normal REST calls without waiting. For more detailed rule-set see `docs/developer-guide/testing/e2e.md`
+
+Good deterministic fixtures:
+
+- expired schedule with no pauses
+- team paused
+- system paused with a valid scenario marker
+- layered team/system pause
+- resolved long system pause
+- resolved layered team/system group
+- overlapping resolved pauses to test most-encompassing duration
+
+Bad deterministic fixtures:
+
+- team interrupt after an unresolved system interrupt
+- two unresolved team interrupts
+- system pause with no scenario marker
+- scenario `3`
+- resolved and unresolved interrupts mixed in one active group
+- team interrupt with `scenario`
+- system interrupt with `correct`
+
+## Maintenance
+
+When adding, renaming, or deleting tests:
+
+- update `test-catalog.md` and `test-catalog.csv` when coverage changes meaningfully
+- keep helper names behavior-focused
+- delete redundant tests instead of keeping two near-identical variants
+- prefer one strong test over several trivial variants

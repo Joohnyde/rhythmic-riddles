@@ -636,3 +636,22 @@ Examples of breaking changes:
 - changing who receives the message
 
 Small compatible additions can stay in `v1` only if frontend safely ignores the new field.
+
+
+# Browser-level schema validation
+
+The Playwright WebSocket E2E suite validates browser-observed backend frames against the shared schema files bundled under:
+
+```text
+apps/frontend/e2e/contracts/backend/websocket-contracts/v1/schema
+```
+
+The registry file is:
+
+```text
+_published-frame-registry.schema.json
+```
+
+When a WebSocket frame payload changes, update the runtime code, schema file, registry, frontend handling, and at least one browser-level test path together.
+
+Schema validation should only be performed for frames produced through reachable game states. Do not weaken a schema to accept a frame produced by an impossible test setup.

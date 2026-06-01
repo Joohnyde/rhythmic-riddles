@@ -17,6 +17,13 @@ a SemVer-like versioning scheme will be used.
 - Build and packaging documentation for cross-platform desktop distribution (Linux, Windows, macOS).
 - Root-level README files across key directories to clarify repository structure and responsibilities.
 
+### E2E testing
+- The E2E fixture API - test infrastructure and must remain gated behind the `e2e` Spring profile.
+- Seeded Playwright WebSocket E2E testing for the frontend.
+- Added detailed E2E guide covering the Spring `e2e` profile, isolated database schema, fixture API, fixture payload rules, interrupt invariants, run commands, schema contracts, and troubleshooting.
+- Documented the frontend `apps/frontend/e2e` folder structure and helper responsibilities.
+- Updated testing overview, writing guidance, and test catalog to include browser-level WebSocket integration coverage.
+
 ### Desktop Packaging Architecture
 - Cross‑platform desktop packaging architecture enabling fully self‑contained distribution.
 - jpackage-based builds bundling a custom Java runtime via jlink (no system Java required).
@@ -83,6 +90,7 @@ a SemVer-like versioning scheme will be used.
 - Introduced consistency checks ensuring that documentation and API definitions remain aligned with the implementation, including verification of Swagger/OpenAPI documentation and error-handling conventions.
 - Added and maintained a structured test catalog (`test-catalog.md` / `test-catalog.csv`) to document backend test coverage and prevent redundant tests.
 - Improved overall test readability and maintainability through clearer naming conventions, stronger assertions, and consistent Mockito static imports.
+- WebSocket schema validation
 
 ### Changed
 - Consolidated and removed outdated documentation to align with current implementation.
@@ -92,6 +100,7 @@ a SemVer-like versioning scheme will be used.
 - Standardized documentation navigation via `docs/index.md` as the authoritative entry point.
 - Improved project structure documentation to clarify boundaries between backend, frontend, hardware, and packaging scripts.
 
+
 ## 0.1.0 – Initial MVP
 
 ### Added
@@ -99,3 +108,5 @@ a SemVer-like versioning scheme will be used.
 - PostgreSQL persistence model with recovery-driven interrupt handling.
 - WebSocket synchronization between Admin and TV clients.
 - Core stage lifecycle: lobby → albums ↔ songs → winner.
+
+
