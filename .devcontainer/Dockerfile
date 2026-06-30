@@ -2,9 +2,9 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 ARG MAVEN_VERSION=3.9.6
-ARG NODE_VERSION=24.11.1
-ARG NPM_VERSION=11.9.0
-ARG ANGULAR_CLI_VERSION=21.0.1
+ARG NODE_VERSION=24.18.0
+ARG NPM_VERSION=11.18.0
+ARG ANGULAR_CLI_VERSION=22.0.4
 
 # Basic utilities
 RUN apt-get update && apt-get install -y \
@@ -34,14 +34,14 @@ RUN curl -fsSL "https://repo.maven.apache.org/maven2/org/apache/maven/apache-mav
   ln -sf "/opt/maven/bin/mvn" /usr/local/bin/mvn && \
   rm /tmp/maven.tgz
 
-# Node 24.11.1 + npm 11.9.0
+# Node 24.18.0 + npm 11.18.0
 RUN curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
   -o /tmp/node.tar.xz && \
   tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 && \
   rm /tmp/node.tar.xz && \
   npm i -g "npm@${NPM_VERSION}"
 
-# Angular CLI 21.0.1 (global)
+# Angular CLI 22.0.4 (global)
 RUN npm i -g "@angular/cli@${ANGULAR_CLI_VERSION}"
 
 # Optional: Postgres CLI client (psql) for debugging (nice to have)
