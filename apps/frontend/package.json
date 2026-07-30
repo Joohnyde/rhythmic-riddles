@@ -50,7 +50,7 @@
     "@angular/compiler-cli": "^22.0.4",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.62.1",
     "ajv": "^8.20.0",
     "eslint": "^10.6.0",
