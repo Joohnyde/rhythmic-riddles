@@ -5,12 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
@@ -22,6 +20,8 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Tag("ws-fast")
 @Tag("ws-contract")
@@ -42,8 +42,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
           "error_solved");
 
   private final ObjectMapper json = new ObjectMapper();
-  private final JsonSchemaFactory schemaFactory =
-      JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+  private final SchemaRegistry schemaRegistry =
+      SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
   @Test
   void everyPublishedAngularMessageTypeHasExactlyOneSchemaAndExactlyOneExample() throws Exception {
@@ -128,18 +128,18 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
   }
 
   private void assertValid(final String type, final JsonNode payload) {
-    final Set<ValidationMessage> violations = schema(type).validate(payload);
+    final List<Error> violations = schema(type).validate(payload);
     assertTrue(violations.isEmpty(), "expected valid " + type + " example but got " + violations);
   }
 
   private void assertInvalid(final String type, final JsonNode payload, final String message) {
-    final Set<ValidationMessage> violations = schema(type).validate(payload);
+    final List<Error> violations = schema(type).validate(payload);
     assertFalse(violations.isEmpty(), message);
   }
 
-  private JsonSchema schema(final String type) {
+  private Schema schema(final String type) {
     try {
-      return schemaFactory.getSchema(
+      return schemaRegistry.getSchema(
           readJson("/websocket-contracts/v1/schema/" + type + ".schema.json"));
     } catch (Exception ex) {
       throw new IllegalStateException(ex);

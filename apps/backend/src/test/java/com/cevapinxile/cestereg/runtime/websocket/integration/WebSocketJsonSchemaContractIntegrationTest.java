@@ -7,21 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Tag("ws-fast")
 @Tag("ws-contract")
@@ -42,14 +41,14 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
           "error_solved");
 
   private final ObjectMapper schemaMapper = new ObjectMapper();
-  private final JsonSchemaFactory schemaFactory =
-      JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+  private final SchemaRegistry schemaRegistry =
+      SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
   @Test
   void everyPublishedFrameTypeHasACompilableJsonSchemaWithGovernanceMetadata() throws Exception {
     for (String frameType : PUBLISHED_FRAME_TYPES) {
       final JsonNode schemaNode = readSchemaNode(frameType);
-      final JsonSchema schema = schemaFactory.getSchema(schemaNode);
+      final Schema schema = schemaRegistry.getSchema(schemaNode);
 
       assertNotNull(schema, "schema must compile for " + frameType);
       assertEquals("implicit-v1", schemaNode.path("x-protocolVersion").asText());
@@ -173,9 +172,6 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
     final SocketProbe admin = connectAdmin(ROOM_A);
     final SocketProbe tv = connectTv(ROOM_A);
 
-    // Current backend connection snapshot is a legacy recovery frame:
-    // {"type":"welcome","roomCode":"AKKU","stage":2,"recovery":true}.
-    // That shape is intentionally not accepted by the published welcome schema.
     assertLegacyRecoveryWelcome(admin.pollFrame(1500));
     assertLegacyRecoveryWelcome(tv.pollFrame(1500));
 
@@ -299,7 +295,7 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
   @Test
   void schemaRegistryListsExactlyThePublishedFrameTypesFromTheDocumentation() throws Exception {
     final JsonNode registry = readSchemaNode("_published-frame-registry");
-    final JsonSchema schema = schemaFactory.getSchema(registry);
+    final Schema schema = schemaRegistry.getSchema(registry);
     final String json =
         schemaMapper.writeValueAsString(Map.of("publishedFrameTypes", PUBLISHED_FRAME_TYPES));
 
@@ -328,23 +324,21 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
   }
 
   private void assertSchemaValid(final String frameType, final String payload) throws Exception {
-    final Set<ValidationMessage> violations =
-        schema(frameType).validate(schemaMapper.readTree(payload));
+    final List<Error> violations = schema(frameType).validate(schemaMapper.readTree(payload));
     assertTrue(
         violations.isEmpty(),
         "expected valid " + frameType + " payload but got " + violations + " for " + payload);
   }
 
   private void assertSchemaInvalid(final String frameType, final String payload) throws Exception {
-    final Set<ValidationMessage> violations =
-        schema(frameType).validate(schemaMapper.readTree(payload));
+    final List<Error> violations = schema(frameType).validate(schemaMapper.readTree(payload));
     assertFalse(
         violations.isEmpty(),
         "expected invalid " + frameType + " payload, but schema accepted " + payload);
   }
 
-  private JsonSchema schema(final String frameType) throws Exception {
-    return schemaFactory.getSchema(readSchemaNode(frameType));
+  private Schema schema(final String frameType) throws Exception {
+    return schemaRegistry.getSchema(readSchemaNode(frameType));
   }
 
   private JsonNode readSchemaNode(final String frameType) throws Exception {

@@ -13,22 +13,12 @@ try {
   & docker compose up -d db dev
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  # Kill whatever holds 8080 inside the container. Command is piped into bash to avoid PowerShell -> bash -c quoting issues.
-  @'
-set -eu
-if ss -lptn | grep -q ':8080'; then
-  echo 'Port 8080 in use inside container. Killing listener...'
-  fuser -k 8080/tcp || true
-fi
-'@ | & docker exec -i cestereg-dev bash
+  # Kill whatever holds 8080 inside the container.
+  & docker exec cestereg-dev bash -lc "if ss -lptn | grep -q ':8080'; then echo 'Port 8080 in use inside container. Killing listener...'; fuser -k 8080/tcp || true; fi"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # Run backend. This stays attached until Spring Boot exits or the user stops the script.
-  @'
-set -eu
-cd apps/backend
-mvn spring-boot:run
-'@ | & docker exec -i cestereg-dev bash
+  & docker exec -i cestereg-dev bash -lc "cd apps/backend && mvn spring-boot:run"
   exit $LASTEXITCODE
 }
 finally {
