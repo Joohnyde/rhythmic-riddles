@@ -13,23 +13,12 @@ try {
   & docker compose up -d db dev
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-  # Kill whatever holds 4200 inside the container. Command is piped into bash to avoid PowerShell -> bash -c quoting issues.
-  @'
-set -eu
-if ss -lptn | grep -q ':4200'; then
-  echo 'Port 4200 in use inside container. Killing listener...'
-  fuser -k 4200/tcp || true
-fi
-'@ | & docker exec -i cestereg-dev bash
+  # Kill whatever holds 4200 inside the container.
+  & docker exec cestereg-dev bash -lc "if ss -lptn | grep -q ':4200'; then echo 'Port 4200 in use inside container. Killing listener...'; fuser -k 4200/tcp || true; fi"
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # Run frontend. This stays attached until Angular exits or the user stops the script.
-  @'
-set -eu
-cd apps/frontend
-npm install --prefer-offline
-npm start
-'@ | & docker exec -i cestereg-dev bash
+  & docker exec -i cestereg-dev bash -lc "cd apps/frontend && npm install --prefer-offline && npm start -- --poll 1000"
   exit $LASTEXITCODE
 }
 finally {
