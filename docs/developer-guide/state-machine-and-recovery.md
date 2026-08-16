@@ -104,6 +104,10 @@ Stage 2 is reconstructed from:
 ### When
 - `game.getStage() == 2` 
 
+### Persisted-state validation
+
+Recovery requires a last-played schedule with a track, album, and song. If that persisted Stage-2 state is missing or incomplete, `contextFetch` rejects recovery with `WrongGameStateException` (`E003`) instead of returning a partial snapshot.
+
 ### Always-present fields (base contract)
 
 Stage 2 always begins with:

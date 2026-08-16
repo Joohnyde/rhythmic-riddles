@@ -83,7 +83,9 @@ CI enforces formatting:
 
 Run locally:
 - `./scripts/dev/format-all.sh`
-- `./scripts/dev/test-all.sh`
+- Backend tests (Linux): `cd apps/backend && mvn -Dplatform=linux test`
+  - Windows/macOS: use `-Dplatform=windows` / `-Dplatform=macos`
+  - See `docs/developer-guide/testing/db-integration-tests.md` for embedded PostgreSQL details.
 
 See `docs/developer-guide/ide-setup.md`.
 

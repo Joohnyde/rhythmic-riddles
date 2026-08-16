@@ -3,9 +3,9 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.cevapinxile.cestereg.core.service.impl;
-
 import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
+import com.cevapinxile.cestereg.common.exception.InvalidArgumentException;
 import com.cevapinxile.cestereg.common.exception.InvalidReferencedObjectException;
 import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
 import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
@@ -15,6 +15,7 @@ import com.cevapinxile.cestereg.core.service.ScheduleService;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
+import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -26,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
-
 /*
  * @author denijal
  */
@@ -37,6 +37,8 @@ public class ScheduleServiceImpl implements ScheduleService {
 
   @Autowired private GameService gameService;
 
+  @Autowired private GameRepository gameRepository;
+
   @Autowired private CategoryService categoryService;
 
   @Autowired private ScheduleRepository scheduleRepository;
@@ -44,13 +46,12 @@ public class ScheduleServiceImpl implements ScheduleService {
   @Autowired private InterruptRepository interruptRepository;
 
   @Autowired private PresenceGateway presenceGateway;
-
   @Autowired private BroadcastGateway broadcastGateway;
-
   @Override
-  @Transactional
+  @Transactional(rollbackOn = DerivedException.class)
   public void replaySong(final UUID lastPlayedScheduleId, final String roomCode)
       throws DerivedException {
+    lockGame(roomCode);
     final GameEntity game = gameService.findByCode(roomCode, 2);
     // Request validation (fail fast on invalid input).
     final Optional<ScheduleEntity> maybeSchedule =
@@ -59,16 +60,15 @@ public class ScheduleServiceImpl implements ScheduleService {
       throw new InvalidReferencedObjectException(
           "Order with id " + lastPlayedScheduleId + " does not exist");
     }
+    final ScheduleEntity lastPlayedSong = maybeSchedule.get();
+    validateScheduleOwnership(lastPlayedSong, game, roomCode);
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
     }
-
     final LocalDateTime now = LocalDateTime.now();
     interruptRepository.resolveErrors(lastPlayedScheduleId, now);
-    final ScheduleEntity lastPlayedSong = maybeSchedule.get();
     lastPlayedSong.setStartedAt(now);
     scheduleRepository.saveAndFlush(lastPlayedSong);
-
     /* Replay has no direct response, so we broadcast the event instead of targeting the TV only.
     This ensures a refreshed admin client can recover the song duration. */
     LOG.info("Replaying schedule {}", lastPlayedScheduleId);
@@ -78,11 +78,11 @@ public class ScheduleServiceImpl implements ScheduleService {
             + lastPlayedSong.getTrackId().getSongId().getSnippetDuration()
             + "}");
   }
-
   @Override
-  @Transactional
+  @Transactional(rollbackOn = DerivedException.class)
   public void revealAnswer(final UUID lastPlayedScheduleId, final String roomCode)
       throws DerivedException {
+    lockGame(roomCode);
     final GameEntity game = gameService.findByCode(roomCode, 2);
     // Request validation (fail fast on invalid input).
     final Optional<ScheduleEntity> maybeSchedule =
@@ -91,47 +91,43 @@ public class ScheduleServiceImpl implements ScheduleService {
       throw new InvalidReferencedObjectException(
           "Order with id " + lastPlayedScheduleId + " does not exist");
     }
+    final ScheduleEntity lastPlayedSong = maybeSchedule.get();
+    validateScheduleOwnership(lastPlayedSong, game, roomCode);
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
     }
-
     final LocalDateTime now = LocalDateTime.now();
     interruptRepository.resolveErrors(lastPlayedScheduleId, now);
-    final ScheduleEntity lastPlayedSong = maybeSchedule.get();
     lastPlayedSong.setRevealedAt(now);
     scheduleRepository.saveAndFlush(lastPlayedSong);
 
     /* Should you broadcast or simply send to TV?
     Admin will get response code 200 and can use that to change view */
-
     LOG.info("Revealing schedule {}", lastPlayedScheduleId);
     broadcastGateway.broadcast(roomCode, "{\"type\":\"song_reveal\"}");
   }
-
   @Override
-  @Transactional
   /* Advances the game: resolve any pending errors from the previous song, then either
   start the next scheduled song or, if none remain, finish the album and move to the next stage. */
+  @Transactional(rollbackOn = DerivedException.class)
   public void progress(String roomCode) throws DerivedException {
+    lockGame(roomCode);
     final GameEntity game = gameService.findByCode(roomCode, 2);
     // Request validation (fail fast on invalid input).
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
     }
-
     final ScheduleEntity lastSongPlayed = scheduleRepository.findLastPlayed(game.getId());
     final LocalDateTime now = LocalDateTime.now();
 
     // Any unresolved "pause/error" state must be closed before starting/revealing/advancing.
     interruptRepository.resolveErrors(lastSongPlayed.getId(), now);
-
     final HashMap<String, Object> json = new HashMap<>();
     final Optional<ScheduleEntity> maybeSchedule = scheduleRepository.findNext(game.getId());
     if (maybeSchedule.isPresent()) {
       final ScheduleEntity nextSong = maybeSchedule.get();
       nextSong.setStartedAt(LocalDateTime.now());
       scheduleRepository.saveAndFlush(nextSong);
-
       GameServiceImpl.putDefaultFields(nextSong, json);
       json.put(
           "remaining",
@@ -145,4 +141,21 @@ public class ScheduleServiceImpl implements ScheduleService {
     final int nextState = categoryService.finishAndNext(game);
     gameService.changeStage(nextState, roomCode);
   }
+
+  private void validateScheduleOwnership(
+      final ScheduleEntity schedule, final GameEntity game, final String roomCode)
+      throws InvalidArgumentException {
+    if (schedule.getCategoryId() != null
+        && schedule.getCategoryId().getGameId() != null
+        && !game.getId().equals(schedule.getCategoryId().getGameId().getId())) {
+      throw new InvalidArgumentException(
+          "Room code " + roomCode + " isn't consistent with schedule " + schedule.getId());
+    }
+  }
+  private void lockGame(final String roomCode) {
+    if (gameRepository != null) {
+      gameRepository.tryLockGame(roomCode);
+    }
+  }
+
 }

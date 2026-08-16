@@ -56,11 +56,11 @@ class TeamScore {
     this.name = name;
   }
 
-  public Integer getScore() {
+  public synchronized Integer getScore() {
     return score;
   }
 
-  public void setScore(Integer score) {
+  public synchronized void setScore(Integer score) {
     this.score = score;
   }
 
@@ -85,7 +85,7 @@ public class TeamScoreCache {
     }
   }
 
-  public Object getScores() {
+  public synchronized Object getScores() {
     return this.scoreList;
   }
 

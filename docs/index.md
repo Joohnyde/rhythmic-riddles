@@ -23,6 +23,7 @@
 
 ## Testing docs
 - [Testing overview](developer-guide/testing/testing-overview.md)
+- [Database integration testing](developer-guide/testing/db-integration-tests.md)
 - [E2E / seeded WebSocket testing](developer-guide/testing/e2e.md)
 - [Writing tests](developer-guide/testing/writing-tests.md)
 - [Test catalog](developer-guide/testing/test-catalog.md)

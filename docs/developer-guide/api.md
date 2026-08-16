@@ -264,6 +264,7 @@ Removes a team.
 
 Response:
 - `200 OK`
+- `422 Unprocessable Entity` — the team exists but belongs to a different room (`E002 - Malformed argument`)
 
 WS side-effect:
 - TV receives `kick_team`
@@ -308,6 +309,7 @@ Replays snippet.
 
 Response:
 - `200 OK`
+- `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
 
 WS side-effect:
 - broadcast `song_repeat`
@@ -319,6 +321,7 @@ Reveals answer.
 
 Response:
 - `200 OK`
+- `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
 
 WS side-effect:
 - broadcast `song_reveal`
@@ -392,6 +395,7 @@ Request:
 
 Response:
 - `200 OK`
+- `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
 
 WS side-effect:
 - broadcast `error_solved`

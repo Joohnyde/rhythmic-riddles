@@ -3,7 +3,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.cevapinxile.cestereg.core.service.impl;
-
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame;
 import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
@@ -24,6 +23,7 @@ import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import jakarta.transaction.Transactional;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 /*
  * @author denijal
  */
@@ -52,8 +51,13 @@ public class InterruptServiceImpl implements InterruptService {
   @Autowired private ScheduleRepository scheduleRepository;
 
   @Autowired private BroadcastGateway broadcastGateway;
-
   @Autowired private PresenceGateway presenceGateway;
+
+  /*
+   * Keep a real-clock default for plain unit construction / Mockito @InjectMocks.
+   * In the running Spring application this field is replaced by the Clock bean from ClockConfig.
+   */
+  @Autowired(required = false) private Clock clock = Clock.systemDefaultZone();
 
   @Override
   /**
@@ -73,9 +77,8 @@ public class InterruptServiceImpl implements InterruptService {
       interrupts = new ArrayList<>();
     }
     if (interrupts.isEmpty() || interrupts.getLast().getEnd() != null) {
-      interrupts.add(new InterruptFrame(LocalDateTime.now(), null));
+      interrupts.add(new InterruptFrame(LocalDateTime.now(clock), null));
     }
-
     LocalDateTime end = startTimestamp;
     long seek = 0;
     for (InterruptFrame interrupt : interrupts) {
@@ -84,7 +87,6 @@ public class InterruptServiceImpl implements InterruptService {
     }
     return seek;
   }
-
   @Override
   public InterruptEntity[] getLastTwoInterrupts(
       final LocalDateTime startTimestamp, final UUID scheduleId) {
@@ -93,28 +95,29 @@ public class InterruptServiceImpl implements InterruptService {
       interruptRepository.findLastPause(startTimestamp, scheduleId)
     };
   }
-
   @Override
-  @Transactional
   /* Interrupt invariant (critical for seek calculation):
    Interrupts may be DISJOINT (A ends, then B starts) or NESTED (B fully inside A).
    Partially overlapping interrupts are forbidden because paused time becomes ambiguous
    (overlap would be double-counted or missed).
-
    Forbidden example (partial overlap):
     1) TV disconnect triggers interrupt A (system pause)
     2) While A is active, a team buzz triggers interrupt B (team pause)
     3) Admin resolves A when TV reconnects, but B is still active
        → A and B now overlap only partially (invalid state).
-
   Therefore, creating a team interrupt while any system interrupt is active is only allowed
   if the new interrupt is guaranteed to be fully nested and resolved before the outer one ends. */
+  @Transactional(rollbackOn = DerivedException.class)
   public void interrupt(final String roomCode, final UUID teamId) throws DerivedException {
+    if (teamId == null) {
+      gameRepository.lockGame(roomCode);
+    } else {
+      gameRepository.tryLockGame(roomCode);
+    }
 
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
     final ScheduleEntity lastPlayedSong = scheduleRepository.findLastPlayed(game.getId());
     TeamEntity team = null;
-
     if (teamId != null) {
       // Request validation (fail fast on invalid input).
       final Optional<TeamEntity> maybeTeam = teamService.findById(teamId);
@@ -126,11 +129,9 @@ public class InterruptServiceImpl implements InterruptService {
         throw new UnauthorizedException(
             "Team with id " + teamId + " isn't part of the game " + roomCode);
       }
-
       final double seek =
           calculateSeek(lastPlayedSong.getStartedAt(), lastPlayedSong.getId()) / 1000.0;
       final double remaining = lastPlayedSong.getTrackId().getSongId().getSnippetDuration() - seek;
-
       final List<InterruptEntity> interruptList = lastPlayedSong.getInterruptList();
       if (interruptList != null) {
         for (InterruptEntity interrupt : interruptList) {
@@ -141,12 +142,10 @@ public class InterruptServiceImpl implements InterruptService {
           }
         }
       }
-
       if (lastPlayedSong.getRevealedAt() != null || remaining < 0) {
         throw new GuessNotAllowedException(
             "Song " + lastPlayedSong.getTrackId().getSongId().getId() + " is no longer playing");
       }
-
       final InterruptEntity[] lastTwoInterrupts =
           getLastTwoInterrupts(lastPlayedSong.getStartedAt(), lastPlayedSong.getId());
       final InterruptEntity teamInterrupt = lastTwoInterrupts[0];
@@ -161,9 +160,8 @@ public class InterruptServiceImpl implements InterruptService {
     final InterruptEntity newInterrupt = new InterruptEntity(UUID.randomUUID());
     newInterrupt.setScheduleId(lastPlayedSong);
     newInterrupt.setTeamId(team);
-    newInterrupt.setArrivedAt(LocalDateTime.now());
+    newInterrupt.setArrivedAt(LocalDateTime.now(clock));
     interruptRepository.saveAndFlush(newInterrupt);
-
     /* Lightweight WS frame to reduce serialization overhead for frequent events.
     Safe from escaping concerns because we only send UUIDs (no free-form input). */
     broadcastGateway.broadcast(
@@ -174,13 +172,12 @@ public class InterruptServiceImpl implements InterruptService {
             + newInterrupt.getId()
             + "\"}");
   }
-
   @Override
-  @Transactional
+  @Transactional(rollbackOn = DerivedException.class)
   public void resolveErrors(final UUID lastPlayedScheduleId, final String roomCode)
       throws DerivedException {
+    gameRepository.tryLockGame(roomCode);
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
-
     // Request validation (fail fast on invalid input).
     final Optional<ScheduleEntity> maybeSchedule =
         scheduleRepository.findById(lastPlayedScheduleId);
@@ -188,24 +185,23 @@ public class InterruptServiceImpl implements InterruptService {
       throw new InvalidReferencedObjectException(
           "Order with id " + lastPlayedScheduleId + " does not exist");
     }
+    validateScheduleOwnership(maybeSchedule.get(), game, roomCode);
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
     }
-
     final Integer previousScenario =
         interruptRepository.findPreviousScenarioId(lastPlayedScheduleId);
-    interruptRepository.resolveErrors(lastPlayedScheduleId, LocalDateTime.now());
+    interruptRepository.resolveErrors(lastPlayedScheduleId, LocalDateTime.now(clock));
     broadcastGateway.broadcast(
         roomCode, "{\"type\":\"error_solved\",\"previousScenario\":" + previousScenario + "}");
   }
-
   @Override
-  @Transactional
+  @Transactional(rollbackOn = DerivedException.class)
   public void answer(final UUID answerId, final AnswerRequest ar, final String roomCode)
       throws DerivedException {
+    gameRepository.tryLockGame(roomCode);
     final boolean correct = ar.correct();
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
-
     // Request validation (fail fast on invalid input).
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
@@ -219,11 +215,11 @@ public class InterruptServiceImpl implements InterruptService {
       throw new InvalidArgumentException(
           "Room code " + roomCode + " isn't consistent with the answer");
     }
+    validateScheduleOwnership(answer.getScheduleId(), game, roomCode);
     if (answer.isCorrect() != null || answer.getResolvedAt() != null) {
       throw new GuessNotAllowedException("That guess was already answered");
     }
-
-    final LocalDateTime resolvedAt = LocalDateTime.now();
+    final LocalDateTime resolvedAt = LocalDateTime.now(clock);
 
     // Scoring rule: correct guess awards +30, incorrect guess penalizes -10.
     final Integer newScore =
@@ -233,13 +229,11 @@ public class InterruptServiceImpl implements InterruptService {
     answer.setScoreOrScenarioId(newScore);
     interruptRepository.resolveErrors(answer.getScheduleId().getId(), resolvedAt);
     interruptRepository.save(answer);
-
     if (correct) {
       final ScheduleEntity schedule = answer.getScheduleId();
       schedule.setRevealedAt(resolvedAt);
       scheduleRepository.saveAndFlush(schedule);
     }
-
     teamService.saveTeamAnswer(
         answer.getTeamId().getId(), answer.getScheduleId().getId(), newScore, roomCode);
     LOG.info(
@@ -254,23 +248,24 @@ public class InterruptServiceImpl implements InterruptService {
             + correct
             + "}");
   }
-
   @Override
   public UUID findCorrectAnswer(final UUID scheduleId, final String roomCode)
       throws DerivedException {
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
+    final Optional<ScheduleEntity> maybeSchedule = scheduleRepository.findById(scheduleId);
+    if (maybeSchedule.isPresent()) {
+      validateScheduleOwnership(maybeSchedule.get(), game, roomCode);
+    }
     return interruptRepository.findCorrectAnswer(scheduleId);
   }
-
   @Override
-  @Transactional
+  @Transactional(rollbackOn = DerivedException.class)
   public void savePreviousScenario(final int scenarioId, final String roomCode)
       throws DerivedException {
     // Request validation (fail fast on invalid input).
     if (scenarioId < 0 || scenarioId > 4 || scenarioId == 3) {
       throw new InvalidArgumentException("Scenario has to be a number between 0 and 4 but not 3");
     }
-
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
     final ScheduleEntity lastPlayedSong = scheduleRepository.findLastPlayed(game.getId());
     if (lastPlayedSong != null) {
@@ -287,4 +282,15 @@ public class InterruptServiceImpl implements InterruptService {
       }
     }
   }
+  private void validateScheduleOwnership(
+      final ScheduleEntity schedule, final GameEntity game, final String roomCode)
+      throws InvalidArgumentException {
+    if (schedule.getCategoryId() != null
+        && schedule.getCategoryId().getGameId() != null
+        && !game.getId().equals(schedule.getCategoryId().getGameId().getId())) {
+      throw new InvalidArgumentException(
+          "Room code " + roomCode + " isn't consistent with schedule " + schedule.getId());
+    }
+  }
+
 }

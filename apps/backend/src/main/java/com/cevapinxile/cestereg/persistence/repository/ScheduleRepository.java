@@ -17,4 +17,5 @@ public interface ScheduleRepository extends JpaRepository<ScheduleEntity, UUID> 
   ScheduleEntity findLastPlayed(UUID gameId);
 
   Optional<ScheduleEntity> findNext(UUID gameId);
+
 }

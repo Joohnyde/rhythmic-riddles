@@ -69,6 +69,18 @@ Workflow:
                             "{\"error\":\"E001 - Invalid referenced object\","
                                 + "\"message\":\"Game or schedule was not found for the provided identifiers.\"}"))),
     @ApiResponse(
+        responseCode = "422",
+        description = "Schedule does not belong to the game identified by roomCode.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E002 - Malformed argument\","
+                                + "\"message\":\"Schedule does not belong to the specified game.\"}"))),
+    @ApiResponse(
         responseCode = "409",
         description = "Game isn't in state 2.",
         content =
@@ -150,6 +162,18 @@ Workflow:
                         value =
                             "{\"error\":\"E001 - Invalid referenced object\","
                                 + "\"message\":\"Game or schedule was not found for the provided identifiers.\"}"))),
+    @ApiResponse(
+        responseCode = "422",
+        description = "Schedule does not belong to the game identified by roomCode.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E002 - Malformed argument\","
+                                + "\"message\":\"Schedule does not belong to the specified game.\"}"))),
     @ApiResponse(
         responseCode = "409",
         description = "Game isn't in state 2.",

@@ -139,6 +139,55 @@ For JSON endpoints, tests should verify `application/json` media type for both s
 
 Controller tests should not retest every service rule. They should prove that HTTP wiring, validation, serialization, and exception handling are correct.
 
+### Real-PostgreSQL repository integration tests
+
+Persistence integration tests live under:
+
+```text
+apps/backend/src/test/java/com/cevapinxile/cestereg/persistence/repository/integration
+```
+
+They use the shared real-PostgreSQL support in `persistence/integration/support` and intentionally seed rows through SQL rather than repository `save()` calls. This keeps the query under test as the thing being proved.
+
+Current suites:
+
+- `GameRepositoryIntegrationTest`
+- `InterruptRepositoryIntegrationTest`
+- `ScheduleRepositoryIntegrationTest`
+- `CategoryRepositoryIntegrationTest`
+- `TeamRepositoryIntegrationTest`
+
+This layer protects stage-aware lookup, ordering, filtering, game/schedule scoping, nested interrupt semantics, update-query targeting, client-facing projections, PostgreSQL-native scoring retrieval, and the automatic-picker/admin-fallback boundary.
+
+Do not add tests here for trivial inherited CRUD behavior.
+
+### DB-backed recovery and persistence invariants
+
+Service-level DB integration tests live under:
+
+```text
+apps/backend/src/test/java/com/cevapinxile/cestereg/core/service/integration
+```
+
+Current service suites:
+
+- `GameLifecycleIntegrationTest`
+- `GameRecoveryIntegrationTest`
+- `GameStateAtomicityIntegrationTest`
+- `InterruptInvariantIntegrationTest`
+- `RoomOwnershipIntegrationTest`
+- `ScheduleAtomicityIntegrationTest`
+- `ScoreCacheConsistencyIntegrationTest`
+- `TransactionAtomicityIntegrationTest`
+- `GameConcurrencyIntegrationTest`
+- `InterruptConcurrencyIntegrationTest`
+
+Schema-level integration lives in `persistence/integration/DatabaseSchemaIntegrationTest`.
+
+Together these tests seed persisted state directly into an ephemeral PostgreSQL database initialized from `db_01_create_schema.sql` followed by `db_04_add_runtime_invariants.sql` and invoke real repositories/services where appropriate. They protect recovery across lobby, album-selection, song, and winner stages; persisted lifecycle transitions; incomplete/corrupt state; active team answering; layered team/system interruption; technical pause; ended-not-revealed and revealed song states; nested/disjoint pause timing; cross-room UUID ownership; transaction rollback; DB/in-memory score-cache coherence; initializer/schema invariants; and persistence invariants under controlled concurrent requests. A fixed `Clock` is used when wall-clock time affects assertions.
+
+See `db-integration-tests.md` for the local runner and fixture conventions.
+
 ### Lower-level/supporting tests
 
 Additional tests may exist for:
@@ -316,7 +365,24 @@ It should cover:
 - end-of-game behavior;
 - ordering-sensitive side effects.
 
-### 4. Browser-observed WebSocket runtime
+### 4. Real-PostgreSQL recovery/query composition
+
+Database integration should protect:
+
+- recovery-critical repository ordering and filtering;
+- stage-aware game lookups and game-owned cascade cleanup;
+- disjoint-or-nested interrupt semantics;
+- persisted score/result projections;
+- `contextFetch(...)` reconstruction from actual rows across all game stages;
+- representative invalid persisted state;
+- query behavior that depends on PostgreSQL rather than mocked repositories;
+- persisted lifecycle transitions and failure atomicity;
+- supported write-path ownership so externally supplied identifiers cannot cross room boundaries;
+- database/in-memory cache coherence and controlled transaction races;
+- the current `db_01` plus `db_04` initializer contract and database-enforced runtime invariants;
+- team/system interrupt contention where team commands fail fast but must-persist system events are never lost.
+
+### 5. Browser-observed WebSocket runtime
 
 Playwright WebSocket integration should protect:
 
@@ -359,8 +425,6 @@ When adding, merging, or deleting tests:
 
 This catalog should later expand to include:
 
-- repository integration tests;
-- DB-backed recovery integration tests;
 - full-stack Spring integration tests;
 - full product E2E regression tests;
 - frontend unit and integration tests.

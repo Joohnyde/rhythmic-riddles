@@ -41,7 +41,7 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
       return;
     }
     try {
-      tvSession.sendMessage(new TextMessage(payload));
+      sendSafely(tvSession, payload);
     } catch (IOException ex) {
       LOG.warn("An IO exception occured", payload);
     }
@@ -55,7 +55,7 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
       return;
     }
     try {
-      adminSession.sendMessage(new TextMessage(payload));
+      sendSafely(adminSession, payload);
     } catch (IOException ex) {
       LOG.warn("An IO exception occured", payload);
     }
@@ -67,10 +67,16 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
       return;
     }
     try {
-      socket.sendMessage(new TextMessage(payload));
+      sendSafely(socket, payload);
       LOG.info("Sent {} to {}", payload, socket.getUri());
     } catch (IOException ex) {
       LOG.error(null, ex);
     }
   }
+  private void sendSafely(final WebSocketSession session, final String payload) throws IOException {
+    synchronized (session) {
+      session.sendMessage(new TextMessage(payload));
+    }
+  }
+
 }

@@ -164,6 +164,18 @@ Workflow:
                             "{\"error\":\"E001 - Invalid referenced object\","
                                 + "\"message\":\"Game or team was not found for the provided identifiers.\"}"))),
     @ApiResponse(
+        responseCode = "422",
+        description = "Team does not belong to the game identified by roomCode.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        value =
+                            "{\"error\":\"E002 - Malformed argument\","
+                                + "\"message\":\"Team does not belong to the specified game.\"}"))),
+    @ApiResponse(
         responseCode = "409",
         description = "Game already started (isn't in stage 0).",
         content =

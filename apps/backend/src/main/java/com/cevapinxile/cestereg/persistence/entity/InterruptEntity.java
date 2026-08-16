@@ -65,7 +65,8 @@ import java.util.UUID;
           """
               SELECT i
               FROM   InterruptEntity i
-              WHERE  i.arrivedAt > :startTimestamp
+              WHERE  i.teamId IS NULL
+                     AND i.arrivedAt > :startTimestamp
                      AND i.scheduleId.id = :scheduleId
               ORDER  BY i.arrivedAt DESC
               LIMIT  1
@@ -119,6 +120,7 @@ import java.util.UUID;
                 AND i.resolvedAt IS NULL
                 AND i.scoreOrScenarioId IS NOT NULL
                 AND i.scoreOrScenarioId != 3
+              ORDER BY i.arrivedAt DESC
               LIMIT  1""")
 })
 public class InterruptEntity implements Serializable {

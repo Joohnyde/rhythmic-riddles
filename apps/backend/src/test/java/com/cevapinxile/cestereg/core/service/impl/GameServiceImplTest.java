@@ -824,7 +824,7 @@ public class GameServiceImplTest {
       when(gameRepository.findByCode("AKKU")).thenReturn(Optional.of(game));
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(null);
 
-      assertThrows(NullPointerException.class, () -> gameService.contextFetch("AKKU"));
+      assertThrows(WrongGameStateException.class, () -> gameService.contextFetch("AKKU"));
     }
 
     @Test
@@ -1684,7 +1684,7 @@ public class GameServiceImplTest {
       when(gameRepository.findByCode("AKKU")).thenReturn(Optional.of(game));
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(null);
 
-      assertThrows(NullPointerException.class, () -> gameService.contextFetch("AKKU"));
+      assertThrows(WrongGameStateException.class, () -> gameService.contextFetch("AKKU"));
 
       verify(teamService, never()).getTeamScores("AKKU");
       verify(interruptService, never())

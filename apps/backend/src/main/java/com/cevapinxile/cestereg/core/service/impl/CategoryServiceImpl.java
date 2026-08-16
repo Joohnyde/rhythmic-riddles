@@ -22,8 +22,10 @@ import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.CategoryRepository;
+import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import com.cevapinxile.cestereg.persistence.repository.TeamRepository;
+import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +49,8 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Autowired private GameService gameService;
 
+  @Autowired private GameRepository gameRepository;
+
   @Autowired private CategoryRepository categoryRepository;
 
   @Autowired private ScheduleRepository scheduleRepository;
@@ -58,9 +62,11 @@ public class CategoryServiceImpl implements CategoryService {
   @Autowired private PresenceGateway presenceGateway;
 
   @Override
+  @Transactional(rollbackOn = DerivedException.class)
   public LastCategory pickAlbum(
       final UUID categoryId, final TeamIdRequest par, final String roomCode)
       throws DerivedException {
+    lockGame(roomCode);
     // Request validation (fail fast on invalid input).
     if (par == null) {
       throw new MissingArgumentException("The request's body is missing");
@@ -97,6 +103,11 @@ public class CategoryServiceImpl implements CategoryService {
     if (category.getGameId().getStage() != 1) {
       throw new WrongGameStateException("Game " + roomCode + " doesn't choose albums now");
     }
+    final LastCategory lockedLastCategory =
+        categoryRepository.findLastCategory(category.getGameId().getId());
+    if (lockedLastCategory != null && !lockedLastCategory.isStarted()) {
+      throw new InvalidArgumentException("An album is already selected and has not started yet");
+    }
 
     category.setPickedByTeamId(team);
     category.setOrdinalNumber(categoryRepository.findNextId(category.getGameId().getId()));
@@ -119,7 +130,9 @@ public class CategoryServiceImpl implements CategoryService {
   }
 
   @Override
+  @Transactional(rollbackOn = DerivedException.class)
   public void startCategory(final UUID categoryId, final String roomCode) throws DerivedException {
+    lockGame(roomCode);
     // Request validation (fail fast on invalid input).
     final Optional<CategoryEntity> maybeCategory = categoryRepository.findById(categoryId);
     if (maybeCategory.isEmpty()) {
@@ -184,4 +197,10 @@ public class CategoryServiceImpl implements CategoryService {
     LOG.info("Finished category {}. Now transitioning to {}", lastCategory.getId(), newState);
     return newState;
   }
+  private void lockGame(final String roomCode) {
+    if (gameRepository != null) {
+      gameRepository.tryLockGame(roomCode);
+    }
+  }
+
 }

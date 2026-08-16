@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
  * @author denijal
  */
 public class TestCatalogConsistencyTest {
-
   private static final Path TEST_SOURCE_ROOT = Paths.get("src/test/java");
   private static final Path TEST_CATALOG =
       Paths.get("../../docs/developer-guide/testing/test-catalog.csv");
@@ -40,7 +39,6 @@ public class TestCatalogConsistencyTest {
     staleInCatalog.removeAll(discoveredTests);
 
     StringBuilder error = new StringBuilder();
-
     if (!catalog.duplicateEntries().isEmpty()) {
       error.append("\nDuplicate entries in test-catalog.csv:\n");
       for (TestKey duplicate : catalog.duplicateEntries()) {
@@ -54,7 +52,6 @@ public class TestCatalogConsistencyTest {
         error.append(" - ").append(missing).append("\n");
       }
     }
-
     if (!staleInCatalog.isEmpty()) {
       error.append("\nEntries present in test-catalog.csv but not found in code:\n");
       for (TestKey stale : staleInCatalog) {
@@ -80,7 +77,6 @@ public class TestCatalogConsistencyTest {
               .filter(Files::isRegularFile)
               .filter(path -> path.toString().endsWith(".java"))
               .toList();
-
       for (Path javaFile : javaFiles) {
         result.addAll(extractTestsFromJavaFile(javaFile));
       }
@@ -96,7 +92,6 @@ public class TestCatalogConsistencyTest {
 
     String fileName = javaFile.getFileName().toString();
     String currentClassName = null;
-
     Pattern classPattern = Pattern.compile("\\bclass\\s+([A-Za-z0-9_]+)\\b");
     Pattern methodPattern =
         Pattern.compile(
@@ -111,7 +106,6 @@ public class TestCatalogConsistencyTest {
       if (classMatcher.find()) {
         currentClassName = classMatcher.group(1);
       }
-
       if (!isSupportedTestAnnotation(line)) {
         continue;
       }
@@ -133,7 +127,7 @@ public class TestCatalogConsistencyTest {
 
   private boolean isSupportedTestAnnotation(String line) {
     for (String annotation : SUPPORTED_TEST_ANNOTATIONS) {
-      if (line.startsWith(annotation) || line.contains(annotation + "(")) {
+      if (line.equals(annotation) || line.startsWith(annotation + "(")) {
         return true;
       }
     }
@@ -145,7 +139,6 @@ public class TestCatalogConsistencyTest {
 
     for (int i = startIndex; i < lines.size(); i++) {
       String line = lines.get(i).trim();
-
       if (line.isBlank() || line.startsWith("//")) continue;
 
       // skip annotations
@@ -174,7 +167,6 @@ public class TestCatalogConsistencyTest {
 
     Set<TestKey> entries = new TreeSet<>();
     Set<TestKey> duplicates = new TreeSet<>();
-
     try (var reader = Files.newBufferedReader(TEST_CATALOG);
         var parser =
             org.apache.commons.csv.CSVFormat.DEFAULT
@@ -184,7 +176,6 @@ public class TestCatalogConsistencyTest {
                 .setIgnoreSurroundingSpaces(true)
                 .get()
                 .parse(reader)) {
-
       Map<String, Integer> headerMap = parser.getHeaderMap();
       if (headerMap == null) {
         fail("Could not read CSV header from: " + TEST_CATALOG.toAbsolutePath());
@@ -194,20 +185,17 @@ public class TestCatalogConsistencyTest {
       requireCsvHeader(headerMap, "file");
       requireCsvHeader(headerMap, "suite");
       requireCsvHeader(headerMap, "test_name");
-
       for (org.apache.commons.csv.CSVRecord record : parser) {
         String framework = getCsvValue(record, "framework");
         if (!"junit".equalsIgnoreCase(framework)) {
           continue;
         }
-
         String file = getCsvValue(record, "file");
         if (file.contains("/")) file = file.substring(file.lastIndexOf('/') + 1);
         String suite = getCsvValue(record, "suite");
         if (StringUtils.isBlank(suite)) suite = file;
         if (suite.contains(".")) suite = suite.substring(0, suite.lastIndexOf('.'));
         String testName = getCsvValue(record, "test_name");
-
         if (file.isBlank() || testName.isBlank()) {
           fail(
               "Malformed row in test-catalog.csv at CSV record "

@@ -3,7 +3,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.cevapinxile.cestereg.core.service.impl;
-
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.ChoosingTeam;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse;
@@ -25,6 +24,7 @@ import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.repository.CategoryRepository;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
+import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
-
 /*
  * @author denijal
  */
@@ -52,7 +51,6 @@ public class GameServiceImpl implements GameService {
   @Autowired private ScheduleRepository scheduleRepository;
 
   @Autowired private BroadcastGateway broadcastGateway;
-
   @Autowired private PresenceGateway presenceGateway;
 
   @Override
@@ -64,7 +62,6 @@ public class GameServiceImpl implements GameService {
     if (cgr.maxSongs() != null && cgr.maxSongs() < 0) {
       throw new InvalidArgumentException("Number of songs must be a positive integer");
     }
-
     GameEntity existingGame = new GameEntity(cgr);
     while (gameRepository.findByCode(existingGame.getCode()).isPresent()) {
       existingGame = new GameEntity(cgr);
@@ -73,7 +70,6 @@ public class GameServiceImpl implements GameService {
     // Log here
     return existingGame.getCode();
   }
-
   /**
    * Populates fields required by the frontend in all scenarios.
    *
@@ -99,7 +95,6 @@ public class GameServiceImpl implements GameService {
     json.put("scheduleId", lastPlayedSong.getId());
     json.put("answerDuration", lastPlayedSong.getTrackId().getSongId().getAnswerDuration());
   }
-
   @Override
   public HashMap<String, Object> contextFetch(final String roomCode) throws DerivedException {
     final HashMap<String, Object> json = new HashMap<>();
@@ -108,7 +103,6 @@ public class GameServiceImpl implements GameService {
     if (maybeGame.isEmpty()) {
       return json;
     }
-
     final GameEntity game = maybeGame.get();
     json.put("type", "welcome");
     switch (game.getStage()) {
@@ -124,13 +118,11 @@ public class GameServiceImpl implements GameService {
         (unless the game is finished).
         The end check is defensive: stage 2 should already enforce completion,
         but this protects against edge cases (e.g., empty or inconsistent setup).
-
         Response structure:
         - If selecting a new category:
            return album metadata (name, image, pickedBy) and the current picker
         - If a category was selected but not started yet:
            return the selected album and who selected it
-
         Picker rotation follows the predefined button order. */
         if (lastChosenCategory == null
             || lastChosenCategory.isStarted()
@@ -146,7 +138,6 @@ public class GameServiceImpl implements GameService {
           json.put("selected", lastChosenCategory);
         }
         // Else would mean that it's the end and we are in stage 1. Impossible!
-
         json.put("stage", "albums");
         break;
       case 2:
@@ -155,11 +146,10 @@ public class GameServiceImpl implements GameService {
         or waiting for admin action based on stored interrupt frames. */
         json.put("stage", "songs");
         final ScheduleEntity lastPlayedSong = scheduleRepository.findLastPlayed(game.getId());
-
+        validateRecoverableSongState(game, lastPlayedSong);
         /* Default fields
         songId, question, answer, answerDuration, lastScheduledId, teams and their scores */
         GameServiceImpl.putDefaultFields(lastPlayedSong, json);
-
         /* Logically a default field, but depends on teamService + roomCode.
         Kept outside putDefaultFields to avoid polluting its signature.*/
         json.put("scores", teamService.getTeamScores(roomCode));
@@ -172,7 +162,6 @@ public class GameServiceImpl implements GameService {
           json.put("bravo", interruptService.findCorrectAnswer(lastPlayedSong.getId(), roomCode));
           break;
         }
-
         /* The song isn't revealed so we have to figure out if it finished
         "seek" = effective playback time, excluding pauses/interrupts, computed from interrupt frames. */
         final double seek =
@@ -180,7 +169,6 @@ public class GameServiceImpl implements GameService {
                 / 1000.0;
         final double remaining =
             lastPlayedSong.getTrackId().getSongId().getSnippetDuration() - seek;
-
         if (remaining < 0) {
           /* Seek went past the end which means the song had finished
           UI: Show "replay" and "reveal" buttons
@@ -193,7 +181,6 @@ public class GameServiceImpl implements GameService {
         Fields neccesairy for proper, continued playback */
         json.put("seek", seek);
         json.put("remaining", remaining);
-
         // We need to figure out if we are interrupted. Find last unresolved team and system
         // interrupt.
         final InterruptEntity[] interrupts =
@@ -202,7 +189,6 @@ public class GameServiceImpl implements GameService {
 
         final InterruptEntity teamInterrupt = interrupts[0];
         final InterruptEntity systemInterrupt = interrupts[1];
-
         if (teamInterrupt != null && teamInterrupt.isCorrect() == null) {
           /* Last team interrupt doesn't have correct field means that the team is still answering
           UI: Show who is answering, the answer, "correct" and "wrong" buttons
@@ -232,8 +218,21 @@ public class GameServiceImpl implements GameService {
       default:
         throw new WrongGameStateException("Game state has to be between 0 and 3");
     }
-
     return json;
+  }
+
+  private static void validateRecoverableSongState(
+      final GameEntity game, final ScheduleEntity schedule) throws WrongGameStateException {
+    if (schedule == null) {
+      throw new WrongGameStateException(
+          "Game " + game.getCode() + " is in song stage without a played schedule");
+    }
+    if (schedule.getTrackId() == null
+        || schedule.getTrackId().getAlbumId() == null
+        || schedule.getTrackId().getSongId() == null) {
+      throw new WrongGameStateException(
+          "Game " + game.getCode() + " has an incomplete persisted song schedule");
+    }
   }
 
   @Override
@@ -244,12 +243,10 @@ public class GameServiceImpl implements GameService {
     if (maybeGame.isEmpty()) {
       throw new InvalidReferencedObjectException("Game with code " + roomCode + " does not exist");
     }
-
     final GameEntity game = maybeGame.get();
     final int currentStage = game.getStage();
 
     // Log here
-
     if (newStage < 0 || newStage > 3) {
       throw new InvalidArgumentException("Game state has to be a number between 0 and 3");
     }
@@ -268,7 +265,6 @@ public class GameServiceImpl implements GameService {
       throw new WrongGameStateException(
           "We're listening to a song. Stage has to be 1 (album selection) or 3 (finish)");
     }
-
     /* No state change is legal if both apps aren't present.
     This request is made by admin app so their app is obviously
     there, hence the error message. */
@@ -277,16 +273,16 @@ public class GameServiceImpl implements GameService {
     }
     return game;
   }
-
   @Override
+  @Transactional(rollbackOn = DerivedException.class)
   public void changeStage(final int stageId, final String roomCode) throws DerivedException {
+    gameRepository.tryLockGame(roomCode);
     final GameEntity game = isChangeStageLegal(stageId, roomCode);
     game.setStage(stageId);
     gameRepository.saveAndFlush(game);
     broadcastGateway.broadcast(
         roomCode, new ObjectMapper().writeValueAsString(contextFetch(roomCode)));
   }
-
   @Override
   public int getStage(final String roomCode) {
     // Request validation (fail fast on invalid input).

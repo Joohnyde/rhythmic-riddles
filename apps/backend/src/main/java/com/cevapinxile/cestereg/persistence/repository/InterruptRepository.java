@@ -3,7 +3,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
 package com.cevapinxile.cestereg.persistence.repository;
-
 import com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
 import java.time.LocalDateTime;
@@ -33,7 +32,6 @@ public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID
    * @return list of outermost interrupt frames ordered by arrival time ascending
    */
   List<InterruptFrame> findInterrupts(LocalDateTime startTimestamp, UUID scheduleId);
-
   /**
    * Returns the latest system interrupt/pause affecting the given schedule since {@code
    * startTimestamp}.
@@ -46,7 +44,6 @@ public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID
    * @return latest pause interrupt or {@code null} if none exists
    */
   InterruptEntity findLastPause(LocalDateTime startTimestamp, UUID scheduleId);
-
   /**
    * Returns the latest team caused interrupt/buzz-in for the given schedule since {@code
    * startTimestamp}.
@@ -59,7 +56,6 @@ public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID
    * @return latest pause interrupt or {@code null} if none exists
    */
   InterruptEntity findLastAnswer(LocalDateTime startTimestamp, UUID scheduleId);
-
   Optional<Boolean> didTeamAnswer(UUID teamId);
 
   @Modifying
@@ -68,4 +64,5 @@ public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID
   UUID findCorrectAnswer(UUID scheduleId);
 
   Integer findPreviousScenarioId(UUID scheduleId);
+
 }

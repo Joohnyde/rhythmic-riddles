@@ -21,4 +21,5 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, UUID> 
   Integer findNextId(UUID gameId);
 
   LastCategory findLastCategory(UUID gameId);
+
 }

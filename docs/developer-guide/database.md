@@ -307,6 +307,7 @@ All scripts are **idempotent** (safe to run multiple times) and designed to work
 2.  `db_01_create_schema.sql`
 3.  `db_02_set_table_ownership.sql`
 4.  `db_03_fill_tables_with_initial_data.sql`
+5.  `db_04_add_runtime_invariants.sql`
 
 #### `db_00_create_db.sql` (bootstrap: role + database)
 
@@ -416,6 +417,17 @@ To avoid inserting a child before its parent (FK violations), this script insert
 
 `schedule` depends on `category` and `track`, and `interrupt` depends on `schedule` and `team`, so they are not seeded here.
 
+#### `db_04_add_runtime_invariants.sql` (runtime integrity constraints)
+
+**Purpose:**
+
+- adds database-level invariants required by concurrent runtime operations;
+- prevents duplicate category ordinals within a game;
+- permits at most one unresolved team interrupt per schedule;
+- constrains game stage values and requires positive song/album limits.
+
+Run this script after the base schema and seed scripts so existing data is validated against the runtime invariants.
+
 
 ## Running scripts manually (external Postgres)
 
@@ -428,6 +440,7 @@ psql -h 127.0.0.1 -p 5432 -U postgres -d postgres -f db_00_create_db.sql
 psql -h 127.0.0.1 -p 5432 -U rhytmic_riddles -d rhytmic_riddles -f db_01_create_schema.sql
 psql -h 127.0.0.1 -p 5432 -U rhytmic_riddles -d rhytmic_riddles -f db_02_set_table_ownership.sql
 psql -h 127.0.0.1 -p 5432 -U rhytmic_riddles -d rhytmic_riddles -f db_03_fill_tables_with_initial_data.sql
+psql -h 127.0.0.1 -p 5432 -U rhytmic_riddles -d rhytmic_riddles -f db_04_add_runtime_invariants.sql
 ```
 
 ### Passing secrets safely (avoid hardcoding)
@@ -541,6 +554,7 @@ If you need changes over time, add dedicated **patch scripts** (e.g. `db_patch_2
 
 ## References
 
-- Source of truth for schema: `db/db_01_create_schema.sql`
+- Base schema: `db/db_01_create_schema.sql`
+- Runtime integrity constraints: `db/db_04_add_runtime_invariants.sql`
 - Seed data: `db/db_03_fill_tables_with_initial_data.sql`
 - Dev env automation: `docker-compose.yml` (`/docker-entrypoint-initdb.d` mounting)
