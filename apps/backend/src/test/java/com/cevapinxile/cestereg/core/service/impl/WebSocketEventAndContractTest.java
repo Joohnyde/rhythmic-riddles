@@ -60,6 +60,7 @@ class WebSocketEventAndContractTest {
     class ScheduleBroadcasts {
       @Mock private GameService gameService;
       @Mock private CategoryService categoryService;
+      @Mock private GameRepository gameRepository;
       @Mock private ScheduleRepository scheduleRepository;
       @Mock private InterruptRepository interruptRepository;
       @Mock private PresenceGateway presenceGateway;
@@ -73,6 +74,7 @@ class WebSocketEventAndContractTest {
         service = new ScheduleServiceImpl();
         ReflectionTestUtils.setField(service, "gameService", gameService);
         ReflectionTestUtils.setField(service, "categoryService", categoryService);
+        ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
         ReflectionTestUtils.setField(service, "scheduleRepository", scheduleRepository);
         ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
         ReflectionTestUtils.setField(service, "presenceGateway", presenceGateway);
@@ -85,7 +87,7 @@ class WebSocketEventAndContractTest {
         final ScheduleEntity schedule = schedule(17.25d, 5.0d);
 
         when(gameService.findByCode("ROOM", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
 
         service.replaySong(schedule.getId(), "ROOM");
@@ -105,7 +107,7 @@ class WebSocketEventAndContractTest {
         final ScheduleEntity schedule = schedule(17.25d, 5.0d);
 
         when(gameService.findByCode("ROOM", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
 
         service.revealAnswer(schedule.getId(), "ROOM");
@@ -179,6 +181,7 @@ class WebSocketEventAndContractTest {
   class StageTwoTransitionConcurrencyTest {
     @Mock private GameService gameService;
     @Mock private CategoryService categoryService;
+    @Mock private GameRepository gameRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
@@ -193,6 +196,7 @@ class WebSocketEventAndContractTest {
       service = new ScheduleServiceImpl();
       ReflectionTestUtils.setField(service, "gameService", gameService);
       ReflectionTestUtils.setField(service, "categoryService", categoryService);
+      ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
       ReflectionTestUtils.setField(service, "scheduleRepository", scheduleRepository);
       ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
       ReflectionTestUtils.setField(service, "presenceGateway", presenceGateway);
@@ -212,7 +216,7 @@ class WebSocketEventAndContractTest {
       final CountDownLatch gate = new CountDownLatch(1);
 
       when(gameService.findByCode("ROOM", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
       doAnswer(
               invocation -> {
@@ -263,7 +267,7 @@ class WebSocketEventAndContractTest {
 
       when(gameService.findByCode("ROOM", 2)).thenReturn(game);
       when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
-      when(scheduleRepository.findById(current.getId())).thenReturn(Optional.of(current));
+
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(current);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.of(next));
       doAnswer(
@@ -364,6 +368,7 @@ class WebSocketEventAndContractTest {
   class StageTwoTransitionRaceStressRepeatedTest {
     @Mock private GameService gameService;
     @Mock private CategoryService categoryService;
+    @Mock private GameRepository gameRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
@@ -379,6 +384,7 @@ class WebSocketEventAndContractTest {
       service = new ScheduleServiceImpl();
       ReflectionTestUtils.setField(service, "gameService", gameService);
       ReflectionTestUtils.setField(service, "categoryService", categoryService);
+      ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
       ReflectionTestUtils.setField(service, "scheduleRepository", scheduleRepository);
       ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
       ReflectionTestUtils.setField(service, "presenceGateway", presenceGateway);
@@ -400,7 +406,7 @@ class WebSocketEventAndContractTest {
         final CountDownLatch start = new CountDownLatch(1);
 
         when(gameService.findByCode("ROOM", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
         doAnswer(
                 invocation -> {
@@ -467,7 +473,7 @@ class WebSocketEventAndContractTest {
 
         when(gameService.findByCode("ROOM", 2)).thenReturn(game);
         when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
-        when(scheduleRepository.findById(current.getId())).thenReturn(Optional.of(current));
+
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(current);
         when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.of(next));
         doAnswer(
@@ -620,6 +626,7 @@ class WebSocketEventAndContractTest {
     @ExtendWith(MockitoExtension.class)
     class CategoryAndScheduleEventContracts {
       @Mock private GameService gameService;
+      @Mock private GameRepository gameRepository;
       @Mock private CategoryRepository categoryRepository;
       @Mock private ScheduleRepository scheduleRepository;
       @Mock private TeamRepository teamRepository;
@@ -635,6 +642,7 @@ class WebSocketEventAndContractTest {
       void setUp() {
         categoryServiceImpl = new CategoryServiceImpl();
         ReflectionTestUtils.setField(categoryServiceImpl, "gameService", gameService);
+        ReflectionTestUtils.setField(categoryServiceImpl, "gameRepository", gameRepository);
         ReflectionTestUtils.setField(categoryServiceImpl, "categoryRepository", categoryRepository);
         ReflectionTestUtils.setField(categoryServiceImpl, "scheduleRepository", scheduleRepository);
         ReflectionTestUtils.setField(categoryServiceImpl, "teamRepository", teamRepository);
@@ -643,6 +651,7 @@ class WebSocketEventAndContractTest {
 
         scheduleServiceImpl = new ScheduleServiceImpl();
         ReflectionTestUtils.setField(scheduleServiceImpl, "gameService", gameService);
+        ReflectionTestUtils.setField(scheduleServiceImpl, "gameRepository", gameRepository);
         ReflectionTestUtils.setField(scheduleServiceImpl, "categoryService", categoryService);
         ReflectionTestUtils.setField(scheduleServiceImpl, "scheduleRepository", scheduleRepository);
         ReflectionTestUtils.setField(
@@ -675,7 +684,7 @@ class WebSocketEventAndContractTest {
         final GameEntity game = game("AKKU", 2);
         final ScheduleEntity schedule = schedule(game, 12.5, 8.0);
         when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
         scheduleServiceImpl.replaySong(schedule.getId(), "AKKU");
@@ -691,7 +700,7 @@ class WebSocketEventAndContractTest {
         final GameEntity game = game("AKKU", 2);
         final ScheduleEntity schedule = schedule(game, 12.5, 8.0);
         when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
         scheduleServiceImpl.revealAnswer(schedule.getId(), "AKKU");

@@ -88,8 +88,7 @@ class GameLifecycleIntegrationTest extends PostgresJpaIntegrationTest {
         fixture.schedule(categoryId, firstTrack, 1, START, START.plusSeconds(20));
     final UUID secondSchedule = fixture.schedule(categoryId, secondTrack, 2, null, null);
     final UUID systemPause =
-        fixture.interrupt(
-            firstSchedule, null, START.plusSeconds(5), null, null, 1);
+        fixture.interrupt(firstSchedule, null, START.plusSeconds(5), null, null, 1);
 
     scheduleService.progress(roomCode);
 
@@ -107,12 +106,7 @@ class GameLifecycleIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID teamId = fixture.team(gameId, "Album Team", "album.png");
     final UUID albumId = fixture.album("First lifecycle album");
     final UUID categoryId = fixture.category(gameId, albumId, teamId, 1, false);
-    fixture.schedule(
-        categoryId,
-        track(albumId, "only"),
-        1,
-        START,
-        START.plusSeconds(20));
+    fixture.schedule(categoryId, track(albumId, "only"), 1, START, START.plusSeconds(20));
     fixture.category(gameId, fixture.album("Unpicked lifecycle album"), null, null, false);
 
     scheduleService.progress(roomCode);
@@ -128,12 +122,7 @@ class GameLifecycleIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID teamId = fixture.team(gameId, "Winner", "winner.png");
     final UUID albumId = fixture.album("Final lifecycle album");
     final UUID categoryId = fixture.category(gameId, albumId, teamId, 1, false);
-    fixture.schedule(
-        categoryId,
-        track(albumId, "final"),
-        1,
-        START,
-        START.plusSeconds(20));
+    fixture.schedule(categoryId, track(albumId, "final"), 1, START, START.plusSeconds(20));
 
     scheduleService.progress(roomCode);
 

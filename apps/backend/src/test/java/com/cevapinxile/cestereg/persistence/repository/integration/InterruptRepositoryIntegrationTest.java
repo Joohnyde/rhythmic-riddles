@@ -43,10 +43,8 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
   @Test
   void findInterruptsReturnsDisjointFramesInArrivalOrder() {
-    fixture.interrupt(
-        scheduleId, null, START.plusSeconds(2), START.plusSeconds(4), null, 1);
-    fixture.interrupt(
-        scheduleId, teamId, START.plusSeconds(7), START.plusSeconds(8), false, -10);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(2), START.plusSeconds(4), null, 1);
+    fixture.interrupt(scheduleId, teamId, START.plusSeconds(7), START.plusSeconds(8), false, -10);
 
     final List<InterruptFrame> frames = interruptRepository.findInterrupts(START, scheduleId);
 
@@ -59,12 +57,15 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
   @Test
   void findInterruptsCollapsesNestedFramesToOutermostIntervals() {
+    fixture.interrupt(scheduleId, null, START.plusSeconds(2), START.plusSeconds(9), null, 1);
+    fixture.interrupt(scheduleId, teamId, START.plusSeconds(4), START.plusSeconds(6), false, -10);
     fixture.interrupt(
-        scheduleId, null, START.plusSeconds(2), START.plusSeconds(9), null, 1);
-    fixture.interrupt(
-        scheduleId, teamId, START.plusSeconds(4), START.plusSeconds(6), false, -10);
-    fixture.interrupt(
-        scheduleId, null, START.plusSeconds(5), START.plusSeconds(5).plusNanos(500_000_000), null, 3);
+        scheduleId,
+        null,
+        START.plusSeconds(5),
+        START.plusSeconds(5).plusNanos(500_000_000),
+        null,
+        3);
 
     final List<InterruptFrame> frames = interruptRepository.findInterrupts(START, scheduleId);
 
@@ -76,8 +77,7 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   @Test
   void findInterruptsKeepsOngoingOutermostFrameAndSuppressesNestedFrames() {
     fixture.interrupt(scheduleId, null, START.plusSeconds(2), null, null, 1);
-    fixture.interrupt(
-        scheduleId, teamId, START.plusSeconds(4), START.plusSeconds(5), false, -10);
+    fixture.interrupt(scheduleId, teamId, START.plusSeconds(4), START.plusSeconds(5), false, -10);
 
     final List<InterruptFrame> frames = interruptRepository.findInterrupts(START, scheduleId);
 
@@ -88,19 +88,16 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
   @Test
   void findInterruptsIgnoresOtherSchedulesAndRowsAtOrBeforeSongStart() {
-    fixture.interrupt(
-        scheduleId, null, START.minusSeconds(1), START.plusSeconds(1), null, 1);
+    fixture.interrupt(scheduleId, null, START.minusSeconds(1), START.plusSeconds(1), null, 1);
     fixture.interrupt(scheduleId, null, START, START.plusSeconds(1), null, 1);
-    fixture.interrupt(
-        scheduleId, null, START.plusSeconds(2), START.plusSeconds(3), null, 1);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(2), START.plusSeconds(3), null, 1);
 
     final UUID albumId = fixture.album("Other album");
     final UUID songId = fixture.song("Other", "Song", 20.0, 5.0);
     final UUID trackId = fixture.track(albumId, songId, null);
     final UUID categoryId = fixture.category(gameId, albumId, teamId, 2, false);
     final UUID otherSchedule = fixture.schedule(categoryId, trackId, 1, START, null);
-    fixture.interrupt(
-        otherSchedule, null, START.plusSeconds(1), START.plusSeconds(10), null, 1);
+    fixture.interrupt(otherSchedule, null, START.plusSeconds(1), START.plusSeconds(10), null, 1);
 
     final List<InterruptFrame> frames = interruptRepository.findInterrupts(START, scheduleId);
 
@@ -110,13 +107,10 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
   @Test
   void latestTeamAndSystemInterruptQueriesRemainIndependentAndScheduleScoped() {
-    fixture.interrupt(
-        scheduleId, null, START.plusSeconds(1), START.plusSeconds(2), null, 1);
-    fixture.interrupt(
-        scheduleId, teamId, START.plusSeconds(3), START.plusSeconds(4), false, -10);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(1), START.plusSeconds(2), null, 1);
+    fixture.interrupt(scheduleId, teamId, START.plusSeconds(3), START.plusSeconds(4), false, -10);
     final UUID expectedSystem =
-        fixture.interrupt(
-            scheduleId, null, START.plusSeconds(5), START.plusSeconds(6), null, 2);
+        fixture.interrupt(scheduleId, null, START.plusSeconds(5), START.plusSeconds(6), null, 2);
     final UUID expectedTeam =
         fixture.interrupt(
             scheduleId, teamId, START.plusSeconds(7), START.plusSeconds(8), false, -20);
@@ -146,13 +140,7 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID unresolvedSystem =
         fixture.interrupt(scheduleId, null, START.plusSeconds(2), null, null, 1);
     final UUID alreadyResolvedSystem =
-        fixture.interrupt(
-            scheduleId,
-            null,
-            START.plusSeconds(3),
-            START.plusSeconds(4),
-            null,
-            2);
+        fixture.interrupt(scheduleId, null, START.plusSeconds(3), START.plusSeconds(4), null, 2);
     final UUID teamAnswer =
         fixture.interrupt(scheduleId, teamId, START.plusSeconds(5), null, null, null);
     final UUID otherAlbumId = fixture.album("Other error album");
@@ -176,22 +164,18 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   @Test
   void findCorrectAnswerReturnsCorrectTeamAndIgnoresWrongAnswers() {
     final UUID otherTeam = fixture.team(gameId, "Blue", "blue.png");
-    fixture.interrupt(
-        scheduleId, teamId, START.plusSeconds(2), START.plusSeconds(3), false, -10);
-    fixture.interrupt(
-        scheduleId, otherTeam, START.plusSeconds(5), START.plusSeconds(6), true, 30);
+    fixture.interrupt(scheduleId, teamId, START.plusSeconds(2), START.plusSeconds(3), false, -10);
+    fixture.interrupt(scheduleId, otherTeam, START.plusSeconds(5), START.plusSeconds(6), true, 30);
 
     final UUID otherAlbum = fixture.album("Other correct-answer album");
     final UUID otherSong = fixture.song("Other", "Correct", 20.0, 5.0);
     final UUID otherTrack = fixture.track(otherAlbum, otherSong, null);
     final UUID otherCategory = fixture.category(gameId, otherAlbum, teamId, 2, false);
     final UUID otherSchedule = fixture.schedule(otherCategory, otherTrack, 1, START, null);
-    fixture.interrupt(
-        otherSchedule, teamId, START.plusSeconds(8), START.plusSeconds(9), true, 999);
+    fixture.interrupt(otherSchedule, teamId, START.plusSeconds(8), START.plusSeconds(9), true, 999);
 
     assertEquals(otherTeam, interruptRepository.findCorrectAnswer(scheduleId));
   }
-
 
   @Test
   void didTeamAnswerOnlyCountsStartedSchedulesInPickedCategories() {
@@ -215,10 +199,8 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
   @Test
   void findPreviousScenarioReturnsStoredScenarioForCurrentUnresolvedSystemPause() {
-    fixture.interrupt(
-        scheduleId, teamId, START.plusSeconds(1), START.plusSeconds(2), false, -10);
-    fixture.interrupt(
-        scheduleId, null, START.plusSeconds(3), START.plusSeconds(4), null, 1);
+    fixture.interrupt(scheduleId, teamId, START.plusSeconds(1), START.plusSeconds(2), false, -10);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(3), START.plusSeconds(4), null, 1);
     fixture.interrupt(scheduleId, null, START.plusSeconds(5), null, null, 4);
 
     assertEquals(4, interruptRepository.findPreviousScenarioId(scheduleId));

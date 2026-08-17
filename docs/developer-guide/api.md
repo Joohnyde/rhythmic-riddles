@@ -162,6 +162,18 @@ Example:
 
 For the full error catalog and HTTP mappings, see `exceptions.md`.
 
+## Concurrent room mutation
+
+State-changing requests for the same room are serialized through the persisted game row. Most user/admin commands use a fail-fast `NOWAIT` lock. If another command already owns that room lock, the losing request returns:
+
+- `423 Locked`
+- `E010 - Room busy`
+- message: `Another request is already changing game {roomCode}. Retry with the latest state.`
+
+System pauses and UI recovery-scenario persistence are must-persist events and wait for the room lock instead of returning this room-busy response. Requests for different room codes lock different game rows and can proceed independently.
+
+Transactional WebSocket side effects are registered after the database work and are sent only after a successful transaction commit. A rolled-back transaction therefore does not publish its gameplay frame.
+
 
 # Endpoint matrix
 
@@ -224,6 +236,7 @@ Request:
 ```
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
@@ -245,6 +258,7 @@ Request:
 ```
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 
 ```json
 {
@@ -263,6 +277,7 @@ WS side-effect:
 Removes a team.
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 - `422 Unprocessable Entity` — the team exists but belongs to a different room (`E002 - Malformed argument`)
 
@@ -283,6 +298,7 @@ Request:
 ```
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `LastCategory` preview object
 
 WS side-effect:
@@ -297,6 +313,7 @@ Starts category flow:
 - starts song stage
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
@@ -308,8 +325,9 @@ WS side-effect:
 Replays snippet.
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
-- `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
+- `422 Unprocessable Entity` — `scheduleId` is unknown, stale, or does not identify the room's current/last-played schedule (`E002 - Malformed argument`)
 
 WS side-effect:
 - broadcast `song_repeat`
@@ -320,8 +338,9 @@ WS side-effect:
 Reveals answer.
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
-- `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
+- `422 Unprocessable Entity` — `scheduleId` is unknown, stale, or does not identify the room's current/last-played schedule (`E002 - Malformed argument`)
 
 WS side-effect:
 - broadcast `song_reveal`
@@ -332,6 +351,7 @@ WS side-effect:
 Starts next song or transitions stage.
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
@@ -357,9 +377,11 @@ Behavior:
 
 Response:
 - `200 OK`
+- team buzz only: `423 Locked` — another request is already changing this room (`E010 - Room busy`)
+- system pause waits for the room lock and is not rejected only because another room mutation is in flight
 
 WS side-effect:
-- broadcast `pause`
+- broadcast `pause` after the transaction commits
 
 
 ## POST /api/v1/games/{roomCode}/interrupts/{answerId}/answer
@@ -375,6 +397,7 @@ Request:
 ```
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
@@ -394,6 +417,7 @@ Request:
 ```
 
 Response:
+- `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 - `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
 

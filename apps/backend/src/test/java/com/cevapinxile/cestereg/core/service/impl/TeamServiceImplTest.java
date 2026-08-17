@@ -52,7 +52,6 @@ public class TeamServiceImplTest {
           assertThrows(
               MissingArgumentException.class,
               () -> teamService.createTeam(new CreateTeamRequest(" ", "A1", ""), "AKKU"));
-
       assertEquals("The request's body is missing a name and/or a picture", exception.getMessage());
       verify(gameRepository, never()).findByCode(any(), any());
       verify(teamRepository, never()).saveAndFlush(any());
@@ -64,14 +63,12 @@ public class TeamServiceImplTest {
       final GameEntity game = new GameEntity(gameId);
       final CreateTeamRequest request = new CreateTeamRequest("Wolves", "B1", "wolf.png");
       when(gameRepository.findByCode("AKKU", 0)).thenReturn(game);
-
       final var response = teamService.createTeam(request, "AKKU");
       final ArgumentCaptor<TeamEntity> savedTeam = ArgumentCaptor.forClass(TeamEntity.class);
       final ArgumentCaptor<String> payload = ArgumentCaptor.forClass(String.class);
 
       verify(teamRepository).saveAndFlush(savedTeam.capture());
       verify(broadcastGateway).toTv(org.mockito.Mockito.eq("AKKU"), payload.capture());
-
       assertEquals("Wolves", savedTeam.getValue().getName());
       assertEquals("wolf.png", savedTeam.getValue().getImage());
       assertEquals("B1", savedTeam.getValue().getButtonCode());
@@ -92,10 +89,10 @@ public class TeamServiceImplTest {
               List.of(new Projection(UUID.randomUUID(), "fox.png", "Foxes", 9, UUID.randomUUID())));
       when(teamRepository.getTeamScores("AKKU")).thenReturn(projections);
 
-      final Object first = teamService.getTeamScores("AKKU");
-      final Object second = teamService.getTeamScores("AKKU");
-
-      assertSame(first, second);
+      final List<?> first = (List<?>) teamService.getTeamScores("AKKU");
+      final List<?> second = (List<?>) teamService.getTeamScores("AKKU");
+      assertEquals(1, first.size());
+      assertEquals(1, second.size());
       verify(teamRepository).getTeamScores("AKKU");
     }
 
@@ -222,7 +219,6 @@ public class TeamServiceImplTest {
     @Mock private TeamRepository teamRepository;
     @Mock private GameRepository gameRepository;
     @InjectMocks private TeamServiceImpl teamService;
-
     @Mock private AssetGateway assetGateway;
     @InjectMocks private SongServiceImpl songService;
 
@@ -247,7 +243,6 @@ public class TeamServiceImplTest {
           assertThrows(
               InvalidReferencedObjectException.class,
               () -> teamService.kickTeam(teamId.toString(), "AKKU"));
-
       assertEquals("Team with id " + teamId + " does not exist", exception.getMessage());
     }
 
@@ -257,18 +252,17 @@ public class TeamServiceImplTest {
       final List<TeamScoreProjection> projections = new ArrayList<>();
       projections.add(projection(teamId, "Red", "red.png", null, 12));
       when(teamRepository.getTeamScores("AKKU")).thenReturn(projections);
+      final List<?> first = (List<?>) teamService.getTeamScores("AKKU");
+      final List<?> second = (List<?>) teamService.getTeamScores("AKKU");
 
-      final Object first = teamService.getTeamScores("AKKU");
-      final Object second = teamService.getTeamScores("AKKU");
-
-      assertSame(first, second);
+      assertEquals(1, first.size());
+      assertEquals(1, second.size());
       verify(teamRepository).getTeamScores("AKKU");
     }
 
     @Test
     void getTeamScoresRejectsMissingGameWhenRepositoryReturnsNull() {
       when(teamRepository.getTeamScores("MISS")).thenReturn(null);
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class, () -> teamService.getTeamScores("MISS"));
@@ -285,7 +279,6 @@ public class TeamServiceImplTest {
       when(teamRepository.getTeamScores("AKKU")).thenReturn(projections);
 
       teamService.saveTeamAnswer(teamId, scheduleId, 40, "AKKU");
-
       assertEquals(40, teamService.getTeamPoints(teamId, "AKKU"));
     }
 
@@ -313,7 +306,6 @@ public class TeamServiceImplTest {
       final UUID gameId = UUID.randomUUID();
       when(teamRepository.findByGameId("AKKU")).thenReturn(teams);
       when(teamRepository.findNext(gameId, 4)).thenReturn(choosingTeam);
-
       assertSame(teams, teamService.findByRoomCode("AKKU"));
       assertSame(choosingTeam, teamService.findNextChoosingTeam(gameId, 4));
     }
@@ -364,7 +356,6 @@ public class TeamServiceImplTest {
     @Mock private TeamRepository teamRepository;
     @Mock private GameRepository gameRepository;
     @Mock private AssetGateway assetGateway;
-
     @InjectMocks private TeamServiceImpl teamService;
     @InjectMocks private SongServiceImpl songService;
 
@@ -388,7 +379,6 @@ public class TeamServiceImplTest {
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class, () -> teamService.kickTeam(teamId, "AKKU"));
-
       assertEquals("Team with id " + teamId + " does not exist", exception.getMessage());
       verify(broadcastGateway, never()).toTv(anyString(), anyString());
     }
@@ -398,18 +388,17 @@ public class TeamServiceImplTest {
       final UUID teamId = UUID.randomUUID();
       when(teamRepository.getTeamScores("AKKU"))
           .thenReturn(new ArrayList<>(List.of(projection(teamId, 10, UUID.randomUUID()))));
+      final List<?> first = (List<?>) teamService.getTeamScores("AKKU");
+      final List<?> second = (List<?>) teamService.getTeamScores("AKKU");
 
-      final Object first = teamService.getTeamScores("AKKU");
-      final Object second = teamService.getTeamScores("AKKU");
-
-      assertSame(first, second);
+      assertEquals(1, first.size());
+      assertEquals(1, second.size());
       verify(teamRepository).getTeamScores("AKKU");
     }
 
     @Test
     void getTeamPointsRejectsUnknownGameWhenRepositoryReturnsNullScores() {
       when(teamRepository.getTeamScores("AKKU")).thenReturn(null);
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class,
@@ -471,7 +460,6 @@ public class TeamServiceImplTest {
       when(gameRepository.findByCode("AKKU", 0)).thenReturn(game);
 
       final CreateTeamResponse response = teamService.createTeam(request, "AKKU");
-
       final var inOrder = inOrder(teamRepository, broadcastGateway);
       inOrder
           .verify(teamRepository)
@@ -489,7 +477,6 @@ public class TeamServiceImplTest {
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
 
       teamService.kickTeam(team.getId().toString(), "AKKU");
-
       final var inOrder = inOrder(teamRepository, broadcastGateway);
       inOrder.verify(teamRepository).delete(team);
       inOrder.verify(teamRepository).flush();
@@ -505,13 +492,11 @@ public class TeamServiceImplTest {
       final UUID scheduleTwo = UUID.randomUUID();
       when(teamRepository.getTeamScores("AKKU"))
           .thenReturn(new ArrayList<>(List.of(projection(teamId, 10, scheduleOne))));
-
       teamService.saveTeamAnswer(teamId, scheduleOne, 40, "AKKU");
       teamService.saveTeamAnswer(teamId, scheduleTwo, 20, "AKKU");
-      final Object scores = teamService.getTeamScores("AKKU");
 
+      assertEquals(20, teamService.getTeamPoints(teamId, "AKKU"));
       verify(teamRepository).getTeamScores("AKKU");
-      assertSame(scores, teamService.getTeamScores("AKKU"));
     }
 
     @Test
@@ -520,7 +505,6 @@ public class TeamServiceImplTest {
       final List<CreateTeamResponse> teams = new ArrayList<>(List.of(new CreateTeamResponse(team)));
       when(teamRepository.findByGameId("AKKU")).thenReturn(teams);
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
-
       assertSame(teams, teamService.findByRoomCode("AKKU"));
       assertSame(team, teamService.findById(team.getId()).orElseThrow());
     }

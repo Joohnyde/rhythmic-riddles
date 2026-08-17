@@ -131,8 +131,7 @@ class GameConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
       final UUID firstTrack = fixture.track(albumId, firstSong, null);
       final UUID secondTrack = fixture.track(albumId, secondSong, null);
       final UUID categoryId = fixture.category(gameId, albumId, teamId, 1, false);
-      fixture.schedule(
-          categoryId, firstTrack, 1, NOW.minusSeconds(12), NOW.minusSeconds(1));
+      fixture.schedule(categoryId, firstTrack, 1, NOW.minusSeconds(12), NOW.minusSeconds(1));
       final UUID nextSchedule = fixture.schedule(categoryId, secondTrack, 2, null, null);
       final GameEntity game = new GameEntity(gameId);
       game.setStage(2);
@@ -143,18 +142,13 @@ class GameConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
 
       final List<InvocationResult> results =
           invokeSimultaneously(
-              () -> scheduleService.progress(roomCode),
-              () -> scheduleService.progress(roomCode));
+              () -> scheduleService.progress(roomCode), () -> scheduleService.progress(roomCode));
 
       assertEquals(
-          1L,
-          successCount(results),
-          "progress race round " + roundIndex + " results=" + results);
+          1L, successCount(results), "progress race round " + roundIndex + " results=" + results);
       assertNotNull(
           jdbc.queryForObject(
-              "SELECT started_at FROM schedule WHERE id = ?",
-              LocalDateTime.class,
-              nextSchedule));
+              "SELECT started_at FROM schedule WHERE id = ?", LocalDateTime.class, nextSchedule));
       assertEquals(
           2,
           jdbc.queryForObject(
@@ -183,7 +177,8 @@ class GameConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
     final CountDownLatch start = new CountDownLatch(1);
 
     try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      final Future<InvocationResult> firstResult = executor.submit(() -> invoke(ready, start, first));
+      final Future<InvocationResult> firstResult =
+          executor.submit(() -> invoke(ready, start, first));
       final Future<InvocationResult> secondResult =
           executor.submit(() -> invoke(ready, start, second));
 

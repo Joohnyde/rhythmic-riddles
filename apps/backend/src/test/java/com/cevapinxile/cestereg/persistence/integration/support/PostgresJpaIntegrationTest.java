@@ -7,10 +7,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 @DataJpaTest(
     showSql = false,
-    properties = {
-      "spring.jpa.hibernate.ddl-auto=none",
-      "spring.sql.init.mode=never"
-    })
+    properties = {"spring.jpa.hibernate.ddl-auto=none", "spring.sql.init.mode=never"})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public abstract class PostgresJpaIntegrationTest {
 

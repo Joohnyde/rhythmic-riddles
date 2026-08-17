@@ -34,6 +34,7 @@ import com.cevapinxile.cestereg.persistence.entity.SongEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.CategoryRepository;
+import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import com.cevapinxile.cestereg.persistence.repository.TeamRepository;
@@ -57,6 +58,7 @@ public class CategoryServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class CategoryCoreFlow {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryRepository categoryRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private TeamRepository teamRepository;
@@ -71,7 +73,6 @@ public class CategoryServiceImplTest {
       final UUID teamId = UUID.randomUUID();
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class,
@@ -86,7 +87,6 @@ public class CategoryServiceImplTest {
       final TeamEntity team = team(game("ZZZZ", 1), "Blue");
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -107,7 +107,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               InvalidArgumentException.class,
               () -> categoryService.pickAlbum(category.getId(), new TeamIdRequest(null), "AKKU"));
-
       assertEquals("Room code AKKU isn't consistent with the category", exception.getMessage());
     }
 
@@ -115,7 +114,6 @@ public class CategoryServiceImplTest {
     void pickAlbumRejectsWrongStage() {
       final CategoryEntity category = category("AKKU", 2, 5);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final WrongGameStateException exception =
           assertThrows(
               WrongGameStateException.class,
@@ -134,7 +132,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               AppNotRegisteredException.class,
               () -> categoryService.pickAlbum(category.getId(), new TeamIdRequest(null), "AKKU"));
-
       assertEquals("TV app has to be connected to proceed", exception.getMessage());
     }
 
@@ -146,7 +143,6 @@ public class CategoryServiceImplTest {
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
       when(categoryRepository.findNextId(category.getGameId().getId())).thenReturn(3);
-
       final LastCategory result =
           categoryService.pickAlbum(category.getId(), new TeamIdRequest(team.getId()), "AKKU");
 
@@ -166,7 +162,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               InvalidReferencedObjectException.class,
               () -> categoryService.startCategory(categoryId, "AKKU"));
-
       assertEquals(
           "Category with with id " + categoryId + " does not exist", exception.getMessage());
     }
@@ -175,7 +170,6 @@ public class CategoryServiceImplTest {
     void startCategoryRejectsRoomMismatch() {
       final CategoryEntity category = category("ZZZZ", 1, 5);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -190,7 +184,6 @@ public class CategoryServiceImplTest {
       category.getAlbumId().setTrackList(new ArrayList<>(List.of(track(20.0))));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(category.getGameId());
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -207,7 +200,6 @@ public class CategoryServiceImplTest {
           .setTrackList(new ArrayList<>(List.of(track(20.0), track(21.0), track(22.0))));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(category.getGameId());
-
       categoryService.startCategory(category.getId(), "AKKU");
 
       final ArgumentCaptor<List<ScheduleEntity>> schedules = ArgumentCaptor.forClass(List.class);
@@ -227,7 +219,6 @@ public class CategoryServiceImplTest {
       final LastCategory dto = new LastCategory(category);
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(dto);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final int nextState = categoryService.finishAndNext(game);
 
       assertEquals(1, nextState);
@@ -244,7 +235,6 @@ public class CategoryServiceImplTest {
       final LastCategory dto = new LastCategory(category);
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(dto);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final int nextState = categoryService.finishAndNext(game);
 
       assertEquals(3, nextState);
@@ -289,6 +279,7 @@ public class CategoryServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class CategorySelectionValidation {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryRepository categoryRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private TeamRepository teamRepository;
@@ -323,7 +314,6 @@ public class CategoryServiceImplTest {
       final UUID teamId = UUID.randomUUID();
       when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category("AKKU", 1, 2)));
       when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class,
@@ -338,7 +328,6 @@ public class CategoryServiceImplTest {
       final TeamEntity team = team(game("ZZZZ", 1), "Blue");
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -359,7 +348,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               WrongGameStateException.class,
               () -> categoryService.pickAlbum(category.getId(), new TeamIdRequest(null), "AKKU"));
-
       assertEquals("Game AKKU doesn't choose albums now", exception.getMessage());
     }
 
@@ -369,7 +357,6 @@ public class CategoryServiceImplTest {
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(categoryRepository.findNextId(category.getGameId().getId())).thenReturn(1);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -387,7 +374,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               InvalidArgumentException.class,
               () -> categoryService.startCategory(category.getId(), "AKKU"));
-
       assertEquals("Room code AKKU isn't consistent with the category", exception.getMessage());
     }
 
@@ -399,7 +385,6 @@ public class CategoryServiceImplTest {
       game.setMaxSongs(3);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(game);
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -419,15 +404,12 @@ public class CategoryServiceImplTest {
           .setTrackList(new ArrayList<>(List.of(track(), track(), track(), track())));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(game);
-
       categoryService.startCategory(category.getId(), "AKKU");
 
       final ArgumentCaptor<List> schedules = ArgumentCaptor.forClass(List.class);
       verify(scheduleRepository).saveAllAndFlush(schedules.capture());
       assertEquals(3, schedules.getValue().size());
-      assertNotNull(
-          ((com.cevapinxile.cestereg.persistence.entity.ScheduleEntity) schedules.getValue().get(0))
-              .getStartedAt());
+      assertNotNull(((ScheduleEntity) schedules.getValue().get(0)).getStartedAt());
       verify(gameService).changeStage(2, "AKKU");
     }
 
@@ -438,7 +420,6 @@ public class CategoryServiceImplTest {
       dto.setCategoryId(UUID.randomUUID());
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(dto);
       when(categoryRepository.findById(dto.getCategoryId())).thenReturn(Optional.empty());
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class, () -> categoryService.finishAndNext(game));
@@ -457,7 +438,6 @@ public class CategoryServiceImplTest {
       dto.setCategoryId(category.getId());
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(dto);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final int result = categoryService.finishAndNext(game);
 
       assertEquals(3, result);
@@ -498,8 +478,7 @@ public class CategoryServiceImplTest {
     private TrackEntity track() {
       final TrackEntity track = new TrackEntity(UUID.randomUUID());
       track.setAlbumId(new AlbumEntity(UUID.randomUUID()));
-      track.setSongId(
-          new com.cevapinxile.cestereg.persistence.entity.SongEntity(UUID.randomUUID()));
+      track.setSongId(new SongEntity(UUID.randomUUID()));
       return track;
     }
   }
@@ -508,6 +487,7 @@ public class CategoryServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class CategoryLifecycleAndBoundaries {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryRepository categoryRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private TeamRepository teamRepository;
@@ -545,7 +525,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               InvalidReferencedObjectException.class,
               () -> categoryService.pickAlbum(categoryId, new TeamIdRequest(null), "AKKU"));
-
       assertEquals(
           "Category with with id " + categoryId + " does not exist", exception.getMessage());
     }
@@ -556,7 +535,6 @@ public class CategoryServiceImplTest {
       final UUID teamId = UUID.randomUUID();
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class,
@@ -574,7 +552,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               InvalidArgumentException.class,
               () -> categoryService.pickAlbum(category.getId(), new TeamIdRequest(null), "AKKU"));
-
       assertEquals("Room code AKKU isn't consistent with the category", exception.getMessage());
     }
 
@@ -582,7 +559,6 @@ public class CategoryServiceImplTest {
     void pickAlbumRejectsWhenGameIsNotChoosingAlbums() {
       final CategoryEntity category = category("AKKU", 2);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final WrongGameStateException exception =
           assertThrows(
               WrongGameStateException.class,
@@ -597,7 +573,6 @@ public class CategoryServiceImplTest {
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(categoryRepository.findNextId(category.getGameId().getId())).thenReturn(2);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -613,10 +588,8 @@ public class CategoryServiceImplTest {
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(categoryRepository.findNextId(category.getGameId().getId())).thenReturn(3);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
-
       final LastCategory result =
           categoryService.pickAlbum(category.getId(), new TeamIdRequest(null), "AKKU");
-
       assertNull(category.getPickedByTeamId());
       assertEquals(3, category.getOrdinalNumber());
       assertSame(category.getId(), result.getCategoryId());
@@ -636,7 +609,6 @@ public class CategoryServiceImplTest {
           assertThrows(
               InvalidReferencedObjectException.class,
               () -> categoryService.startCategory(categoryId, "AKKU"));
-
       assertEquals(
           "Category with with id " + categoryId + " does not exist", exception.getMessage());
     }
@@ -645,7 +617,6 @@ public class CategoryServiceImplTest {
     void startCategoryRejectsCategoryFromDifferentRoom() {
       final CategoryEntity category = category("BLAH", 1);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -662,7 +633,6 @@ public class CategoryServiceImplTest {
       game.setMaxSongs(3);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(game);
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -679,7 +649,6 @@ public class CategoryServiceImplTest {
       category.getAlbumId().setTrackList(new ArrayList<>(List.of(track(), track(), track())));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(game);
-
       categoryService.startCategory(category.getId(), "AKKU");
 
       verify(scheduleRepository).saveAllAndFlush(any());
@@ -693,7 +662,6 @@ public class CategoryServiceImplTest {
       final CategoryEntity category = category("AKKU", 1);
       category.setOrdinalNumber(2);
       final LastCategory lastCategory = new LastCategory(category);
-
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(lastCategory);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
 
@@ -711,7 +679,6 @@ public class CategoryServiceImplTest {
       final LastCategory lastCategory = new LastCategory(category);
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(lastCategory);
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.empty());
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class, () -> categoryService.finishAndNext(game));
@@ -726,7 +693,6 @@ public class CategoryServiceImplTest {
       game.setStage(stage);
       game.setMaxAlbums(4);
       game.setMaxSongs(2);
-
       final AlbumEntity album = new AlbumEntity(UUID.randomUUID(), "Album");
       album.setTrackList(new ArrayList<>());
       final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
@@ -737,8 +703,7 @@ public class CategoryServiceImplTest {
     }
 
     private TrackEntity track() {
-      final TrackEntity track = new TrackEntity(UUID.randomUUID());
-      return track;
+      return new TrackEntity(UUID.randomUUID());
     }
   }
 
@@ -746,6 +711,7 @@ public class CategoryServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class CategoryRegressionAndFailureCases {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryRepository categoryRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private TeamRepository teamRepository;
@@ -760,7 +726,6 @@ public class CategoryServiceImplTest {
       final TeamEntity team = team(game("BLAH", 1), "Green");
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -781,7 +746,6 @@ public class CategoryServiceImplTest {
       when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
       when(categoryRepository.findNextId(game.getId())).thenReturn(5);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
-
       final LastCategory result =
           categoryService.pickAlbum(category.getId(), new TeamIdRequest(team.getId()), "AKKU");
 
@@ -799,7 +763,6 @@ public class CategoryServiceImplTest {
           .thenThrow(
               new WrongGameStateException(
                   "Album selection is in progress. We can only move to song listening (stage 2)"));
-
       final WrongGameStateException exception =
           assertThrows(
               WrongGameStateException.class,
@@ -816,7 +779,6 @@ public class CategoryServiceImplTest {
       final LastCategory lastCategory = new LastCategory(category(game));
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(lastCategory);
       when(categoryRepository.findById(lastCategory.getCategoryId())).thenReturn(Optional.empty());
-
       final InvalidReferencedObjectException exception =
           assertThrows(
               InvalidReferencedObjectException.class, () -> categoryService.finishAndNext(game));
@@ -835,7 +797,6 @@ public class CategoryServiceImplTest {
       when(categoryRepository.findLastCategory(game.getId()))
           .thenReturn(new LastCategory(category));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final int state = categoryService.finishAndNext(game);
 
       assertEquals(1, state);
@@ -861,8 +822,7 @@ public class CategoryServiceImplTest {
       for (int i = 0; i < 3; i++) {
         final TrackEntity track = new TrackEntity(UUID.randomUUID());
         track.setAlbumId(album);
-        track.setSongId(
-            new com.cevapinxile.cestereg.persistence.entity.SongEntity(UUID.randomUUID()));
+        track.setSongId(new SongEntity(UUID.randomUUID()));
         tracks.add(track);
       }
       album.setTrackList(tracks);
@@ -884,6 +844,7 @@ public class CategoryServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class CategoryOrderingAndFinalization {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryService categoryService;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
@@ -891,7 +852,6 @@ public class CategoryServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private CategoryRepository categoryRepository;
     @Mock private TeamRepository teamRepository;
-
     @InjectMocks private ScheduleServiceImpl scheduleService;
     @InjectMocks private CategoryServiceImpl categoryServiceImpl;
 
@@ -900,7 +860,6 @@ public class CategoryServiceImplTest {
         throws DerivedException {
       final CategoryEntity category = category(game("BLAH", 1));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final InvalidArgumentException exception =
           assertThrows(
               InvalidArgumentException.class,
@@ -920,7 +879,6 @@ public class CategoryServiceImplTest {
       when(gameService.isChangeStageLegal(2, "AKKU")).thenReturn(game);
 
       categoryServiceImpl.startCategory(category.getId(), "AKKU");
-
       final InOrder inOrder = inOrder(scheduleRepository, gameService);
       inOrder.verify(scheduleRepository).saveAllAndFlush(any());
       inOrder.verify(gameService).changeStage(2, "AKKU");
@@ -933,9 +891,8 @@ public class CategoryServiceImplTest {
       final CategoryEntity category = category(game);
       category.setOrdinalNumber(2);
       when(categoryRepository.findLastCategory(game.getId()))
-          .thenReturn(new com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory(category));
+          .thenReturn(new LastCategory(category));
       when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
-
       final int nextState = categoryServiceImpl.finishAndNext(game);
 
       assertEquals(3, nextState);
@@ -949,7 +906,6 @@ public class CategoryServiceImplTest {
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(null);
 
       assertThrows(NullPointerException.class, () -> categoryServiceImpl.finishAndNext(game));
-
       verify(categoryRepository, never()).saveAndFlush(any());
     }
 

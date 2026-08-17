@@ -38,7 +38,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 class InterruptServiceImplClockTest {
 
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 1, 15, 12, 0);
-  private static final Clock FIXED_CLOCK = Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
+  private static final Clock FIXED_CLOCK =
+      Clock.fixed(NOW.toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
 
   @Mock private TeamService teamService;
   @Mock private InterruptRepository interruptRepository;

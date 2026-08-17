@@ -121,5 +121,4 @@ class CategoryRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
     assertNull(open.getPickedByTeam());
     assertNull(open.getOrdinalNumber());
   }
-
 }

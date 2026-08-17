@@ -100,18 +100,14 @@ class ScheduleRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   }
 
   private UUID categoryWithAlbum(
-      final UUID gameId,
-      final UUID teamId,
-      final Integer ordinal,
-      final String albumName) {
+      final UUID gameId, final UUID teamId, final Integer ordinal, final String albumName) {
     final UUID albumId = fixture.album(albumName);
     return fixture.category(gameId, albumId, teamId, ordinal, false);
   }
 
   private UUID schedule(final UUID categoryId, final int ordinal, final LocalDateTime startedAt) {
     final UUID albumId =
-        jdbc.queryForObject(
-            "SELECT album_id FROM category WHERE id = ?", UUID.class, categoryId);
+        jdbc.queryForObject("SELECT album_id FROM category WHERE id = ?", UUID.class, categoryId);
     final UUID songId = fixture.song("Artist", "Song " + ordinal, 30.0, 8.0);
     final UUID trackId = fixture.track(albumId, songId, null);
     return fixture.schedule(categoryId, trackId, ordinal, startedAt, null);

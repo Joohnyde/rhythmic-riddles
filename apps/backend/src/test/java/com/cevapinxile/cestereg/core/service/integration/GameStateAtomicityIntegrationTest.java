@@ -59,7 +59,6 @@ class GameStateAtomicityIntegrationTest extends PostgresJpaIntegrationTest {
     assertThrows(WrongGameStateException.class, () -> gameService.changeStage(2, roomCode));
 
     assertEquals(
-        1,
-        jdbc.queryForObject("SELECT stage FROM game WHERE id = ?", Integer.class, gameId));
+        1, jdbc.queryForObject("SELECT stage FROM game WHERE id = ?", Integer.class, gameId));
   }
 }

@@ -25,23 +25,21 @@ public interface GameRepository extends JpaRepository<GameEntity, UUID> {
   /**
    * Serializes a must-persist event for one room. Unlike {@link #tryLockGame(String)}, this waits
    * for a short in-flight transaction instead of dropping the event because the room is busy.
+   *
    * @param roomCode unique room identifier
    * @return UUID of the game whose code corresponds to roomCode parameter.
    */
-  @Query(
-      value = "SELECT id FROM game WHERE code = :roomCode FOR UPDATE",
-      nativeQuery = true)
+  @Query(value = "SELECT id FROM game WHERE code = :roomCode FOR UPDATE", nativeQuery = true)
   Optional<UUID> lockGame(@Param("roomCode") String roomCode);
 
   /**
-   * Acquires the per-game row lock used to serialize state-changing commands for one room.
-   * NOWAIT intentionally fails a competing command instead of letting it run after the winner.
+   * Acquires the per-game row lock used to serialize state-changing commands for one room. NOWAIT
+   * intentionally fails a competing command instead of letting it run after the winner.
+   *
    * @param roomCode unique room identifier
    * @return UUID of the game whose code corresponds to roomCode parameter.
    */
-  @Query(
-      value = "SELECT id FROM game WHERE code = :roomCode FOR UPDATE NOWAIT",
-      nativeQuery = true)
+  @Query(value = "SELECT id FROM game WHERE code = :roomCode FOR UPDATE NOWAIT", nativeQuery = true)
   Optional<UUID> tryLockGame(@Param("roomCode") String roomCode);
 
   /**

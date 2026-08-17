@@ -42,8 +42,7 @@ class GameRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   @Test
   void stageAwareFindByCodeRejectsUnknownRoomWithDomainReferenceError() {
     assertThrows(
-        InvalidReferencedObjectException.class,
-        () -> gameRepository.findByCode("MISS", 2));
+        InvalidReferencedObjectException.class, () -> gameRepository.findByCode("MISS", 2));
   }
 
   @Test
@@ -57,36 +56,17 @@ class GameRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
         fixture.category(gameToDelete, sharedAlbum, teamToDelete, 1, false);
     final UUID scheduleToDelete =
         fixture.schedule(
-            categoryToDelete,
-            sharedTrack,
-            1,
-            LocalDateTime.of(2026, 2, 7, 20, 0),
-            null);
+            categoryToDelete, sharedTrack, 1, LocalDateTime.of(2026, 2, 7, 20, 0), null);
     fixture.interrupt(
-        scheduleToDelete,
-        teamToDelete,
-        LocalDateTime.of(2026, 2, 7, 20, 0, 2),
-        null,
-        null,
-        null);
+        scheduleToDelete, teamToDelete, LocalDateTime.of(2026, 2, 7, 20, 0, 2), null, null, null);
 
     final UUID otherGame = fixture.game("GKEP", 2, 2, 1);
     final UUID otherTeam = fixture.team(otherGame, "Keep", "keep.png");
     final UUID otherCategory = fixture.category(otherGame, sharedAlbum, otherTeam, 1, false);
     final UUID otherSchedule =
-        fixture.schedule(
-            otherCategory,
-            sharedTrack,
-            1,
-            LocalDateTime.of(2026, 2, 7, 21, 0),
-            null);
+        fixture.schedule(otherCategory, sharedTrack, 1, LocalDateTime.of(2026, 2, 7, 21, 0), null);
     fixture.interrupt(
-        otherSchedule,
-        otherTeam,
-        LocalDateTime.of(2026, 2, 7, 21, 0, 2),
-        null,
-        null,
-        null);
+        otherSchedule, otherTeam, LocalDateTime.of(2026, 2, 7, 21, 0, 2), null, null, null);
 
     gameRepository.deleteByCode("GDEL");
     gameRepository.flush();

@@ -44,21 +44,21 @@ public class ScheduleController {
   @Operation(
       summary = "Replay current song snippet",
       description =
-"""
-Replays (refreshes) the current song snippet in stage 2.
-
-Workflow:
-- Validates game and schedule exist and game is in stage 2.
-- Ensures both apps are present (sync safety).
-- Resolves all unresolved system errors to avoid seek/sync issues.
-- Sets schedule.startedAt to now and persists.
-- Broadcasts remaining time (full duration) to clients.
-""")
+          """
+          Replays (refreshes) the current song snippet in stage 2.
+          Workflow:
+          - Validates the game exists and is in stage 2.
+          - Verifies scheduleId still identifies the room's current/last-played schedule.
+          - Ensures both apps are present (sync safety).
+          - Resolves all unresolved system errors to avoid seek/sync issues.
+          - Sets schedule.startedAt to now and persists.
+          - Broadcasts remaining time (full duration) after the transaction commits.
+          """)
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Replay triggered successfully."),
     @ApiResponse(
         responseCode = "404",
-        description = "Invalid Game/Schedule id.",
+        description = "Invalid Game id.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -67,10 +67,11 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E001 - Invalid referenced object\","
-                                + "\"message\":\"Game or schedule was not found for the provided identifiers.\"}"))),
+                                + "\"message\":\"Game was not found for the provided roomCode.\"}"))),
     @ApiResponse(
         responseCode = "422",
-        description = "Schedule does not belong to the game identified by roomCode.",
+        description =
+            "scheduleId is unknown, stale, or does not identify the current schedule for this room.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -79,7 +80,7 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E002 - Malformed argument\","
-                                + "\"message\":\"Schedule does not belong to the specified game.\"}"))),
+                                + "\"message\":\"Schedule is not the current schedule for the specified game.\"}"))),
     @ApiResponse(
         responseCode = "409",
         description = "Game isn't in state 2.",
@@ -89,9 +90,23 @@ Workflow:
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples =
                     @ExampleObject(
+                        name = "wrongStage",
                         value =
                             "{\"error\":\"E003 - Wrong game-state\","
                                 + "\"message\":\"Replaying is only allowed in stage 2 (song playing).\"}"))),
+    @ApiResponse(
+        responseCode = "423",
+        description = "Another request is already changing this room.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        name = "roomBusy",
+                        value =
+                            "{\"error\":\"E010 - Room busy\","
+                                + "\"message\":\"Another request is already changing game AKKU.\"}"))),
     @ApiResponse(
         responseCode = "503",
         description = "An app isn't present.",
@@ -122,7 +137,7 @@ Workflow:
       @RoomCodePath @PathVariable String roomCode,
       @Parameter(
               name = "scheduleId",
-              description = "Unique identifier of the schedule.",
+              description = "Unique identifier of the current schedule.",
               required = true,
               example = "1c835481-b314-4217-9a32-0af276e44fef",
               schema = @Schema(type = "string", format = "uuid"))
@@ -139,20 +154,21 @@ Workflow:
   @Operation(
       summary = "Reveal song answer",
       description =
-"""
-Reveals the answer for the current song in stage 2.
-
-Workflow:
-- Validates game and schedule exist and game is in stage 2.
-- Ensures both apps are present (sync safety).
-- Resolves all unresolved system errors to avoid seek/sync issues.
-- Sets schedule.revealedAt to now, persists, and broadcasts reveal to clients.
-""")
+          """
+          Reveals the answer for the current song in stage 2.
+          Workflow:
+          - Validates the game exists and is in stage 2.
+          - Verifies scheduleId still identifies the room's current/last-played schedule.
+          - Ensures both apps are present (sync safety).
+          - Resolves all unresolved system errors to avoid seek/sync issues.
+          - Sets schedule.revealedAt to now and persists.
+          - Broadcasts the reveal after the transaction commits.
+          """)
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Answer reveal triggered successfully."),
     @ApiResponse(
         responseCode = "404",
-        description = "Invalid Game/Schedule id.",
+        description = "Invalid Game id.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -161,10 +177,11 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E001 - Invalid referenced object\","
-                                + "\"message\":\"Game or schedule was not found for the provided identifiers.\"}"))),
+                                + "\"message\":\"Game was not found for the provided roomCode.\"}"))),
     @ApiResponse(
         responseCode = "422",
-        description = "Schedule does not belong to the game identified by roomCode.",
+        description =
+            "scheduleId is unknown, stale, or does not identify the current schedule for this room.",
         content =
             @Content(
                 mediaType = "application/json",
@@ -173,7 +190,7 @@ Workflow:
                     @ExampleObject(
                         value =
                             "{\"error\":\"E002 - Malformed argument\","
-                                + "\"message\":\"Schedule does not belong to the specified game.\"}"))),
+                                + "\"message\":\"Schedule is not the current schedule for the specified game.\"}"))),
     @ApiResponse(
         responseCode = "409",
         description = "Game isn't in state 2.",
@@ -183,9 +200,23 @@ Workflow:
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples =
                     @ExampleObject(
+                        name = "wrongStage",
                         value =
                             "{\"error\":\"E003 - Wrong game-state\","
                                 + "\"message\":\"Revealing is only allowed in stage 2 (song playing).\"}"))),
+    @ApiResponse(
+        responseCode = "423",
+        description = "Another request is already changing this room.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        name = "roomBusy",
+                        value =
+                            "{\"error\":\"E010 - Room busy\","
+                                + "\"message\":\"Another request is already changing game AKKU.\"}"))),
     @ApiResponse(
         responseCode = "503",
         description = "An app isn't present.",
@@ -216,7 +247,7 @@ Workflow:
       @RoomCodePath @PathVariable String roomCode,
       @Parameter(
               name = "scheduleId",
-              description = "Unique identifier of the schedule.",
+              description = "Unique identifier of the current schedule.",
               required = true,
               example = "1c835481-b314-4217-9a32-0af276e44fef",
               schema = @Schema(type = "string", format = "uuid"))
@@ -233,19 +264,15 @@ Workflow:
   @Operation(
       summary = "Advance to next song or next stage",
       description =
-"""
-Moves gameplay forward after a song finishes.
-
-Workflow:
-- Validates game exists and is in stage 2, and both apps are present.
-- Resolves all unresolved system errors to avoid seek/sync issues.
-- Finds the next Schedule by incrementing ordinal number and looking it up.
-  - If found: sets its startedAt to now and broadcasts that the next song is playing.
-  - If not found: determines whether to go back to album selection (stage 1) or finish the game (stage 3):
-    - Loads last chosen category and compares its ordinalNumber with game.maxAlbums.
-    - If maxAlbums reached: transitions to stage 3 (winner table).
-    - Else: marks category finished, transitions game to stage 1, broadcasts stage change.
-""")
+          """
+          Moves gameplay forward after a song finishes.
+          Workflow:
+          - Validates game exists and is in stage 2, and both apps are present.
+          - Resolves all unresolved system errors to avoid seek/sync issues.
+          - Finds the next Schedule by incrementing ordinal number and looking it up.
+            - If found: sets its startedAt to now and broadcasts that the next song is playing after commit.
+            - If not found: determines whether to go back to album selection (stage 1) or finish the game (stage 3).
+          """)
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -271,9 +298,23 @@ Workflow:
                 schema = @Schema(implementation = ErrorResponse.class),
                 examples =
                     @ExampleObject(
+                        name = "wrongStage",
                         value =
                             "{\"error\":\"E003 - Wrong game-state\","
                                 + "\"message\":\"Next is only allowed in stage 2 (song playing).\"}"))),
+    @ApiResponse(
+        responseCode = "423",
+        description = "Another request is already changing this room.",
+        content =
+            @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = ErrorResponse.class),
+                examples =
+                    @ExampleObject(
+                        name = "roomBusy",
+                        value =
+                            "{\"error\":\"E010 - Room busy\","
+                                + "\"message\":\"Another request is already changing game AKKU.\"}"))),
     @ApiResponse(
         responseCode = "503",
         description = "An app isn't present.",

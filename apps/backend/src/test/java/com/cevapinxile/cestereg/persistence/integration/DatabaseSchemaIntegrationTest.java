@@ -68,20 +68,10 @@ class DatabaseSchemaIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID trackId = fixture.track(albumId, songId, null);
     final UUID categoryId = fixture.category(gameId, albumId, teamId, 1, false);
     final UUID scheduleId =
-        fixture.schedule(
-            categoryId,
-            trackId,
-            1,
-            LocalDateTime.of(2026, 2, 8, 20, 0),
-            null);
+        fixture.schedule(categoryId, trackId, 1, LocalDateTime.of(2026, 2, 8, 20, 0), null);
     final UUID interruptId =
         fixture.interrupt(
-            scheduleId,
-            teamId,
-            LocalDateTime.of(2026, 2, 8, 20, 0, 2),
-            null,
-            null,
-            null);
+            scheduleId, teamId, LocalDateTime.of(2026, 2, 8, 20, 0, 2), null, null, null);
 
     executeProductionSql("db_01_create_schema.sql");
     executeProductionSql("db_04_add_runtime_invariants.sql");
@@ -100,9 +90,7 @@ class DatabaseSchemaIntegrationTest extends PostgresJpaIntegrationTest {
   void databaseRejectsDuplicateRoomCodes() {
     fixture.game("DUPE", 0, 3, 2);
 
-    assertThrows(
-        DataIntegrityViolationException.class,
-        () -> fixture.game("DUPE", 0, 3, 2));
+    assertThrows(DataIntegrityViolationException.class, () -> fixture.game("DUPE", 0, 3, 2));
   }
 
   private void executeProductionSql(final String fileName) {

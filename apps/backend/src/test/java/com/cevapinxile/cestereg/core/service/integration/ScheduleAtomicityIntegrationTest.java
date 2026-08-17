@@ -64,8 +64,7 @@ class ScheduleAtomicityIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID songId = fixture.song("Artist", "Atomic progress song", 30.0, 8.0);
     final UUID trackId = fixture.track(albumId, songId, null);
     final UUID categoryId = fixture.category(gameId, albumId, teamId, 1, false);
-    final UUID scheduleId =
-        fixture.schedule(categoryId, trackId, 1, START, START.plusSeconds(20));
+    final UUID scheduleId = fixture.schedule(categoryId, trackId, 1, START, START.plusSeconds(20));
     final UUID systemPause =
         fixture.interrupt(scheduleId, null, START.plusSeconds(5), null, null, 1);
     final GameEntity game = new GameEntity(gameId);
@@ -77,14 +76,10 @@ class ScheduleAtomicityIntegrationTest extends PostgresJpaIntegrationTest {
         .when(categoryService)
         .finishAndNext(game);
 
-    assertThrows(
-        InvalidReferencedObjectException.class,
-        () -> scheduleService.progress(roomCode));
+    assertThrows(InvalidReferencedObjectException.class, () -> scheduleService.progress(roomCode));
 
     assertNull(
         jdbc.queryForObject(
-            "SELECT resolved_at FROM interrupt WHERE id = ?",
-            LocalDateTime.class,
-            systemPause));
+            "SELECT resolved_at FROM interrupt WHERE id = ?", LocalDateTime.class, systemPause));
   }
 }

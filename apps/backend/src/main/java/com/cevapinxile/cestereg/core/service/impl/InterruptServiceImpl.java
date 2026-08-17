@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.cevapinxile.cestereg.core.service.impl;
+
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame;
 import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
@@ -15,6 +16,8 @@ import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
 import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import com.cevapinxile.cestereg.core.service.TeamService;
+import com.cevapinxile.cestereg.core.service.support.RoomLocks;
+import com.cevapinxile.cestereg.core.service.support.TransactionCallbacks;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
@@ -34,12 +37,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 /*
  * @author denijal
  */
 @Service
 public class InterruptServiceImpl implements InterruptService {
-
   private static final Logger LOG = LoggerFactory.getLogger(InterruptServiceImpl.class);
 
   @Autowired private TeamService teamService;
@@ -57,7 +60,8 @@ public class InterruptServiceImpl implements InterruptService {
    * Keep a real-clock default for plain unit construction / Mockito @InjectMocks.
    * In the running Spring application this field is replaced by the Clock bean from ClockConfig.
    */
-  @Autowired(required = false) private Clock clock = Clock.systemDefaultZone();
+  @Autowired(required = false)
+  private Clock clock = Clock.systemDefaultZone();
 
   @Override
   /**
@@ -69,6 +73,10 @@ public class InterruptServiceImpl implements InterruptService {
    *
    * <p>To enforce this, we query only the outermost interrupt frames and subtract their durations.
    * Nested interrupts are contained inside the outer frame and must not be counted separately.
+   *
+   * @param startTimestamp timestamp from which playback time is calculated
+   * @param scheduleId identifier of the schedule whose interrupts are considered
+   * @return effective playback time in milliseconds, excluding time spent paused by interrupts
    */
   public long calculateSeek(final LocalDateTime startTimestamp, final UUID scheduleId) {
     List<InterruptFrame> interrupts =
@@ -87,6 +95,7 @@ public class InterruptServiceImpl implements InterruptService {
     }
     return seek;
   }
+
   @Override
   public InterruptEntity[] getLastTwoInterrupts(
       final LocalDateTime startTimestamp, final UUID scheduleId) {
@@ -95,6 +104,7 @@ public class InterruptServiceImpl implements InterruptService {
       interruptRepository.findLastPause(startTimestamp, scheduleId)
     };
   }
+
   @Override
   /* Interrupt invariant (critical for seek calculation):
    Interrupts may be DISJOINT (A ends, then B starts) or NESTED (B fully inside A).
@@ -109,17 +119,17 @@ public class InterruptServiceImpl implements InterruptService {
   if the new interrupt is guaranteed to be fully nested and resolved before the outer one ends. */
   @Transactional(rollbackOn = DerivedException.class)
   public void interrupt(final String roomCode, final UUID teamId) throws DerivedException {
+    /* System pauses must not be dropped, so they wait for the room lock. Team buzzes use NOWAIT:
+    once another room mutation wins, a queued buzz would already be stale. */
     if (teamId == null) {
-      gameRepository.lockGame(roomCode);
+      RoomLocks.lock(gameRepository, roomCode);
     } else {
-      gameRepository.tryLockGame(roomCode);
+      RoomLocks.tryLock(gameRepository, roomCode);
     }
-
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
     final ScheduleEntity lastPlayedSong = scheduleRepository.findLastPlayed(game.getId());
     TeamEntity team = null;
     if (teamId != null) {
-      // Request validation (fail fast on invalid input).
       final Optional<TeamEntity> maybeTeam = teamService.findById(teamId);
       if (maybeTeam.isEmpty()) {
         throw new InvalidReferencedObjectException("Team with id" + teamId + " does not exist");
@@ -164,21 +174,21 @@ public class InterruptServiceImpl implements InterruptService {
     interruptRepository.saveAndFlush(newInterrupt);
     /* Lightweight WS frame to reduce serialization overhead for frequent events.
     Safe from escaping concerns because we only send UUIDs (no free-form input). */
-    broadcastGateway.broadcast(
-        roomCode,
+    final String payload =
         "{\"type\":\"pause\",\"answeringTeamId\":\""
             + (team == null ? "null" : team.getId())
             + "\",\"interruptId\":\""
             + newInterrupt.getId()
-            + "\"}");
+            + "\"}";
+    TransactionCallbacks.afterCommitOrNow(() -> broadcastGateway.broadcast(roomCode, payload));
   }
+
   @Override
   @Transactional(rollbackOn = DerivedException.class)
   public void resolveErrors(final UUID lastPlayedScheduleId, final String roomCode)
       throws DerivedException {
-    gameRepository.tryLockGame(roomCode);
+    RoomLocks.tryLock(gameRepository, roomCode);
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
-    // Request validation (fail fast on invalid input).
     final Optional<ScheduleEntity> maybeSchedule =
         scheduleRepository.findById(lastPlayedScheduleId);
     if (maybeSchedule.isEmpty()) {
@@ -192,17 +202,18 @@ public class InterruptServiceImpl implements InterruptService {
     final Integer previousScenario =
         interruptRepository.findPreviousScenarioId(lastPlayedScheduleId);
     interruptRepository.resolveErrors(lastPlayedScheduleId, LocalDateTime.now(clock));
-    broadcastGateway.broadcast(
-        roomCode, "{\"type\":\"error_solved\",\"previousScenario\":" + previousScenario + "}");
+    final String payload =
+        "{\"type\":\"error_solved\",\"previousScenario\":" + previousScenario + "}";
+    TransactionCallbacks.afterCommitOrNow(() -> broadcastGateway.broadcast(roomCode, payload));
   }
+
   @Override
   @Transactional(rollbackOn = DerivedException.class)
   public void answer(final UUID answerId, final AnswerRequest ar, final String roomCode)
       throws DerivedException {
-    gameRepository.tryLockGame(roomCode);
+    RoomLocks.tryLock(gameRepository, roomCode);
     final boolean correct = ar.correct();
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
-    // Request validation (fail fast on invalid input).
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
     }
@@ -211,6 +222,9 @@ public class InterruptServiceImpl implements InterruptService {
       throw new InvalidReferencedObjectException("Answer with id " + answerId + " does not exist");
     }
     final InterruptEntity answer = maybeAnswer.get();
+    if (answer.getTeamId() == null) {
+      throw new InvalidArgumentException("Interrupt with id " + answerId + " is not a team answer");
+    }
     if (!answer.getTeamId().getGameId().getCode().equals(roomCode)) {
       throw new InvalidArgumentException(
           "Room code " + roomCode + " isn't consistent with the answer");
@@ -220,7 +234,6 @@ public class InterruptServiceImpl implements InterruptService {
       throw new GuessNotAllowedException("That guess was already answered");
     }
     final LocalDateTime resolvedAt = LocalDateTime.now(clock);
-
     // Scoring rule: correct guess awards +30, incorrect guess penalizes -10.
     final Integer newScore =
         teamService.getTeamPoints(answer.getTeamId().getId(), roomCode) + (correct ? 30 : -10);
@@ -238,16 +251,17 @@ public class InterruptServiceImpl implements InterruptService {
         answer.getTeamId().getId(), answer.getScheduleId().getId(), newScore, roomCode);
     LOG.info(
         "Team {} answered correct={} new points={}", answer.getTeamId().getId(), correct, newScore);
-    broadcastGateway.broadcast(
-        roomCode,
+    final String payload =
         "{\"type\":\"answer\",\"teamId\":\""
             + answer.getTeamId().getId()
             + "\",\"scheduleId\":\""
             + answer.getScheduleId().getId()
             + "\",\"correct\":"
             + correct
-            + "}");
+            + "}";
+    TransactionCallbacks.afterCommitOrNow(() -> broadcastGateway.broadcast(roomCode, payload));
   }
+
   @Override
   public UUID findCorrectAnswer(final UUID scheduleId, final String roomCode)
       throws DerivedException {
@@ -258,20 +272,24 @@ public class InterruptServiceImpl implements InterruptService {
     }
     return interruptRepository.findCorrectAnswer(scheduleId);
   }
+
   @Override
   @Transactional(rollbackOn = DerivedException.class)
   public void savePreviousScenario(final int scenarioId, final String roomCode)
       throws DerivedException {
-    // Request validation (fail fast on invalid input).
+    // Request validation (fail fast on invalid input before taking the room lock).
     if (scenarioId < 0 || scenarioId > 4 || scenarioId == 3) {
       throw new InvalidArgumentException("Scenario has to be a number between 0 and 4 but not 3");
     }
+    /* Recovery metadata belongs to the system pause and must not be dropped while that pause is
+    still committing. Wait for the room lock, then update it only if it is still unresolved. */
+    RoomLocks.lock(gameRepository, roomCode);
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
     final ScheduleEntity lastPlayedSong = scheduleRepository.findLastPlayed(game.getId());
     if (lastPlayedSong != null) {
       final InterruptEntity pause =
           interruptRepository.findLastPause(lastPlayedSong.getStartedAt(), lastPlayedSong.getId());
-      if (pause != null) {
+      if (pause != null && pause.getResolvedAt() == null) {
         /* NOTE: scoreOrScenarioId is overloaded:
         - for TEAM interrupts it stores the awarded score (+30 / -10)
         - for SYSTEM/PAUSE interrupts it stores the admin UI "previousScenarioId"
@@ -282,6 +300,7 @@ public class InterruptServiceImpl implements InterruptService {
       }
     }
   }
+
   private void validateScheduleOwnership(
       final ScheduleEntity schedule, final GameEntity game, final String roomCode)
       throws InvalidArgumentException {
@@ -292,5 +311,4 @@ public class InterruptServiceImpl implements InterruptService {
           "Room code " + roomCode + " isn't consistent with schedule " + schedule.getId());
     }
   }
-
 }

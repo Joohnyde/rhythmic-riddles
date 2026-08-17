@@ -89,7 +89,6 @@ class TransactionAtomicityIntegrationTest extends PostgresJpaIntegrationTest {
 
   private <T> T column(
       final String table, final String column, final UUID id, final Class<T> type) {
-    return jdbc.queryForObject(
-        "SELECT " + column + " FROM " + table + " WHERE id = ?", type, id);
+    return jdbc.queryForObject("SELECT " + column + " FROM " + table + " WHERE id = ?", type, id);
   }
 }

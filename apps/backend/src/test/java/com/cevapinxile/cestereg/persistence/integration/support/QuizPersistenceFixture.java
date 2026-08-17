@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** Direct SQL fixture builder for persistence tests; deliberately bypasses repository save methods. */
+/**
+ * Direct SQL fixture builder for persistence tests; deliberately bypasses repository save methods.
+ */
 public final class QuizPersistenceFixture {
 
   private final JdbcTemplate jdbc;
@@ -34,10 +36,7 @@ public final class QuizPersistenceFixture {
   public UUID album(final String name, final String customQuestion) {
     final UUID id = UUID.randomUUID();
     jdbc.update(
-        "INSERT INTO album (id, name, custom_question) VALUES (?, ?, ?)",
-        id,
-        name,
-        customQuestion);
+        "INSERT INTO album (id, name, custom_question) VALUES (?, ?, ?)", id, name, customQuestion);
     return id;
   }
 

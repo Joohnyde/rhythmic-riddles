@@ -77,22 +77,15 @@ class TeamRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
     assertEquals(30, scores.getFirst().getScore());
   }
 
-
   @Test
   void findNextChoosesTeamWithFewestCompletedAlbumPicks() {
     final UUID gameId = fixture.game("TNXT", 1, 3, 4);
     final UUID first =
         fixture.team(
-            UUID.fromString("00000000-0000-0000-0000-000000000001"),
-            gameId,
-            "First",
-            "1.png");
+            UUID.fromString("00000000-0000-0000-0000-000000000001"), gameId, "First", "1.png");
     final UUID second =
         fixture.team(
-            UUID.fromString("00000000-0000-0000-0000-000000000002"),
-            gameId,
-            "Second",
-            "2.png");
+            UUID.fromString("00000000-0000-0000-0000-000000000002"), gameId, "Second", "2.png");
     pickAlbum(gameId, first, 1);
 
     final UUID otherGame = fixture.game("TNX2", 1, 3, 4);
@@ -113,16 +106,10 @@ class TeamRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID gameId = fixture.game("TODD", 1, 3, 5);
     final UUID first =
         fixture.team(
-            UUID.fromString("00000000-0000-0000-0000-000000000011"),
-            gameId,
-            "First",
-            "1.png");
+            UUID.fromString("00000000-0000-0000-0000-000000000011"), gameId, "First", "1.png");
     final UUID second =
         fixture.team(
-            UUID.fromString("00000000-0000-0000-0000-000000000012"),
-            gameId,
-            "Second",
-            "2.png");
+            UUID.fromString("00000000-0000-0000-0000-000000000012"), gameId, "Second", "2.png");
     pickAlbum(gameId, first, 1);
     pickAlbum(gameId, second, 2);
     pickAlbum(gameId, first, 3);
@@ -158,7 +145,10 @@ class TeamRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   }
 
   private UUID playedSchedule(
-      final UUID gameId, final UUID teamId, final int categoryOrdinal, final LocalDateTime startedAt) {
+      final UUID gameId,
+      final UUID teamId,
+      final int categoryOrdinal,
+      final LocalDateTime startedAt) {
     final UUID albumId = fixture.album("Score album " + categoryOrdinal);
     final UUID songId = fixture.song("Artist", "Song", 30.0, 8.0);
     final UUID trackId = fixture.track(albumId, songId, null);

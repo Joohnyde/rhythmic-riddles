@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.cevapinxile.cestereg.core.service.impl;
+
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.ChoosingTeam;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse;
@@ -17,6 +18,8 @@ import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
 import com.cevapinxile.cestereg.core.service.GameService;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import com.cevapinxile.cestereg.core.service.TeamService;
+import com.cevapinxile.cestereg.core.service.support.RoomLocks;
+import com.cevapinxile.cestereg.core.service.support.TransactionCallbacks;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
@@ -32,13 +35,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
+
 /*
  * @author denijal
  */
 @Service
 public class GameServiceImpl implements GameService {
-
   private static final Logger LOG = LoggerFactory.getLogger(GameServiceImpl.class);
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Autowired private TeamService teamService;
 
@@ -56,10 +60,10 @@ public class GameServiceImpl implements GameService {
   @Override
   public String createGame(final CreateGameRequest cgr) throws DerivedException {
     // Request validation (fail fast on invalid input).
-    if (cgr.maxAlbums() != null && cgr.maxAlbums() < 0) {
+    if (cgr.maxAlbums() != null && cgr.maxAlbums() <= 0) {
       throw new InvalidArgumentException("Number of albums must be a positive integer");
     }
-    if (cgr.maxSongs() != null && cgr.maxSongs() < 0) {
+    if (cgr.maxSongs() != null && cgr.maxSongs() <= 0) {
       throw new InvalidArgumentException("Number of songs must be a positive integer");
     }
     GameEntity existingGame = new GameEntity(cgr);
@@ -70,6 +74,7 @@ public class GameServiceImpl implements GameService {
     // Log here
     return existingGame.getCode();
   }
+
   /**
    * Populates fields required by the frontend in all scenarios.
    *
@@ -95,10 +100,10 @@ public class GameServiceImpl implements GameService {
     json.put("scheduleId", lastPlayedSong.getId());
     json.put("answerDuration", lastPlayedSong.getTrackId().getSongId().getAnswerDuration());
   }
+
   @Override
   public HashMap<String, Object> contextFetch(final String roomCode) throws DerivedException {
     final HashMap<String, Object> json = new HashMap<>();
-
     final Optional<GameEntity> maybeGame = gameRepository.findByCode(roomCode);
     if (maybeGame.isEmpty()) {
       return json;
@@ -176,7 +181,6 @@ public class GameServiceImpl implements GameService {
           json.put("revealed", false);
           break;
         }
-
         /* Seek didn't go past the end which means the song didn't finish
         Fields neccesairy for proper, continued playback */
         json.put("seek", seek);
@@ -186,7 +190,6 @@ public class GameServiceImpl implements GameService {
         final InterruptEntity[] interrupts =
             interruptService.getLastTwoInterrupts(
                 lastPlayedSong.getStartedAt(), lastPlayedSong.getId());
-
         final InterruptEntity teamInterrupt = interrupts[0];
         final InterruptEntity systemInterrupt = interrupts[1];
         if (teamInterrupt != null && teamInterrupt.isCorrect() == null) {
@@ -227,7 +230,8 @@ public class GameServiceImpl implements GameService {
       throw new WrongGameStateException(
           "Game " + game.getCode() + " is in song stage without a played schedule");
     }
-    if (schedule.getTrackId() == null
+    if (schedule.getStartedAt() == null
+        || schedule.getTrackId() == null
         || schedule.getTrackId().getAlbumId() == null
         || schedule.getTrackId().getSongId() == null) {
       throw new WrongGameStateException(
@@ -245,7 +249,6 @@ public class GameServiceImpl implements GameService {
     }
     final GameEntity game = maybeGame.get();
     final int currentStage = game.getStage();
-
     // Log here
     if (newStage < 0 || newStage > 3) {
       throw new InvalidArgumentException("Game state has to be a number between 0 and 3");
@@ -273,16 +276,18 @@ public class GameServiceImpl implements GameService {
     }
     return game;
   }
+
   @Override
   @Transactional(rollbackOn = DerivedException.class)
   public void changeStage(final int stageId, final String roomCode) throws DerivedException {
-    gameRepository.tryLockGame(roomCode);
+    RoomLocks.tryLock(gameRepository, roomCode);
     final GameEntity game = isChangeStageLegal(stageId, roomCode);
     game.setStage(stageId);
     gameRepository.saveAndFlush(game);
-    broadcastGateway.broadcast(
-        roomCode, new ObjectMapper().writeValueAsString(contextFetch(roomCode)));
+    final String payload = objectMapper.writeValueAsString(contextFetch(roomCode));
+    TransactionCallbacks.afterCommitOrNow(() -> broadcastGateway.broadcast(roomCode, payload));
   }
+
   @Override
   public int getStage(final String roomCode) {
     // Request validation (fail fast on invalid input).
@@ -290,7 +295,6 @@ public class GameServiceImpl implements GameService {
     if (maybeGame.isEmpty()) {
       return -1;
     }
-
     return maybeGame.get().getStage();
   }
 

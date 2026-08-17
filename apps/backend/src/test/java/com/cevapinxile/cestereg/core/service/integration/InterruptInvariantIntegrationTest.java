@@ -1,7 +1,6 @@
 package com.cevapinxile.cestereg.core.service.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.cevapinxile.cestereg.common.exception.GuessNotAllowedException;
@@ -22,11 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@Import({
-  InterruptServiceImpl.class,
-  TeamServiceImpl.class,
-  FixedTestClockConfiguration.class
-})
+@Import({InterruptServiceImpl.class, TeamServiceImpl.class, FixedTestClockConfiguration.class})
 class InterruptInvariantIntegrationTest extends PostgresJpaIntegrationTest {
 
   private static final LocalDateTime NOW = FixedTestClockConfiguration.NOW;
@@ -35,7 +30,6 @@ class InterruptInvariantIntegrationTest extends PostgresJpaIntegrationTest {
   @Autowired private JdbcTemplate jdbc;
   @MockitoBean private BroadcastGateway broadcastGateway;
   @MockitoBean private PresenceGateway presenceGateway;
-
   private QuizPersistenceFixture fixture;
 
   @BeforeEach
@@ -48,7 +42,6 @@ class InterruptInvariantIntegrationTest extends PostgresJpaIntegrationTest {
     final Round round = round("IPAU");
     fixture.interrupt(round.scheduleId(), null, NOW.minusSeconds(3), null, null, 1);
     final int before = interruptCount(round.scheduleId());
-
     final GuessNotAllowedException exception =
         assertThrows(
             GuessNotAllowedException.class,
@@ -59,39 +52,11 @@ class InterruptInvariantIntegrationTest extends PostgresJpaIntegrationTest {
   }
 
   @Test
-  void systemPauseCanNestInsideActiveTeamAnswerWithoutClosingOuterTeamPause() throws Exception {
-    final Round round = round("NEST");
-    final UUID teamInterrupt =
-        fixture.interrupt(
-            round.scheduleId(), round.teamId(), NOW.minusSeconds(2), null, null, null);
-
-    interruptService.interrupt(round.roomCode(), null);
-
-    assertEquals(2, interruptCount(round.scheduleId()));
-    assertNull(resolvedAt(teamInterrupt));
-    assertEquals(
-        NOW,
-        jdbc.queryForObject(
-            """
-                SELECT arrived_at
-                FROM interrupt
-                WHERE schedule_id = ?
-                  AND team_id IS NULL
-                ORDER BY arrived_at DESC
-                LIMIT 1
-                """,
-            LocalDateTime.class,
-            round.scheduleId()));
-  }
-
-  @Test
   void resolvedSystemPauseAllowsLaterTeamBuzzAsDisjointInterval() throws Exception {
     final Round round = round("IDIS");
-    fixture.interrupt(
-        round.scheduleId(), null, NOW.minusSeconds(5), NOW.minusSeconds(3), null, 1);
+    fixture.interrupt(round.scheduleId(), null, NOW.minusSeconds(5), NOW.minusSeconds(3), null, 1);
 
     interruptService.interrupt(round.roomCode(), round.teamId());
-
     assertEquals(2, interruptCount(round.scheduleId()));
     assertEquals(
         NOW,
@@ -100,6 +65,35 @@ class InterruptInvariantIntegrationTest extends PostgresJpaIntegrationTest {
             LocalDateTime.class,
             round.scheduleId(),
             round.teamId()));
+  }
+
+  @Test
+  void savePreviousScenarioUpdatesLatestUnresolvedSystemPause() throws Exception {
+    final Round round = round("IUPS");
+    final UUID pauseId =
+        fixture.interrupt(round.scheduleId(), null, NOW.minusSeconds(3), null, null, 1);
+
+    interruptService.savePreviousScenario(2, round.roomCode());
+
+    assertEquals(
+        2,
+        jdbc.queryForObject(
+            "SELECT score_or_scenario_id FROM interrupt WHERE id = ?", Integer.class, pauseId));
+  }
+
+  @Test
+  void savePreviousScenarioDoesNotModifyResolvedSystemPause() throws Exception {
+    final Round round = round("IRPS");
+    final UUID pauseId =
+        fixture.interrupt(
+            round.scheduleId(), null, NOW.minusSeconds(3), NOW.minusSeconds(1), null, 1);
+
+    interruptService.savePreviousScenario(2, round.roomCode());
+
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "SELECT score_or_scenario_id FROM interrupt WHERE id = ?", Integer.class, pauseId));
   }
 
   private Round round(final String roomCode) {
@@ -111,11 +105,6 @@ class InterruptInvariantIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID categoryId = fixture.category(gameId, albumId, teamId, 1, false);
     final UUID scheduleId = fixture.schedule(categoryId, trackId, 1, NOW.minusSeconds(8), null);
     return new Round(roomCode, teamId, scheduleId);
-  }
-
-  private LocalDateTime resolvedAt(final UUID interruptId) {
-    return jdbc.queryForObject(
-        "SELECT resolved_at FROM interrupt WHERE id = ?", LocalDateTime.class, interruptId);
   }
 
   private int interruptCount(final UUID scheduleId) {

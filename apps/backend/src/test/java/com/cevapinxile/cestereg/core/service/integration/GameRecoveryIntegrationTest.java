@@ -76,7 +76,8 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
   void contextFetchReconstructsActiveTeamInterruptFromPersistedState() throws Exception {
     final Round round = round("RANS", 10.0, NOW.minusSeconds(6), null);
     final UUID interruptId =
-        fixture.interrupt(round.scheduleId(), round.teamId(), NOW.minusSeconds(2), null, null, null);
+        fixture.interrupt(
+            round.scheduleId(), round.teamId(), NOW.minusSeconds(2), null, null, null);
 
     final HashMap<String, Object> context = gameService.contextFetch(round.roomCode());
 
@@ -156,12 +157,7 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
   void contextFetchReconstructsRevealedSongAndCorrectTeamFromPersistedState() throws Exception {
     final Round round = round("RREV", 10.0, NOW.minusSeconds(8), NOW.minusSeconds(1));
     fixture.interrupt(
-        round.scheduleId(),
-        round.teamId(),
-        NOW.minusSeconds(3),
-        NOW.minusSeconds(1),
-        true,
-        30);
+        round.scheduleId(), round.teamId(), NOW.minusSeconds(3), NOW.minusSeconds(1), true, 30);
 
     final HashMap<String, Object> context = gameService.contextFetch(round.roomCode());
 
@@ -176,12 +172,7 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
   void contextFetchReconstructsRevealedSongWithoutFabricatingCorrectTeam() throws Exception {
     final Round round = round("RNON", 10.0, NOW.minusSeconds(8), NOW.minusSeconds(1));
     fixture.interrupt(
-        round.scheduleId(),
-        round.teamId(),
-        NOW.minusSeconds(4),
-        NOW.minusSeconds(3),
-        false,
-        -10);
+        round.scheduleId(), round.teamId(), NOW.minusSeconds(4), NOW.minusSeconds(3), false, -10);
 
     final HashMap<String, Object> context = gameService.contextFetch(round.roomCode());
 
@@ -197,17 +188,10 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
   void contextFetchComposesRepositoryAndSeekLogicWithoutDoubleCountingNestedPauses()
       throws Exception {
     final Round round = round("RNST", 20.0, NOW.minusSeconds(10), null);
+    fixture.interrupt(round.scheduleId(), null, NOW.minusSeconds(8), NOW.minusSeconds(5), null, 1);
     fixture.interrupt(
-        round.scheduleId(), null, NOW.minusSeconds(8), NOW.minusSeconds(5), null, 1);
-    fixture.interrupt(
-        round.scheduleId(),
-        round.teamId(),
-        NOW.minusSeconds(7),
-        NOW.minusSeconds(6),
-        false,
-        -10);
-    fixture.interrupt(
-        round.scheduleId(), null, NOW.minusSeconds(3), NOW.minusSeconds(2), null, 2);
+        round.scheduleId(), round.teamId(), NOW.minusSeconds(7), NOW.minusSeconds(6), false, -10);
+    fixture.interrupt(round.scheduleId(), null, NOW.minusSeconds(3), NOW.minusSeconds(2), null, 2);
 
     final HashMap<String, Object> context = gameService.contextFetch(round.roomCode());
 
@@ -263,10 +247,7 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID gameId = fixture.game("RNXT", 1, 3, 3);
     final UUID first =
         fixture.team(
-            UUID.fromString("00000000-0000-0000-0000-000000000101"),
-            gameId,
-            "First",
-            "first.png");
+            UUID.fromString("00000000-0000-0000-0000-000000000101"), gameId, "First", "first.png");
     final UUID second =
         fixture.team(
             UUID.fromString("00000000-0000-0000-0000-000000000102"),
@@ -306,10 +287,8 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID trackId = fixture.track(albumId, songId, null);
     final UUID categoryId = fixture.category(gameId, albumId, red, 1, true);
     final UUID scheduleId = fixture.schedule(categoryId, trackId, 1, NOW.minusMinutes(1), NOW);
-    fixture.interrupt(
-        scheduleId, red, NOW.minusSeconds(50), NOW.minusSeconds(49), true, 60);
-    fixture.interrupt(
-        scheduleId, blue, NOW.minusSeconds(40), NOW.minusSeconds(39), false, 20);
+    fixture.interrupt(scheduleId, red, NOW.minusSeconds(50), NOW.minusSeconds(49), true, 60);
+    fixture.interrupt(scheduleId, blue, NOW.minusSeconds(40), NOW.minusSeconds(39), false, 20);
 
     final HashMap<String, Object> context = gameService.contextFetch("RWIN");
 
@@ -366,6 +345,5 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     assertNotNull(context.get("scores"));
   }
 
-  private record Round(
-      String roomCode, UUID gameId, UUID teamId, UUID songId, UUID scheduleId) {}
+  private record Round(String roomCode, UUID gameId, UUID teamId, UUID songId, UUID scheduleId) {}
 }

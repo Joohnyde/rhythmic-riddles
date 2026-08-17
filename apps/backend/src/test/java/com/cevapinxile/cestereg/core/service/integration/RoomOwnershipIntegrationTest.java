@@ -69,8 +69,7 @@ class RoomOwnershipIntegrationTest extends PostgresJpaIntegrationTest {
       final LocalDateTime originalStartedAt = startedAt(otherRoom.scheduleId());
 
       assertThrows(
-          DerivedException.class,
-          () -> scheduleService.replaySong(otherRoom.scheduleId(), "OWA1"));
+          DerivedException.class, () -> scheduleService.replaySong(otherRoom.scheduleId(), "OWA1"));
 
       assertEquals(originalStartedAt, startedAt(otherRoom.scheduleId()));
     }
@@ -96,8 +95,7 @@ class RoomOwnershipIntegrationTest extends PostgresJpaIntegrationTest {
       fixture.game("OWA3", 2, 3, 2);
       final PersistedRound otherRoom = round("OWB3");
       final UUID systemPause =
-          fixture.interrupt(
-              otherRoom.scheduleId(), null, NOW.minusSeconds(2), null, null, 1);
+          fixture.interrupt(otherRoom.scheduleId(), null, NOW.minusSeconds(2), null, null, 1);
 
       assertThrows(
           DerivedException.class,
@@ -130,12 +128,7 @@ class RoomOwnershipIntegrationTest extends PostgresJpaIntegrationTest {
       final PersistedRound foreignRound = round("OWB6");
       final UUID corruptAnswer =
           fixture.interrupt(
-              foreignRound.scheduleId(),
-              localTeam,
-              NOW.minusSeconds(2),
-              null,
-              null,
-              null);
+              foreignRound.scheduleId(), localTeam, NOW.minusSeconds(2), null, null, null);
 
       assertThrows(
           DerivedException.class,
@@ -156,13 +149,11 @@ class RoomOwnershipIntegrationTest extends PostgresJpaIntegrationTest {
       final UUID otherTeam = fixture.team(otherGame, "Other Team", "other.png");
 
       assertThrows(
-          DerivedException.class,
-          () -> teamService.kickTeam(otherTeam.toString(), "OWA5"));
+          DerivedException.class, () -> teamService.kickTeam(otherTeam.toString(), "OWA5"));
 
       assertEquals(
           1,
-          jdbc.queryForObject(
-              "SELECT COUNT(*) FROM team WHERE id = ?", Integer.class, otherTeam));
+          jdbc.queryForObject("SELECT COUNT(*) FROM team WHERE id = ?", Integer.class, otherTeam));
     }
   }
 
