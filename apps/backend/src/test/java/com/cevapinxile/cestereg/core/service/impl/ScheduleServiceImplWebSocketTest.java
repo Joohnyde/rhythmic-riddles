@@ -15,6 +15,7 @@ import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.SongEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
+import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import java.time.LocalDateTime;
@@ -45,6 +46,7 @@ class ScheduleServiceImplWebSocketTest {
     class Stage2SequenceContracts {
       @Mock private GameService gameService;
       @Mock private CategoryService categoryService;
+      @Mock private GameRepository gameRepository;
       @Mock private ScheduleRepository scheduleRepository;
       @Mock private InterruptRepository interruptRepository;
       @Mock private PresenceGateway presenceGateway;
@@ -59,7 +61,7 @@ class ScheduleServiceImplWebSocketTest {
         final ScheduleEntity schedule = schedule(game, 17.5, 6.0);
 
         when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
         service.replaySong(schedule.getId(), "AKKU");
@@ -83,7 +85,7 @@ class ScheduleServiceImplWebSocketTest {
         final ScheduleEntity schedule = schedule(game, 17.5, 6.0);
 
         when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
 
         final AppNotRegisteredException exception =
@@ -105,7 +107,7 @@ class ScheduleServiceImplWebSocketTest {
         final ScheduleEntity schedule = schedule(game, 17.5, 6.0);
 
         when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
         service.revealAnswer(schedule.getId(), "AKKU");
@@ -125,7 +127,7 @@ class ScheduleServiceImplWebSocketTest {
         final ScheduleEntity schedule = schedule(game, 17.5, 6.0);
 
         when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-        when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
 
         final AppNotRegisteredException exception =
@@ -242,6 +244,7 @@ class ScheduleServiceImplWebSocketTest {
   class ScheduleServiceImplStage2BroadcastSerializationTest {
     @Mock private GameService gameService;
     @Mock private CategoryService categoryService;
+    @Mock private GameRepository gameRepository;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
@@ -255,6 +258,7 @@ class ScheduleServiceImplWebSocketTest {
       service = new ScheduleServiceImpl();
       ReflectionTestUtils.setField(service, "gameService", gameService);
       ReflectionTestUtils.setField(service, "categoryService", categoryService);
+      ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
       ReflectionTestUtils.setField(service, "scheduleRepository", scheduleRepository);
       ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
       ReflectionTestUtils.setField(service, "presenceGateway", presenceGateway);
@@ -271,7 +275,8 @@ class ScheduleServiceImplWebSocketTest {
       final SongEntity song = mock(SongEntity.class);
 
       when(gameService.findByCode("ROOM", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(gameId)).thenReturn(schedule);
+      when(schedule.getId()).thenReturn(scheduleId);
       when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
       when(schedule.getTrackId()).thenReturn(track);
       when(track.getSongId()).thenReturn(song);
@@ -297,7 +302,8 @@ class ScheduleServiceImplWebSocketTest {
       final ScheduleEntity schedule = mock(ScheduleEntity.class);
 
       when(gameService.findByCode("ROOM", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(gameId)).thenReturn(schedule);
+      when(schedule.getId()).thenReturn(scheduleId);
       when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
 
       service.revealAnswer(scheduleId, "ROOM");

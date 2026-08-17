@@ -91,6 +91,8 @@ a SemVer-like versioning scheme will be used.
 - Added and maintained a structured test catalog (`test-catalog.md` / `test-catalog.csv`) to document backend test coverage and prevent redundant tests.
 - Improved overall test readability and maintainability through clearer naming conventions, stronger assertions, and consistent Mockito static imports.
 - WebSocket schema validation
+- Added PostgreSQL-backed database integration testing using the production schema, with coverage for persistence queries, game recovery, transaction atomicity, and database invariants.
+- Added concurrency integration coverage for simultaneous team buzzes, answers, game progression, album selection, and system-interrupt races.
 
 ### Changed
 - Consolidated and removed outdated documentation to align with current implementation.
@@ -99,6 +101,10 @@ a SemVer-like versioning scheme will be used.
 - Updated logging documentation to reflect SLF4J + rolling log configuration.
 - Standardized documentation navigation via `docs/index.md` as the authoritative entry point.
 - Improved project structure documentation to clarify boundaries between backend, frontend, hardware, and packaging scripts.
+- Hardened concurrent room mutations with room-level locking, preventing conflicting user actions while ensuring system interrupts are persisted and nested recovery state remains valid.
+- Improved transaction consistency across database state, score caching, and WebSocket broadcasts so failed operations cannot leave partial state or publish uncommitted changes.
+- Strengthened room ownership and stale-schedule validation for client-provided persistence identifiers.
+- Added a dedicated HTTP 423 room-busy response for conflicting same-room operations and documented the updated API behavior.
 
 
 ## 0.1.0 – Initial MVP

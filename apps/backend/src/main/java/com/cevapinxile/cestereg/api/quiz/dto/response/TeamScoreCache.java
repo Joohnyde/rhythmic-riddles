@@ -14,7 +14,6 @@ import java.util.UUID;
  * @author denijal
  */
 class TeamScore {
-
   private UUID teamId;
   private String image;
   private String name;
@@ -30,6 +29,18 @@ class TeamScore {
 
     // Self-register
     scoreMap.putIfAbsent(teamId, this);
+  }
+
+  private TeamScore(final TeamScore source) {
+    this.teamId = source.teamId;
+    this.image = source.image;
+    this.name = source.name;
+    this.score = source.score;
+    this.scheduleId = source.scheduleId;
+  }
+
+  TeamScore snapshot() {
+    return new TeamScore(this);
   }
 
   public UUID getTeamId() {
@@ -85,11 +96,13 @@ public class TeamScoreCache {
     }
   }
 
-  public Object getScores() {
-    return this.scoreList;
+  public synchronized Object getScores() {
+    // Return a point-in-time copy so serialization cannot observe score and scheduleId
+    // half-updated.
+    return scoreList.stream().map(TeamScore::snapshot).toList();
   }
 
-  public Integer getScore(UUID teamId) throws InvalidReferencedObjectException {
+  public synchronized Integer getScore(UUID teamId) throws InvalidReferencedObjectException {
     if (!this.scoreMap.containsKey(teamId)) {
       throw new InvalidReferencedObjectException(
           "Team with id " + teamId + " could not be found in the cache");
@@ -97,7 +110,7 @@ public class TeamScoreCache {
     return this.scoreMap.get(teamId).getScore();
   }
 
-  public void setScore(UUID teamId, UUID scheduleId, Integer score)
+  public synchronized void setScore(UUID teamId, UUID scheduleId, Integer score)
       throws InvalidReferencedObjectException {
     if (!this.scoreMap.containsKey(teamId)) {
       throw new InvalidReferencedObjectException(

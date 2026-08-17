@@ -54,7 +54,9 @@ This gives you the same versions across machines and a "one click" environment:
 Then run:
 - `./scripts/dev/doctor.sh` (health checks)
 - `./scripts/dev/env-up.sh` (starts dev services)
-- `./scripts/dev/test-all.sh` (runs all tests)
+- Backend tests (Linux): `cd apps/backend && mvn -Dplatform=linux test`
+  - Windows/macOS: use `-Dplatform=windows` / `-Dplatform=macos`
+  - See `docs/developer-guide/testing/db-integration-tests.md` for embedded PostgreSQL details.
 
 ### Option B — Local tools (without containers)
 Prereqs:
@@ -65,8 +67,8 @@ Prereqs:
 
 Run:
 - Start DB (see `infra/docker-compose/local-dev.compose.yml`)
-- Backend: `cd apps/quiz-game/backend && mvn spring-boot:run`
-- Frontend: `cd apps/quiz-game/frontend && npm ci && npm start`
+- Backend: `cd apps/backend && mvn spring-boot:run`
+- Frontend: `cd apps/frontend && npm ci && npm start`
 
 Ports (default):
 - Backend: `http://localhost:8080`

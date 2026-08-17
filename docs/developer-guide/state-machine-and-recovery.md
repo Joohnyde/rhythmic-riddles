@@ -104,6 +104,10 @@ Stage 2 is reconstructed from:
 ### When
 - `game.getStage() == 2` 
 
+### Persisted-state validation
+
+Recovery requires a last-played schedule with a track, album, and song. If that persisted Stage-2 state is missing or incomplete, `contextFetch` rejects recovery with `WrongGameStateException` (`E003`) instead of returning a partial snapshot.
+
 ### Always-present fields (base contract)
 
 Stage 2 always begins with:
@@ -229,3 +233,43 @@ Key rules enforced:
 
 After a successful stage change, the service broadcasts a fresh context snapshot (`type: "welcome"`) to clients. 
 
+
+## Room mutation locking
+
+The game row is the synchronization point for mutations inside one room. A lock is taken before the command re-reads and validates mutable game state, so two requests for the same room cannot both act on the same stale state. Different rooms lock different rows and continue independently.
+
+| Operation | Lock behavior | Reason |
+|---|---|---|
+| Create game | None | The room does not exist yet. |
+| Change stage | `tryLockGame` (`NOWAIT`) | Competing stage/gameplay commands must not queue and later act on stale state. |
+| Create team | `tryLockGame` (`NOWAIT`) | Prevents a team from being created while the lobby is concurrently closing. |
+| Kick team | `tryLockGame` (`NOWAIT`) | Prevents a team from being removed while the game concurrently leaves the lobby. |
+| Pick album | `tryLockGame` (`NOWAIT`) | Serializes category selection with other room mutations. |
+| Start category | `tryLockGame` (`NOWAIT`) | Serializes the transition into song playback. |
+| Replay song | `tryLockGame` (`NOWAIT`) | A replay command is stale if another room mutation already won. |
+| Reveal answer | `tryLockGame` (`NOWAIT`) | A reveal command is stale if another room mutation already won. |
+| Progress / next song | `tryLockGame` (`NOWAIT`) | Prevents two progress requests from advancing the schedule twice. |
+| `finishAndNext` | Inherits the `progress` lock | It is an internal continuation of the already locked progress transaction. |
+| Team buzz | `tryLockGame` (`NOWAIT`) | A buzz must not wait behind another mutation and execute after its timing/state is stale. |
+| System interrupt | Blocking `lockGame` | A system pause is a must-persist event and waits for an in-flight room mutation. |
+| Answer team guess | `tryLockGame` (`NOWAIT`) | Serializes scoring/resolution with other room mutations. |
+| Resolve system errors | `tryLockGame` (`NOWAIT`) | A competing recovery command should fail against the latest state rather than queue. |
+| Save previous UI scenario | Blocking `lockGame` | Recovery metadata must wait for the system pause to finish persisting, then updates only an unresolved pause. |
+| `contextFetch` | None | Read-only recovery. It does not mutate room state. |
+
+### Fail-fast room contention
+
+`tryLockGame` uses PostgreSQL `FOR UPDATE NOWAIT`. If another transaction already owns the same room row, the request is rejected immediately as `423 Locked` / `E010 - Room busy` with a message explaining that another request is changing the room and that the client should retry against the latest state. This is intentional: executing a queued gameplay command later can make the command semantically stale.
+
+Blocking `lockGame` is reserved for the two must-persist recovery cases above. Those operations wait instead of being discarded by transient contention.
+Service implementations call both locking modes through the shared `core.service.support.RoomLocks` helper so the blocking/fail-fast distinction stays in one place.
+
+### Schedule IDs on replay and reveal
+
+Replay and reveal still receive `scheduleId` from the client, but the ID is treated as a stale-command token rather than as the source of truth. After acquiring the room lock, the backend loads the room's current (`findLastPlayed`) schedule and requires its ID to match the supplied ID. The current schedule is needed for the operation anyway, so this validation does not add another schedule lookup.
+
+### Side effects and transaction commit
+
+Database writes remain inside the service transaction. WebSocket broadcasts and score-cache updates are registered through `TransactionCallbacks.afterCommitOrNow(...)` and run only after a successful commit when Spring transaction synchronization is active. If the transaction rolls back, those callbacks do not run. Direct unit-test calls without an active Spring transaction run the callback immediately.
+
+This means a client is never deliberately broadcast a state that later rolls back. A WebSocket delivery failure after commit cannot roll the database transaction back; reconnect recovery must reconstruct the already committed state.

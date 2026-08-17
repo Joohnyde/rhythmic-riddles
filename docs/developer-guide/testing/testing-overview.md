@@ -16,9 +16,25 @@ The goal of the test suite is not just to prove that code works on the happy pat
 
 ## Current Test Focus
 
-The current focus is now:
+The current safety net now has two complementary integration boundaries in addition to the existing service/controller tests:
 
-### 1. Seeded browser WebSocket integration
+### 1. Real-PostgreSQL repository and recovery integration
+
+The backend DB integration suite verifies query behavior that mocks cannot prove and reconstructs recovery directly from persisted rows. It covers:
+
+- outermost interrupt-frame ordering and nested-pause suppression;
+- independent latest team/system interrupt retrieval;
+- schedule and category ordering/scoping;
+- PostgreSQL-native score projections and picker queries;
+- normal playback recovery;
+- active team and technical-pause recovery;
+- ended-but-unrevealed and revealed recovery;
+- persisted invalid-state rejection;
+- supported-path protection of the disjoint-or-nested interrupt invariant.
+
+These tests use the project’s embedded real PostgreSQL runtime rather than an H2 compatibility substitute, and initialize it from the root production `db/db_01_create_schema.sql` and `db/db_04_add_runtime_invariants.sql`. Fixture rows are inserted directly so repository tests exercise the query itself rather than `JpaRepository.save()`. See `db-integration-tests.md` for practical guidance.
+
+### 2. Seeded browser WebSocket integration
 
 The Playwright suite under `apps/frontend/e2e` verifies the real browser/WebSocket boundary:
 
@@ -31,21 +47,18 @@ The Playwright suite under `apps/frontend/e2e` verifies the real browser/WebSock
 - recovery `welcome` snapshots;
 - schema compliance for reachable WebSocket frames.
 
-This layer is already a major part of the current safety net. It proves that real browser clients and the backend WebSocket runtime agree on routing, frame shape, lifecycle, and recovery behavior.
+Together, the DB-backed suite proves that persisted state is reconstructed correctly and the browser suite proves that the resulting runtime protocol reaches real clients correctly.
 
-### 2. DB-backed recovery integration
+## Running backend tests
 
-After that, prove reconnect recovery from persisted state:
+On Linux, run the full backend suite with:
 
-- normal playback;
-- active team interrupt;
-- technical pause;
-- ended-not-revealed;
-- revealed.
+```bash
+cd apps/backend
+mvn -Dplatform=linux test
+```
 
-That is where recovery becomes truly trustworthy.
-
-The WebSocket tests prove that browsers receive recovery frames. DB-backed recovery integration should prove that persisted state is queried and reconstructed correctly before a WebSocket frame is ever sent.
+The `platform` Maven property selects the native binary used by embedded PostgreSQL. Use `-Dplatform=windows` on Windows or `-Dplatform=macos` on macOS. A bare `mvn test` does not select one of these platform-specific dependencies. See `db-integration-tests.md` for suite structure and troubleshooting.
 
 ## Why `contextFetch` matters
 
@@ -104,7 +117,36 @@ com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException
 
 That behavior is considered part of the API contract.
 
-#### 3. Seeded browser WebSocket integration tests
+#### 3. Repository/query integration
+
+The persistence integration suite runs against real PostgreSQL and protects semantics that mocked repositories cannot prove:
+
+- ordering and `LIMIT` behavior;
+- schedule/category scoping;
+- interrupt-frame nesting and filtering;
+- update-query targeting;
+- PostgreSQL-specific projections such as `DISTINCT ON`;
+- score and album-picker query edge cases.
+
+Do not add integration tests for trivial inherited CRUD behavior. A repository integration test should protect a meaningful query contract.
+
+#### 4. DB-backed recovery integration
+
+`GameRecoveryIntegrationTest` builds reachable persisted states directly in PostgreSQL and calls `GameServiceImpl.contextFetch(...)` through real repositories and services.
+
+This layer proves recovery for:
+
+- normal playback;
+- active team interrupt;
+- technical pause;
+- ended-not-revealed;
+- revealed;
+- nested/disjoint pause timing;
+- representative corrupt persisted state.
+
+This is deliberately separate from the E2E fixture API so fixture infrastructure is not part of the assertion chain.
+
+#### 5. Seeded browser WebSocket integration tests
 
 The frontend Playwright suite under `apps/frontend/e2e` validates real browser WebSocket behavior using the backend `e2e` profile and deterministic fixtures.
 
@@ -125,46 +167,11 @@ This is not full product E2E. REST calls and fixture endpoints may be used as tr
 
 #### 1. Frontend unit and integration tests
 
-Frontend unit tests should cover component and service behavior that does not require a real backend WebSocket connection.
+Frontend unit tests should cover component and domain-store behavior that does not require a real backend WebSocket connection.
 
-Good candidates:
+Good candidates include recovery-state mapping, song-round transitions, duplicate-action guards, route guards, form validation, and error rendering. These tests should stay smaller than Playwright tests and should not duplicate browser-level WebSocket coverage.
 
-- pure component state;
-- route guards;
-- frontend services;
-- selector stability;
-- form validation;
-- error rendering.
-
-These tests should stay smaller than Playwright tests and should not duplicate browser-level WebSocket coverage.
-
-#### 2. DB-backed recovery integration
-
-After that, prove reconnect recovery from persisted state:
-
-- normal playback;
-- active team interrupt;
-- technical pause;
-- ended-not-revealed;
-- revealed.
-
-That is where recovery becomes truly trustworthy.
-
-This layer should focus on persisted data and recovery queries. It should answer: “Given this database state, does the backend reconstruct the correct game context?”
-
-#### 3. Repository/query integration
-
-Especially for the recovery-critical queries:
-
-- ordering;
-- stage-aware lookups;
-- interrupt retrieval;
-- schedule/category edge cases;
-- score/result queries.
-
-This layer should use a real database or a database-compatible integration setup. It should protect query semantics that mocks cannot prove.
-
-#### 4. Small number of full-stack integration tests
+#### 2. Small number of full-stack integration tests
 
 A few high-value ones:
 
@@ -175,9 +182,9 @@ A few high-value ones:
 
 This layer should be small. The point is not to duplicate every service test, but to prove that Spring wiring and infrastructure behave correctly together.
 
-#### 5. E2E regression
+#### 3. E2E regression
 
-Then cover the whole flow:
+Then cover the user-visible product flow:
 
 - room creation;
 - both apps connected;
@@ -190,7 +197,7 @@ Then cover the whole flow:
 - scoring;
 - finish/results.
 
-This layer should test the user-visible product journey. It should not duplicate every low-level WebSocket assertion already covered by the seeded WebSocket integration suite.
+This layer should not duplicate every low-level WebSocket assertion already covered by the seeded WebSocket integration suite.
 
 ## What should be tested when code changes
 
@@ -221,7 +228,7 @@ Desired minimum CI gates:
 Future additions may include:
 
 - coverage reporting;
-- repository integration tests with Testcontainers;
+- the real-PostgreSQL DB integration suite as a merge/release gate;
 - Playwright end-to-end smoke tests;
 - seeded WebSocket E2E in CI;
 - full product E2E regression for release branches.

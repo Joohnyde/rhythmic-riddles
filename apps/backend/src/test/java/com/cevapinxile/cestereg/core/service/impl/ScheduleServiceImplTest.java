@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,7 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
-import com.cevapinxile.cestereg.common.exception.InvalidReferencedObjectException;
+import com.cevapinxile.cestereg.common.exception.InvalidArgumentException;
 import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
 import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
 import com.cevapinxile.cestereg.core.service.CategoryService;
@@ -26,6 +25,7 @@ import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.SongEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.CategoryRepository;
+import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import com.cevapinxile.cestereg.persistence.repository.TeamRepository;
@@ -46,6 +46,7 @@ public class ScheduleServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class ScheduleCoreFlow {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryService categoryService;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
@@ -59,14 +60,13 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final UUID scheduleId = UUID.randomUUID();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.empty());
 
-      final InvalidReferencedObjectException exception =
+      final InvalidArgumentException exception =
           assertThrows(
-              InvalidReferencedObjectException.class,
-              () -> scheduleService.replaySong(scheduleId, "AKKU"));
-
-      assertEquals("Order with id " + scheduleId + " does not exist", exception.getMessage());
+              InvalidArgumentException.class, () -> scheduleService.replaySong(scheduleId, "AKKU"));
+      assertEquals(
+          "Schedule " + scheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
     }
 
     @Test
@@ -74,9 +74,8 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final ScheduleEntity schedule = schedule(game, 25.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -90,11 +89,10 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final ScheduleEntity schedule = schedule(game, 25.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.replaySong(schedule.getId(), "AKKU");
-
       assertNotNull(schedule.getStartedAt());
       verify(interruptRepository).resolveErrors(any(UUID.class), any(LocalDateTime.class));
       verify(scheduleRepository).saveAndFlush(schedule);
@@ -106,14 +104,15 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final UUID scheduleId = UUID.randomUUID();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.empty());
 
-      final InvalidReferencedObjectException exception =
+      final InvalidArgumentException exception =
           assertThrows(
-              InvalidReferencedObjectException.class,
+              InvalidArgumentException.class,
               () -> scheduleService.revealAnswer(scheduleId, "AKKU"));
 
-      assertEquals("Order with id " + scheduleId + " does not exist", exception.getMessage());
+      assertEquals(
+          "Schedule " + scheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
     }
 
     @Test
@@ -121,11 +120,10 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final ScheduleEntity schedule = schedule(game, 25.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.revealAnswer(schedule.getId(), "AKKU");
-
       assertNotNull(schedule.getRevealedAt());
       verify(interruptRepository).resolveErrors(any(UUID.class), any(LocalDateTime.class));
       verify(scheduleRepository).saveAndFlush(schedule);
@@ -137,7 +135,6 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(AppNotRegisteredException.class, () -> scheduleService.progress("AKKU"));
 
@@ -154,7 +151,6 @@ public class ScheduleServiceImplTest {
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.of(next));
-
       scheduleService.progress("AKKU");
 
       assertNotNull(next.getStartedAt());
@@ -173,7 +169,6 @@ public class ScheduleServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.empty());
       when(categoryService.finishAndNext(game)).thenReturn(3);
-
       scheduleService.progress("AKKU");
 
       verify(categoryService).finishAndNext(game);
@@ -210,6 +205,7 @@ public class ScheduleServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class ScheduleValidationAndPresence {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryService categoryService;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
@@ -223,14 +219,13 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU", 2);
       final UUID scheduleId = UUID.randomUUID();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.empty());
-
-      final InvalidReferencedObjectException exception =
+      final InvalidArgumentException exception =
           assertThrows(
-              InvalidReferencedObjectException.class,
-              () -> scheduleService.replaySong(scheduleId, "AKKU"));
+              InvalidArgumentException.class, () -> scheduleService.replaySong(scheduleId, "AKKU"));
 
-      assertEquals("Order with id " + scheduleId + " does not exist", exception.getMessage());
+      assertEquals(
+          "Schedule " + scheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
     }
 
     @Test
@@ -238,9 +233,8 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = schedule(30.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -254,11 +248,10 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = schedule(22.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.replaySong(schedule.getId(), "AKKU");
-
       assertNotNull(schedule.getStartedAt());
       verify(interruptRepository).resolveErrors(eq(schedule.getId()), any(LocalDateTime.class));
       verify(scheduleRepository).saveAndFlush(schedule);
@@ -267,18 +260,39 @@ public class ScheduleServiceImplTest {
     }
 
     @Test
+    void replaySongRejectsStaleScheduleFromSameRoom() throws Exception {
+      final GameEntity game = game("AKKU", 2);
+      final ScheduleEntity current = schedule(22.0);
+      final UUID staleScheduleId = UUID.randomUUID();
+      when(gameService.findByCode("AKKU", 2)).thenReturn(game);
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(current);
+
+      final InvalidArgumentException exception =
+          assertThrows(
+              InvalidArgumentException.class,
+              () -> scheduleService.replaySong(staleScheduleId, "AKKU"));
+
+      assertEquals(
+          "Schedule " + staleScheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
+      verify(interruptRepository, never()).resolveErrors(any(), any());
+      verify(scheduleRepository, never()).saveAndFlush(any());
+      verify(broadcastGateway, never()).broadcast(anyString(), anyString());
+    }
+
+    @Test
     void revealAnswerRejectsUnknownSchedule() throws Exception {
       final GameEntity game = game("AKKU", 2);
       final UUID scheduleId = UUID.randomUUID();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.empty());
-
-      final InvalidReferencedObjectException exception =
+      final InvalidArgumentException exception =
           assertThrows(
-              InvalidReferencedObjectException.class,
+              InvalidArgumentException.class,
               () -> scheduleService.revealAnswer(scheduleId, "AKKU"));
 
-      assertEquals("Order with id " + scheduleId + " does not exist", exception.getMessage());
+      assertEquals(
+          "Schedule " + scheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
     }
 
     @Test
@@ -286,9 +300,8 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = schedule(22.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -302,11 +315,10 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = schedule(22.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.revealAnswer(schedule.getId(), "AKKU");
-
       assertNotNull(schedule.getRevealedAt());
       verify(interruptRepository).resolveErrors(eq(schedule.getId()), any(LocalDateTime.class));
       verify(scheduleRepository).saveAndFlush(schedule);
@@ -315,14 +327,33 @@ public class ScheduleServiceImplTest {
     }
 
     @Test
+    void revealAnswerRejectsStaleScheduleFromSameRoom() throws Exception {
+      final GameEntity game = game("AKKU", 2);
+      final ScheduleEntity current = schedule(22.0);
+      final UUID staleScheduleId = UUID.randomUUID();
+      when(gameService.findByCode("AKKU", 2)).thenReturn(game);
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(current);
+
+      final InvalidArgumentException exception =
+          assertThrows(
+              InvalidArgumentException.class,
+              () -> scheduleService.revealAnswer(staleScheduleId, "AKKU"));
+
+      assertEquals(
+          "Schedule " + staleScheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
+      verify(interruptRepository, never()).resolveErrors(any(), any());
+      verify(scheduleRepository, never()).saveAndFlush(any());
+      verify(broadcastGateway, never()).broadcast(anyString(), anyString());
+    }
+
+    @Test
     void progressRequiresBothApps() throws Exception {
       final GameEntity game = game("AKKU", 2);
-      final ScheduleEntity last = schedule(20.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
 
       final AppNotRegisteredException exception =
           assertThrows(AppNotRegisteredException.class, () -> scheduleService.progress("AKKU"));
-
       assertEquals("Both apps need to be present in order to continue", exception.getMessage());
       verify(interruptRepository, never()).resolveErrors(any(), any());
     }
@@ -336,7 +367,6 @@ public class ScheduleServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(last);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.empty());
       when(categoryService.finishAndNext(game)).thenReturn(3);
-
       scheduleService.progress("AKKU");
 
       verify(interruptRepository).resolveErrors(eq(last.getId()), any(LocalDateTime.class));
@@ -374,6 +404,7 @@ public class ScheduleServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class ScheduleReplayRevealAndProgression {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryService categoryService;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
@@ -388,14 +419,11 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final ScheduleEntity schedule = schedule(game, 25.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
-
       scheduleService.replaySong(schedule.getId(), "AKKU");
-
       assertNotNull(schedule.getStartedAt());
-      final org.mockito.InOrder inOrder =
-          inOrder(interruptRepository, scheduleRepository, broadcastGateway);
+      final InOrder inOrder = inOrder(interruptRepository, scheduleRepository, broadcastGateway);
       inOrder
           .verify(interruptRepository)
           .resolveErrors(eq(schedule.getId()), any(LocalDateTime.class));
@@ -412,9 +440,8 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final ScheduleEntity schedule = schedule(game, 25.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -429,14 +456,12 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game();
       final ScheduleEntity schedule = schedule(game, 25.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.revealAnswer(schedule.getId(), "AKKU");
-
       assertNotNull(schedule.getRevealedAt());
-      final org.mockito.InOrder inOrder =
-          inOrder(interruptRepository, scheduleRepository, broadcastGateway);
+      final InOrder inOrder = inOrder(interruptRepository, scheduleRepository, broadcastGateway);
       inOrder
           .verify(interruptRepository)
           .resolveErrors(eq(schedule.getId()), any(LocalDateTime.class));
@@ -466,12 +491,9 @@ public class ScheduleServiceImplTest {
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.of(next));
-
       scheduleService.progress("AKKU");
-
       assertNotNull(next.getStartedAt());
-      final org.mockito.InOrder inOrder =
-          inOrder(interruptRepository, scheduleRepository, broadcastGateway);
+      final InOrder inOrder = inOrder(interruptRepository, scheduleRepository, broadcastGateway);
       inOrder
           .verify(interruptRepository)
           .resolveErrors(eq(lastPlayed.getId()), any(LocalDateTime.class));
@@ -490,7 +512,6 @@ public class ScheduleServiceImplTest {
       final ScheduleEntity third = schedule(game, 16.0);
       second.setStartedAt(null);
       third.setStartedAt(null);
-
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(first).thenReturn(second);
@@ -500,7 +521,6 @@ public class ScheduleServiceImplTest {
 
       scheduleService.progress("AKKU");
       scheduleService.progress("AKKU");
-
       verify(interruptRepository).resolveErrors(eq(first.getId()), any(LocalDateTime.class));
       verify(interruptRepository).resolveErrors(eq(second.getId()), any(LocalDateTime.class));
       verify(scheduleRepository).saveAndFlush(second);
@@ -516,7 +536,6 @@ public class ScheduleServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.empty());
       when(categoryService.finishAndNext(game)).thenReturn(1);
-
       scheduleService.progress("AKKU");
 
       verify(categoryService).finishAndNext(game);
@@ -534,7 +553,6 @@ public class ScheduleServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.empty());
       when(categoryService.finishAndNext(game)).thenReturn(3);
-
       scheduleService.progress("AKKU");
 
       verify(categoryService).finishAndNext(game);
@@ -571,6 +589,7 @@ public class ScheduleServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class ScheduleRegressionAndExceptionHandling {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryService categoryService;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
@@ -584,14 +603,13 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU");
       final UUID scheduleId = UUID.randomUUID();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.empty());
-
-      final InvalidReferencedObjectException exception =
+      final InvalidArgumentException exception =
           assertThrows(
-              InvalidReferencedObjectException.class,
-              () -> scheduleService.replaySong(scheduleId, "AKKU"));
+              InvalidArgumentException.class, () -> scheduleService.replaySong(scheduleId, "AKKU"));
 
-      assertEquals("Order with id " + scheduleId + " does not exist", exception.getMessage());
+      assertEquals(
+          "Schedule " + scheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
     }
 
     @Test
@@ -599,9 +617,8 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU");
       final ScheduleEntity schedule = schedule(12.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
@@ -616,11 +633,10 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU");
       final ScheduleEntity schedule = schedule(12.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.replaySong(schedule.getId(), "AKKU");
-
       final InOrder inOrder = inOrder(interruptRepository, scheduleRepository, broadcastGateway);
       inOrder
           .verify(interruptRepository)
@@ -636,14 +652,14 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU");
       final UUID scheduleId = UUID.randomUUID();
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.empty());
-
-      final InvalidReferencedObjectException exception =
+      final InvalidArgumentException exception =
           assertThrows(
-              InvalidReferencedObjectException.class,
+              InvalidArgumentException.class,
               () -> scheduleService.revealAnswer(scheduleId, "AKKU"));
 
-      assertEquals("Order with id " + scheduleId + " does not exist", exception.getMessage());
+      assertEquals(
+          "Schedule " + scheduleId + " is not the current schedule for game AKKU",
+          exception.getMessage());
     }
 
     @Test
@@ -651,11 +667,10 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU");
       final ScheduleEntity schedule = schedule(12.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
 
       scheduleService.revealAnswer(schedule.getId(), "AKKU");
-
       final InOrder inOrder = inOrder(interruptRepository, scheduleRepository, broadcastGateway);
       inOrder
           .verify(interruptRepository)
@@ -673,7 +688,6 @@ public class ScheduleServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.empty());
       when(categoryService.finishAndNext(game)).thenReturn(3);
-
       scheduleService.progress("AKKU");
 
       final InOrder inOrder = inOrder(interruptRepository, categoryService, gameService);
@@ -694,7 +708,6 @@ public class ScheduleServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(null);
 
       assertThrows(NullPointerException.class, () -> scheduleService.progress("AKKU"));
-
       verify(scheduleRepository, never()).findNext(game.getId());
       verify(broadcastGateway, never()).broadcast(anyString(), anyString());
     }
@@ -708,9 +721,7 @@ public class ScheduleServiceImplTest {
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(lastPlayed);
       when(scheduleRepository.findNext(game.getId())).thenReturn(Optional.of(nextSong));
-
       scheduleService.progress("AKKU");
-
       verify(scheduleRepository).saveAndFlush(nextSong);
       verify(broadcastGateway)
           .broadcast(eq("AKKU"), org.mockito.ArgumentMatchers.contains("\"type\":\"song_next\""));
@@ -756,6 +767,7 @@ public class ScheduleServiceImplTest {
   @ExtendWith(MockitoExtension.class)
   class ScheduleOrderingAndRepeatedProgression {
     @Mock private GameService gameService;
+    @Mock private GameRepository gameRepository;
     @Mock private CategoryService categoryService;
     @Mock private ScheduleRepository scheduleRepository;
     @Mock private InterruptRepository interruptRepository;
@@ -763,7 +775,6 @@ public class ScheduleServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private CategoryRepository categoryRepository;
     @Mock private TeamRepository teamRepository;
-
     @InjectMocks private ScheduleServiceImpl scheduleService;
     @InjectMocks private CategoryServiceImpl categoryServiceImpl;
 
@@ -773,14 +784,12 @@ public class ScheduleServiceImplTest {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = schedule(15.0);
       when(gameService.findByCode("AKKU", 2)).thenReturn(game);
-      when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+      when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
-
       final AppNotRegisteredException exception =
           assertThrows(
               AppNotRegisteredException.class,
               () -> scheduleService.replaySong(schedule.getId(), "AKKU"));
-
       assertEquals("Both apps need to be present in order to continue", exception.getMessage());
       verify(interruptRepository, never()).resolveErrors(eq(schedule.getId()), any());
       verify(scheduleRepository, never()).saveAndFlush(schedule);
@@ -802,7 +811,6 @@ public class ScheduleServiceImplTest {
           .thenReturn(Optional.of(nextSong))
           .thenReturn(Optional.empty());
       when(categoryService.finishAndNext(game)).thenReturn(3);
-
       scheduleService.progress("AKKU");
       scheduleService.progress("AKKU");
 

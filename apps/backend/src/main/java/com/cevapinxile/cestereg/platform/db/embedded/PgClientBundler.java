@@ -114,7 +114,7 @@ public final class PgClientBundler {
         throw new IllegalStateException(
             "Bundled pg client only supports Windows x64. Detected: " + os + " " + arch);
       }
-      return "windows-x86_64"; // <-- change to your chosen folder name (see suggestions below)
+      return "windows-x86_64";
     }
 
     if (os.contains("linux")) {

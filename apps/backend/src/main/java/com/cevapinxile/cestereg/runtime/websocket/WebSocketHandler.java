@@ -32,6 +32,7 @@ import tools.jackson.databind.ObjectMapper;
 public class WebSocketHandler extends TextWebSocketHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(WebSocketHandler.class);
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final SessionRegistry sessionRegistry;
   private final WebSocketBroadcastGateway broadcastGateway;
@@ -62,7 +63,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
     if (sessionRegistry.setSession(session)) {
       final String roomCode = session.getAttributes().get("ROOM_CODE").toString();
       final HashMap<String, Object> context = gameService.contextFetch(roomCode);
-      broadcastGateway.sendToSomeone(session, new ObjectMapper().writeValueAsString(context));
+      broadcastGateway.sendToSomeone(session, OBJECT_MAPPER.writeValueAsString(context));
     }
   }
 

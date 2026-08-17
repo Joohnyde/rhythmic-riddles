@@ -17,7 +17,6 @@ import org.springframework.data.jpa.repository.Modifying;
  * @author denijal
  */
 public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID> {
-
   /**
    * Returns outermost interrupt frames after {@code startTimestamp} for the given schedule.
    *
