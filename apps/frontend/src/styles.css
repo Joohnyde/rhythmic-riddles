@@ -1,0 +1,594 @@
+@import 'tailwindcss';
+
+/*
+ * RhythmicRiddles Design System
+ *
+ * Brand anchors:
+ * Purple  #B53DD6
+ * Sky     #3EB8F0
+ * Coral   #FF6A5F
+ * Apricot #FF9F6E
+ * Indigo  #2A1E49
+ * Plum    #1B142E
+ * Lilac   #F2E9FF
+ */
+
+@font-face {
+  font-family: 'Novecento Sans';
+  src: url('/fonts/Novecentosanswide-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Novecento Sans';
+  src: url('/fonts/Novecentosanswide-Normal.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Novecento Sans';
+  src: url('/fonts/Novecentosanswide-DemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* =========================================================
+   RAW COLOR PALETTE
+   ========================================================= */
+
+@theme {
+  /* ---------- Primary / Electric Orchid ---------- */
+  --color-primary-50: #fcf0ff;
+  --color-primary-100: #f6ddfd;
+  --color-primary-200: #ecbdf9;
+  --color-primary-300: #db8ef1;
+  --color-primary-400: #c862e4;
+  --color-primary-500: #b53dd6; /* hsl(287 65% 54%) */
+  --color-primary-600: #a227c4;
+  --color-primary-700: #8521a1;
+  --color-primary-800: #6b1d81;
+  --color-primary-900: #581d68;
+  --color-primary-950: #380e43;
+
+  /* ---------- Secondary / Sky ---------- */
+  --color-secondary-50: #effbff;
+  --color-secondary-100: #ddf6fe;
+  --color-secondary-200: #b9edfc;
+  --color-secondary-300: #84ddf9;
+  --color-secondary-400: #53caf5;
+  --color-secondary-500: #3eb8f0; /* brand */
+  --color-secondary-600: #1997d4;
+  --color-secondary-700: #1779ab;
+  --color-secondary-800: #19658b;
+  --color-secondary-900: #195471;
+  --color-secondary-950: #10364b;
+
+  /* ---------- Accent / Coral ---------- */
+  --color-accent-50: #fff5f3;
+  --color-accent-100: #ffe7e3;
+  --color-accent-200: #ffd0c9;
+  --color-accent-300: #ffaaa0;
+  --color-accent-400: #ff8275;
+  --color-accent-500: #ff6a5f; /* brand */
+  --color-accent-600: #e94940;
+  --color-accent-700: #c63730;
+  --color-accent-800: #a3302b;
+  --color-accent-900: #872e2a;
+  --color-accent-950: #491411;
+
+  /* ---------- Warm / Apricot ---------- */
+  --color-warm-50: #fff9f5;
+  --color-warm-100: #fff0e7;
+  --color-warm-200: #ffddca;
+  --color-warm-300: #ffc4a3;
+  --color-warm-400: #ffac80;
+  --color-warm-500: #ff9f6e; /* brand */
+  --color-warm-600: #f17b43;
+  --color-warm-700: #d15c27;
+  --color-warm-800: #aa4823;
+  --color-warm-900: #893d22;
+  --color-warm-950: #4a1d0d;
+
+  /* ---------- Cosmic neutral / surface ---------- */
+  --color-cosmic-50: #f8f6fb;
+  --color-cosmic-100: #f2e9ff; /* logo lilac white */
+  --color-cosmic-200: #ded6ea;
+  --color-cosmic-300: #bdb3cc;
+  --color-cosmic-400: #968aa8;
+  --color-cosmic-500: #746783;
+  --color-cosmic-600: #5b4d6d;
+  --color-cosmic-700: #493b5e;
+  --color-cosmic-800: #392c50;
+  --color-cosmic-850: #2a1e49; /* deep indigo */
+  --color-cosmic-900: #1b142e; /* dark plum */
+  --color-cosmic-925: #161023;
+  --color-cosmic-950: #100b1b;
+  --color-cosmic-975: #0b0712;
+
+  /* ---------- Semantic state colors ---------- */
+
+  --color-success-50: #effbf6;
+  --color-success-100: #d8f5e9;
+  --color-success-200: #b4ebd6;
+  --color-success-300: #82dcbb;
+  --color-success-400: #5acfa2;
+  --color-success-500: #45bd8e;
+  --color-success-600: #339873;
+  --color-success-700: #2d785e;
+  --color-success-800: #285f4c;
+  --color-success-900: #234e40;
+  --color-success-950: #102c24;
+
+  --color-warning-50: #fff9f2;
+  --color-warning-100: #fff0dd;
+  --color-warning-200: #ffdcb5;
+  --color-warning-300: #ffc281;
+  --color-warning-400: #ffaa55;
+  --color-warning-500: #f48c35;
+  --color-warning-600: #da691b;
+  --color-warning-700: #b54d18;
+  --color-warning-800: #913d1b;
+  --color-warning-900: #77351a;
+  --color-warning-950: #431907;
+
+  --color-danger-50: #fff5f4;
+  --color-danger-100: #ffe5e1;
+  --color-danger-200: #ffcfc8;
+  --color-danger-300: #ffa99e;
+  --color-danger-400: #ff7d70;
+  --color-danger-500: #f65b50;
+  --color-danger-600: #dc3d35;
+  --color-danger-700: #b92e29;
+  --color-danger-800: #992a27;
+  --color-danger-900: #7f2926;
+  --color-danger-950: #45110f;
+
+  /* ---------- Geometry ---------- */
+
+  --radius-card: 1rem;
+  --radius-panel: 1.25rem;
+  --radius-control: 0.75rem;
+
+  /* ---------- Shadows ---------- */
+
+  --shadow-card: 0 10px 35px rgb(5 2 15 / 0.28);
+
+  --shadow-elevated: 0 16px 50px rgb(5 2 15 / 0.42);
+
+  --shadow-primary: 0 8px 24px rgb(181 61 214 / 0.2);
+
+  --font-sans: 'Novecento Sans', sans-serif;
+}
+
+/* =========================================================
+   SEMANTIC TOKENS
+   =========================================================
+   Components should generally consume THESE rather than
+   depending directly on raw palette values.
+   ========================================================= */
+
+:root {
+  font-family: 'Novecento Sans', sans-serif;
+  color-scheme: dark;
+
+  /*
+   * Page
+   */
+  --background: #100b1b;
+  --background-secondary: #161023;
+
+  /*
+   * Surfaces
+   */
+  --surface: #1b142e;
+  --surface-raised: #211838;
+  --surface-elevated: #2a1e49;
+  --surface-hover: #332451;
+  --surface-active: #3b295e;
+
+  /*
+   * Brand
+   */
+  --primary: #b53dd6;
+  --primary-hover: #c862e4;
+  --primary-active: #a227c4;
+
+  /*
+   * The disabled primary action intentionally mirrors the
+   * design-system's original soft-primary treatment.
+   * The actual soft action is quieter so the two states remain distinct.
+   */
+  --primary-disabled-background: rgb(181 61 214 / 0.12);
+  --primary-disabled-border: rgb(181 61 214 / 0.28);
+  --primary-disabled-text: #db8ef1;
+
+  --primary-soft-background: rgb(181 61 214 / 0.075);
+  --primary-soft-border: rgb(181 61 214 / 0.18);
+  --primary-soft-text: #ecbdf9;
+
+  --secondary: #3eb8f0;
+  --secondary-hover: #61c5f3;
+  --secondary-active: #1997d4;
+
+  --accent: #ff6a5f;
+  --accent-hover: #ff8275;
+  --accent-active: #e94940;
+
+  --warm: #ff9f6e;
+
+  /*
+   * Typography
+   */
+  --text: #f2e9ff;
+  --text-secondary: #d6cde2;
+  --text-muted: #a99db9;
+  --text-subtle: #796d8b;
+  --text-disabled: #5e526f;
+
+  --text-on-primary: #160a20;
+  --text-on-secondary: #07151d;
+  --text-on-accent: #1d0908;
+
+  /*
+   * Borders
+   */
+  --border: #392c50;
+  --border-strong: #514064;
+  --border-subtle: rgb(242 233 255 / 0.08);
+
+  /*
+   * Inputs
+   */
+  --input-background: #171025;
+  --input-border: #493b5e;
+  --input-border-hover: #635078;
+  --input-placeholder: #796d8b;
+
+  /*
+   * Focus
+   */
+  --focus: #c862e4;
+  --focus-ring: rgb(181 61 214 / 0.32);
+
+  /*
+   * States
+   */
+  --success: #45bd8e;
+  --warning: #ff9f6e;
+  --danger: #f65b50;
+  --info: #3eb8f0;
+
+  /*
+   * Quiz-specific
+   */
+  --answer-correct: #45bd8e;
+  --answer-incorrect: #f65b50;
+  --answer-selected: #b53dd6;
+
+  --timer-safe: #3eb8f0;
+  --timer-warning: #ff9f6e;
+  --timer-critical: #ff6a5f;
+
+  /*
+   * Effects
+   */
+  --overlay: rgb(5 2 12 / 0.68);
+  --scrim: rgb(5 2 12 / 0.84);
+
+  --glow-primary: rgb(181 61 214 / 0.18);
+  --glow-secondary: rgb(62 184 240 / 0.14);
+  --glow-accent: rgb(255 106 95 / 0.14);
+}
+
+/*
+ * Expose semantic CSS variables as Tailwind utilities.
+ *
+ * Examples:
+ *   bg-background
+ *   bg-surface
+ *   text-foreground
+ *   border-border
+ *   bg-primary
+ *
+ * `inline` is intentional because these theme variables
+ * reference regular CSS variables.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
+
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-disabled: var(--primary-disabled-background);
+  --color-primary-disabled-border: var(--primary-disabled-border);
+  --color-primary-disabled-text: var(--primary-disabled-text);
+  --color-primary-soft: var(--primary-soft-background);
+  --color-primary-soft-border: var(--primary-soft-border);
+  --color-primary-soft-text: var(--primary-soft-text);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-active: var(--secondary-active);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+
+  --color-warm: var(--warm);
+
+  --color-foreground: var(--text);
+  --color-foreground-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-disabled: var(--text-disabled);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-subtle: var(--border-subtle);
+
+  --color-input: var(--input-background);
+  --color-input-border: var(--input-border);
+
+  --color-focus: var(--focus);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-answer-correct: var(--answer-correct);
+  --color-answer-incorrect: var(--answer-incorrect);
+  --color-answer-selected: var(--answer-selected);
+}
+
+/* =========================================================
+   GLOBAL BASE
+   ========================================================= */
+
+@layer base {
+  html {
+    background-color: var(--background);
+    color: var(--text);
+  }
+
+  body {
+    @apply font-sans;
+    min-height: 100vh;
+
+    background:
+      radial-gradient(circle at 20% 0%, rgb(181 61 214 / 0.055), transparent 32rem),
+      radial-gradient(circle at 90% 35%, rgb(62 184 240 / 0.035), transparent 30rem),
+      linear-gradient(145deg, var(--background), var(--background-secondary));
+
+    color: var(--text);
+  }
+
+  ::selection {
+    background: rgb(181 61 214 / 0.35);
+    color: var(--text);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  padding: 0.75rem 1rem;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+button:active:not(:disabled) {
+  background: var(--accent-active);
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input {
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-control);
+  padding: 0.75rem 1rem;
+  background: var(--input-background);
+  color: var(--text);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+input:hover:not(:disabled) {
+  border-color: var(--input-border-hover);
+}
+
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(181 61 214 / 0.15);
+}
+
+input::placeholder {
+  color: var(--input-placeholder);
+}
+
+input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Reusable control primitives carried over from the design-system demo. */
+.rr-btn {
+  min-height: 45px;
+  padding-inline: 20px;
+  border-radius: var(--radius-control);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.rr-btn-primary {
+  background: var(--primary);
+  color: var(--text-on-primary);
+  box-shadow: var(--shadow-primary);
+}
+
+.rr-btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.rr-btn-primary:active:not(:disabled) {
+  background: var(--primary-active);
+}
+
+.rr-btn-primary:disabled {
+  opacity: 1;
+  background: var(--primary-disabled-background);
+  border-color: var(--primary-disabled-border);
+  color: var(--primary-disabled-text);
+  box-shadow: none;
+}
+
+.rr-btn-soft {
+  background: var(--primary-soft-background);
+  border-color: var(--primary-soft-border);
+  color: var(--primary-soft-text);
+  box-shadow: none;
+}
+
+.rr-btn-soft:hover:not(:disabled) {
+  background: rgb(181 61 214 / 0.12);
+  border-color: rgb(181 61 214 / 0.24);
+}
+
+.rr-input {
+  width: 100%;
+  height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-control);
+  background: var(--input-background);
+  color: var(--text);
+}
+
+.rr-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(181 61 214 / 0.15);
+}
+
+.page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 3rem);
+}
+
+.shell {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.card {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow: var(--shadow-elevated);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.kicker {
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+}
+
+.title {
+  margin: 0.25rem 0 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid.two {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--color-danger-400);
+}
+
+.success {
+  background: var(--success);
+  color: #052e2b;
+}
+
+.success:hover:not(:disabled) {
+  background: var(--color-success-400);
+}
+
+.card--disabled {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+  cursor: not-allowed;
+}

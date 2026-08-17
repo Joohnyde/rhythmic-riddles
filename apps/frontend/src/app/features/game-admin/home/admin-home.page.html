@@ -1,7 +1,17 @@
-<main class="page shell" data-testid="admin-home-page">
-  <header>
-    <p class="kicker">Host controls</p>
-    <h1 class="title">Admin</h1>
-  </header>
-  <rr-login surface="admin" />
+<main class="relative min-h-dvh overflow-hidden bg-black" data-testid="admin-home-page">
+  <div
+    class="absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
+    style="background-image: url('/images/background2.jpg')"
+    aria-hidden="true"
+  ></div>
+
+  <section
+    class="relative z-10 mx-auto flex min-h-dvh w-full max-w-4xl flex-col items-center justify-center px-5 py-8 text-center sm:px-8"
+  >
+    <rr-brand-wordmark [admin]="true" />
+
+    <div class="mt-8 w-full max-w-[27rem]">
+      <rr-login surface="admin" />
+    </div>
+  </section>
 </main>

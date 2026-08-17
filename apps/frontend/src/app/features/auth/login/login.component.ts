@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -23,15 +23,16 @@ export class LoginComponent {
   private readonly router = inject(Router);
 
   readonly roomCode = signal('');
+  readonly roomCodeValid = computed(() => /^[A-Za-z]{4}$/.test(this.roomCode().trim()));
   readonly inTransit = signal(false);
   readonly error = signal<string | null>(null);
 
   async login(): Promise<void> {
-    const code = this.roomCode().trim();
-    if (!code || this.inTransit()) {
-      return;
-    }
+    const code = this.roomCode().trim().toUpperCase();
+    if (!this.roomCodeValid() || this.inTransit()) return;
 
+    // Keep the UI, WebSocket handshake and in-memory session on one canonical code.
+    this.roomCode.set(code);
     this.inTransit.set(true);
     this.error.set(null);
 
