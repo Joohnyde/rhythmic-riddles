@@ -1,18 +1,47 @@
-<form class="card grid" (ngSubmit)="login()" [attr.data-testid]="surface + '-login-form'">
-  <label class="grid">
-    <span class="kicker">Room code</span>
+<form
+  class="login-form grid w-full gap-4"
+  (ngSubmit)="login()"
+  [attr.data-testid]="surface + '-login-form'"
+>
+  <label class="grid gap-2 text-left">
+    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-primary-200"
+      >Room code</span
+    >
     <input
+      class="h-12 w-full rounded-control border border-input-border bg-input px-4 text-center text-base font-semibold uppercase tracking-[0.2em] text-foreground outline-none transition-[border-color,box-shadow,background-color] duration-150 placeholder:text-sm placeholder:font-normal placeholder:normal-case placeholder:tracking-normal placeholder:text-subtle hover:border-border-strong focus:border-primary"
       name="roomCode"
       [ngModel]="roomCode()"
       (ngModelChange)="roomCode.set($event)"
       [attr.data-testid]="surface + '-room-code-input'"
+      [attr.aria-invalid]="error() ? 'true' : null"
       autocomplete="off"
+      autocapitalize="characters"
+      autofocus
+      maxlength="4"
+      placeholder="Enter 4 letter room code"
+      spellcheck="false"
     />
   </label>
+
   @if (error()) {
-    <p class="muted" [attr.data-testid]="surface + '-login-error'">{{ error() }}</p>
+    <p class="text-center text-sm text-danger" [attr.data-testid]="surface + '-login-error'">
+      {{ error() }}
+    </p>
   }
-  <button type="submit" [disabled]="inTransit()" [attr.data-testid]="surface + '-login-button'">
-    Log in
+
+  <button
+    class="rr-btn rr-btn-primary mx-auto min-w-32 uppercase tracking-[0.08em] disabled:translate-y-0"
+    type="submit"
+    [disabled]="!roomCodeValid() || inTransit()"
+    [attr.aria-busy]="inTransit()"
+    [attr.data-testid]="surface + '-login-button'"
+  >
+    {{ inTransit() ? 'Connecting…' : 'Log in' }}
   </button>
+
+  @if (surface === 'admin') {
+    <p class="text-center text-xs tracking-[0.08em] text-muted">
+      You are about to log in as a host.
+    </p>
+  }
 </form>

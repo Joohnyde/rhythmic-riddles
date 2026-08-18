@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+}
+
+.brand-wordmark {
+  width: min(31.125rem, calc(100vw - 2rem));
+  max-width: 100%;
+  isolation: isolate;
+}
+
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  pointer-events: none;
+  /* Larger primary-colour aura while keeping the logo itself crisp. */
+  filter: drop-shadow(0 0 7px rgb(181 61 214 / 0.46)) drop-shadow(0 0 20px rgb(181 61 214 / 0.32))
+    drop-shadow(0 0 38px rgb(181 61 214 / 0.2));
+}
+
+/*
+ * The SVG is deliberately inlined instead of rendered through <img>.
+ * External SVG images have their own cached document/animation timeline, so
+ * recreating the Angular component does not reliably restart per-letter CSS
+ * animations. Inline SVG gives every BrandWordmarkComponent instance fresh DOM
+ * nodes and therefore a fresh animation timeline on reload/navigation.
+ */
+[id^='letter-top_'],
+[id^='letter-bottom_'] {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rr-letter-arrive 480ms cubic-bezier(0.2, 0.72, 0.24, 1) both;
+}
+
+#letter-top_0_R {
+  animation-delay: 40ms;
+}
+#letter-top_1_H {
+  animation-delay: 68ms;
+}
+#letter-top_2_Y {
+  animation-delay: 96ms;
+}
+#letter-top_3_T {
+  animation-delay: 124ms;
+}
+#letter-top_4_H {
+  animation-delay: 152ms;
+}
+#letter-top_5_M {
+  animation-delay: 180ms;
+}
+#letter-top_6_I {
+  animation-delay: 208ms;
+}
+#letter-top_7_C {
+  animation-delay: 236ms;
+}
+#letter-bottom_0_R {
+  animation-delay: 264ms;
+}
+#letter-bottom_1_I {
+  animation-delay: 292ms;
+}
+#letter-bottom_2_D {
+  animation-delay: 320ms;
+}
+#letter-bottom_3_D {
+  animation-delay: 348ms;
+}
+#letter-bottom_4_L {
+  animation-delay: 376ms;
+}
+#letter-bottom_5_E {
+  animation-delay: 404ms;
+}
+#letter-bottom_6_S {
+  animation-delay: 432ms;
+}
+
+.admin-ribbon {
+  position: absolute;
+  z-index: 2;
+  top: 1rem;
+  left: -0.6rem;
+  padding: 0.3rem 0.76rem 0.26rem;
+  border: 1px solid rgb(255 255 255 / 0.24);
+  border-radius: 0.3rem;
+  background: linear-gradient(135deg, var(--primary-hover), var(--primary-active));
+  box-shadow:
+    0 7px 18px rgb(5 2 12 / 0.36),
+    0 0 15px rgb(181 61 214 / 0.24);
+  color: #fff5ff;
+  font-size: clamp(0.55rem, 0.8vw, 0.72rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transform: rotate(-9deg);
+  transform-origin: center;
+}
+
+@keyframes rr-letter-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  58% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+
+  80% {
+    transform: translateY(1px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-ribbon {
+    top: 0.55rem;
+    left: -0.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [id^='letter-top_'],
+  [id^='letter-bottom_'] {
+    animation: none;
+  }
+}
