@@ -80,6 +80,7 @@ node/
 # Angular
 .angular/
 dist/
+**/team-icons.generated.ts
 out-tsc/
 coverage/
 .tmp/
@@ -118,6 +119,12 @@ tmp/
 *.jpeg
 *.gif
 *.svg
+
+# Keep public assets
+!apps/
+!apps/frontend/
+!apps/frontend/public/
+!apps/frontend/public/**
 
 ############################################
 # Docker

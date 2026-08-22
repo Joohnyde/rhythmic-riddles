@@ -18,7 +18,7 @@ try {
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # Run frontend. This stays attached until Angular exits or the user stops the script.
-  & docker exec -i cestereg-dev bash -lc "cd apps/frontend && npm install --prefer-offline && npm start -- --poll 1000"
+  & docker exec -i cestereg-dev bash -lc "cd apps/frontend && npm ci && npm start"
   exit $LASTEXITCODE
 }
 finally {

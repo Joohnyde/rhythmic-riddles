@@ -2,9 +2,11 @@ package com.cevapinxile.cestereg.runtime.websocket.integration;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -54,6 +56,23 @@ class WebSocketContractIntegrationTest extends AbstractWebSocketIntegrationTestS
     scheduleService.progress(ROOM_A);
     assertContract(admin.readJson(), "song_next");
     assertContract(tv.readJson(), "song_next");
+  }
+
+  @Test
+  void unassignedLobbyBuzzerPublishesStrictButtonClickedFrameToAdminOnly() throws Exception {
+    gameA.setStage(0);
+    when(gameRepository.findActive()).thenReturn(Optional.of(gameA));
+    when(teamRepository.findIdByButtonAndGameId("1671", gameA.getId()))
+        .thenReturn(Optional.empty());
+    final SocketProbe admin = connectAdmin(ROOM_A);
+    final SocketProbe tv = connectTv(ROOM_A);
+    assertContract(admin.readJson(), "welcome");
+    assertContract(tv.readJson(), "welcome");
+
+    buzzerService.buzz("1671");
+
+    assertContract(admin.readJson(), "button_clicked");
+    assertNull(tv.pollFrame(350), "button_clicked must remain an admin-only lobby event");
   }
 
   @Test

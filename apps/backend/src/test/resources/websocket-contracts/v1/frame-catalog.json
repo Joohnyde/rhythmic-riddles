@@ -36,6 +36,16 @@
       "notes": "Team removed in lobby."
     },
     {
+      "type": "button_clicked",
+      "recipients": [
+        "admin"
+      ],
+      "replaySafe": false,
+      "schema": "schema/button_clicked.schema.json",
+      "example": "examples/button_clicked.json",
+      "notes": "Unassigned lobby buzzer press available for admin team linking."
+    },
+    {
       "type": "album_picked",
       "recipients": [
         "tv"

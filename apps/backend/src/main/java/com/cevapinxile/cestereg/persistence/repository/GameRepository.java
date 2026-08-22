@@ -91,4 +91,6 @@ public interface GameRepository extends JpaRepository<GameEntity, UUID> {
   @Modifying
   @Query(value = "DELETE FROM game WHERE code = :roomCode", nativeQuery = true)
   void deleteByCode(@Param("roomCode") String roomCode);
+
+  Optional<GameEntity> findActive();
 }

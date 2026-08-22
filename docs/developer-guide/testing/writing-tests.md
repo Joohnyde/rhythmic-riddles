@@ -245,7 +245,7 @@ Bad deterministic fixtures:
 
 When adding, renaming, or deleting tests:
 
-- update `test-catalog.md` and `test-catalog.csv` when coverage changes meaningfully
+- update `test-catalog.csv` for every test addition, rename, or deletion; update `test-catalog.md` when the overall coverage model changes meaningfully
 - keep helper names behavior-focused
 - delete redundant tests instead of keeping two near-identical variants
 - prefer one strong test over several trivial variants

@@ -139,11 +139,15 @@ CREATE INDEX IF NOT EXISTS idx_interrupt_schedule_arrived_time
 CREATE INDEX IF NOT EXISTS idx_interrupt_team_schedule
   ON public.interrupt USING btree (team_id, schedule_id);
 
-CREATE INDEX IF NOT EXISTS idx_team_button_code
-  ON public.team USING btree (button_code);
--- Note: index options like deduplicate_items require supported PG versions.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_team_button_code
+  ON public.team USING btree (game_id, button_code);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uq_game_code
   ON public.game USING btree (code);
+
+CREATE INDEX IF NOT EXISTS idx_game_active_date
+    ON game (date DESC)
+    WHERE stage != 3;
 
 CREATE INDEX IF NOT EXISTS interrupt_index_arrived_desc
   ON public.interrupt USING btree (arrived_at DESC) WITH (deduplicate_items='true');

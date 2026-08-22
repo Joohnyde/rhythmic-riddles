@@ -37,6 +37,10 @@ import java.util.UUID;
       name = "TeamEntity.findByButtonCode",
       query = "SELECT t FROM TeamEntity t WHERE t.buttonCode = :buttonCode"),
   @NamedQuery(
+      name = "TeamEntity.findIdByButtonAndGameId",
+      query =
+          "SELECT t.id FROM TeamEntity t WHERE t.buttonCode = :buttonCode AND t.gameId.id = :gameId"),
+  @NamedQuery(
       name = "TeamEntity.findByName",
       query = "SELECT t FROM TeamEntity t WHERE t.name = :name"),
   @NamedQuery(

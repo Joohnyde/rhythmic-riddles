@@ -33,6 +33,7 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
           "welcome",
           "new_team",
           "kick_team",
+          "button_clicked",
           "album_picked",
           "song_next",
           "song_repeat",
@@ -102,6 +103,11 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
             List.of("tv"),
             recipients,
             type + " should stay TV-only unless Angular/admin handling changes");
+      } else if ("button_clicked".equals(type)) {
+        assertEquals(
+            List.of("admin"),
+            recipients,
+            "button_clicked is a lobby-linking event and must stay admin-only");
       } else {
         assertEquals(
             List.of("admin", "tv"), recipients, type + " should be consumed by both admin and TV");

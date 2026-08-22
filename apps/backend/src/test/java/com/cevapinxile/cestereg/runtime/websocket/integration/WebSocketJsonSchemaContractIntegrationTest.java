@@ -3,6 +3,7 @@ package com.cevapinxile.cestereg.runtime.websocket.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
@@ -32,6 +33,7 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
           "welcome",
           "new_team",
           "kick_team",
+          "button_clicked",
           "album_picked",
           "song_next",
           "song_repeat",
@@ -72,6 +74,7 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
             + teamId
             + "\",\"name\":\"Team A\",\"image\":\"team.png\"}}");
     assertSchemaValid("kick_team", "{\"type\":\"kick_team\",\"uuid\":\"" + teamId + "\"}");
+    assertSchemaValid("button_clicked", "{\"type\":\"button_clicked\",\"buttonCode\":1671}");
     assertSchemaValid(
         "album_picked",
         "{\"type\":\"album_picked\",\"selected\":{\"id\":\"cat-1\",\"started\":false}}");
@@ -204,6 +207,23 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
   }
 
   @Test
+  void realWireButtonClickedFrameValidatesAgainstSchemaAndStaysAdminOnly() throws Exception {
+    gameA.setStage(0);
+    org.mockito.Mockito.when(gameRepository.findActive()).thenReturn(java.util.Optional.of(gameA));
+    org.mockito.Mockito.when(teamRepository.findIdByButtonAndGameId("1671", gameA.getId()))
+        .thenReturn(java.util.Optional.empty());
+    final SocketProbe admin = connectAdmin(ROOM_A);
+    final SocketProbe tv = connectTv(ROOM_A);
+    admin.readJson();
+    tv.readJson();
+
+    buzzerService.buzz("1671");
+
+    assertFrameMatchesSchema(admin, "button_clicked");
+    assertNull(tv.pollFrame(350), "button_clicked must not be published to TV");
+  }
+
+  @Test
   void schemasRejectExtraFieldsMissingRequiredFieldsWrongTypesAndWrongDiscriminators()
       throws Exception {
     final String teamId = UUID.randomUUID().toString();
@@ -242,6 +262,9 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
             + interruptId
             + "\"}");
     assertSchemaInvalid("kick_team", "{\"type\":\"kick_team\",\"uuid\":\"not-a-uuid\"}");
+    assertSchemaInvalid("button_clicked", "{\"type\":\"button_clicked\",\"buttonCode\":\"1671\"}");
+    assertSchemaInvalid(
+        "button_clicked", "{\"type\":\"button_clicked\",\"buttonCode\":101,\"extra\":true}");
     assertSchemaInvalid("error_solved", "{\"type\":\"error_solved\",\"previousScenario\":2.5}");
     assertSchemaInvalid("song_repeat", "{\"type\":\"song_repeat\",\"remaining\":-1}");
     assertSchemaInvalid(
