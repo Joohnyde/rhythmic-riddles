@@ -171,6 +171,16 @@ For JSON endpoints, tests should verify `application/json` media type for both s
 
 Controller tests should not retest every service rule. They should prove that HTTP wiring, validation, serialization, and exception handling are correct.
 
+### Spring full-stack application integration
+
+`RhytmicRiddlesApplicationTests` starts the real application on a random port against the shared ephemeral PostgreSQL database. It keeps the Spring graph real except for the physical `BuzzerSerialAdapter` boundary and verifies three representative composition outcomes:
+
+- team creation commits and returns the serialized result;
+- a stale lobby mutation returns `409 / E003` without persistence;
+- real room-row lock contention returns `423 / E010` without persistence.
+
+The suite is intentionally small; deeper business, rollback, concurrency, recovery, and WebSocket variants remain in their focused suites. The random-port tests also supersede the old bootstrap-only `contextLoads()` test.
+
 ### Real-PostgreSQL repository integration tests
 
 Persistence integration tests live under:
@@ -226,7 +236,7 @@ Additional tests may exist for:
 
 - WebSocket handshake helpers;
 - cached DTO behavior;
-- application bootstrap sanity;
+- application/full-stack composition sanity;
 - request/response DTO behavior;
 - utility classes.
 

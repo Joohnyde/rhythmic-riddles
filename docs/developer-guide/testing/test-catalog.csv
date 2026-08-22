@@ -1,5 +1,7 @@
 framework,file,suite,test_name,description,importance
-junit,RhytmicRiddlesApplicationTests.java,,contextLoads,Context loads.,9
+junit,RhytmicRiddlesApplicationTests.java,SuccessfulVerticalSlice,createTeamReturnsCreatedTeamAndCommitsItToPostgres,Creates a team through real HTTP and verifies the committed PostgreSQL row.,9
+junit,RhytmicRiddlesApplicationTests.java,BusinessFailureVerticalSlice,createTeamAfterGameStartedReturnsWrongGameStateAndDoesNotPersistTeam,Returns E003 through real HTTP when a stale lobby request tries to create a team after the game starts.,9
+junit,RhytmicRiddlesApplicationTests.java,LockContentionFailureVerticalSlice,createTeamWhileRoomIsLockedReturnsRoomBusyAndDoesNotPersistTeam,Maps real PostgreSQL NOWAIT contention to E010/423 without persisting the losing mutation.,10
 junit,api/quiz/dto/response/TeamScoreCacheTest.java,,returnsAndUpdatesScoresForExistingTeams,Returns and updates scores for existing teams.,6
 junit,api/quiz/dto/response/TeamScoreCacheTest.java,,rejectsUnknownTeamLookups,Rejects unknown team lookups.,8
 junit,core/service/impl/CategoryServiceImplTest.java,CategoryCoreFlow,pickAlbumRejectsUnknownTeam,Pick album rejects unknown team.,8

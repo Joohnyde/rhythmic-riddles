@@ -93,6 +93,7 @@ a SemVer-like versioning scheme will be used.
 - WebSocket schema validation
 - Added PostgreSQL-backed database integration testing using the production schema, with coverage for persistence queries, game recovery, transaction atomicity, and database invariants.
 - Added concurrency integration coverage for simultaneous team buzzes, answers, game progression, album selection, and system-interrupt races.
+- Added a small real-HTTP Spring full-stack integration layer covering committed writes, expected business rejection, and PostgreSQL room-lock contention.
 
 ### Changed
 - Consolidated and removed outdated documentation to align with current implementation.

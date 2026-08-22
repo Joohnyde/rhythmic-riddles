@@ -16,7 +16,7 @@ The goal of the test suite is not just to prove that code works on the happy pat
 
 ## Current Test Focus
 
-The current safety net now has two complementary integration boundaries in addition to the existing service/controller tests:
+The current safety net now has three complementary integration boundaries in addition to the existing focused service/controller tests:
 
 ### 1. Real-PostgreSQL repository and recovery integration
 
@@ -34,7 +34,11 @@ The backend DB integration suite verifies query behavior that mocks cannot prove
 
 These tests use the project’s embedded real PostgreSQL runtime rather than an H2 compatibility substitute, and initialize it from the root production `db/db_01_create_schema.sql` and `db/db_04_add_runtime_invariants.sql`. Fixture rows are inserted directly so repository tests exercise the query itself rather than `JpaRepository.save()`. See `db-integration-tests.md` for practical guidance.
 
-### 2. Seeded browser WebSocket integration
+### 2. Spring full-stack application integration
+
+A deliberately small random-port Spring Boot layer verifies that real HTTP, Spring wiring, application transactions, repositories, PostgreSQL, and JSON contracts compose correctly. It uses representative success and failure outcomes rather than repeating endpoint behavior already owned by narrower suites. Exact scenarios are listed in `test-catalog.md`.
+
+### 3. Seeded browser WebSocket integration
 
 The Playwright suite under `apps/frontend/e2e` verifies the real browser/WebSocket boundary:
 
@@ -47,7 +51,7 @@ The Playwright suite under `apps/frontend/e2e` verifies the real browser/WebSock
 - recovery `welcome` snapshots;
 - schema compliance for reachable WebSocket frames.
 
-Together, the DB-backed suite proves that persisted state is reconstructed correctly and the browser suite proves that the resulting runtime protocol reaches real clients correctly.
+Together, the DB-backed suite protects persistence semantics, the Spring full-stack layer proves HTTP/application composition, and the browser suite proves the runtime protocol reaches real clients correctly.
 
 ## Running backend tests
 
@@ -177,7 +181,11 @@ This layer proves recovery for:
 
 This is deliberately separate from the E2E fixture API so fixture infrastructure is not part of the assertion chain.
 
-#### 5. Seeded browser WebSocket integration tests
+#### 5. Spring full-stack application integration
+
+`RhytmicRiddlesApplicationTests` is the narrow real-HTTP composition layer. Add tests here only when crossing the running Spring application exposes a risk not already demonstrated by controller, service, repository, transaction, concurrency, recovery, or WebSocket suites. The application owns the request transaction, and committed state is verified directly in PostgreSQL afterward.
+
+#### 6. Seeded browser WebSocket integration tests
 
 The frontend Playwright suite under `apps/frontend/e2e` validates real browser WebSocket behavior using the backend `e2e` profile and deterministic fixtures.
 
@@ -194,7 +202,7 @@ This layer protects:
 
 This is not full product E2E. REST calls and fixture endpoints may be used as triggers. The important assertions are browser-observed WebSocket effects.
 
-#### 6. Frontend unit and component tests
+#### 7. Frontend unit and component tests
 
 Angular unit and component tests run through Vitest and cover frontend behavior that does not require a real backend WebSocket connection. Current coverage includes Signal Store Stage 0 behavior, login handshakes, team-icon allocation, Admin lobby components, buzzer animation triggers, and TV lobby pagination/layout helpers.
 
@@ -202,18 +210,7 @@ These tests should stay faster and narrower than Playwright tests and should not
 
 ### Planned layers
 
-#### 1. Small number of full-stack integration tests
-
-A few high-value ones:
-
-- controller → service → DB happy path;
-- exception advice wired;
-- transactions wired;
-- serialization wired.
-
-This layer should be small. The point is not to duplicate every service test, but to prove that Spring wiring and infrastructure behave correctly together.
-
-#### 2. E2E regression
+#### 1. E2E regression
 
 Then cover the user-visible product flow:
 
