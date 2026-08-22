@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.team-list {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary) 75%, transparent) transparent;
+}
+
+.admin-confirm-dialog {
+  width: min(520px, calc(100vw - 32px));
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.admin-confirm-dialog::backdrop {
+  background: rgb(5 2 12 / 0.78);
+  backdrop-filter: blur(4px);
+}

@@ -49,10 +49,23 @@ cd apps/frontend
 npm run e2e:ws
 ```
 
-Expected `package.json` script:
+Run frontend unit tests, test-catalog governance, and then the complete Playwright suite:
+
+```bash
+npm run test:all
+```
+
+The Playwright config deliberately caps the shared E2E environment at two workers by default. The suite uses one Spring/PostgreSQL stack, so Playwright's default of half the machine's logical CPUs can create severe contention on high-core machines. Override the cap only when the environment can sustain it:
+
+```bash
+E2E_WORKERS=2 npm run e2e
+```
+
+Expected `package.json` scripts:
 
 ```json
 {
+    "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
     "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\""
 }
 ```
@@ -182,6 +195,8 @@ A schema failure means one of three things:
 
 Do not loosen schemas just to make impossible test states pass.
 
-### Flaky socket tests
+### Flaky or unexpectedly slow socket tests
 
 Prefer deterministic fixture timestamps over real waits. When testing duplicate sockets, disconnects, or replacement clients, use separate browser contexts for each role/client.
+
+Do not remove the configured worker cap to make the suite look more parallel. All specs share one backend, database, and frontend server. Excessive Playwright workers can increase total runtime dramatically through integration-stack contention. Use `E2E_WORKERS` for deliberate local/CI tuning and compare the complete suite wall time rather than an individual test in isolation.

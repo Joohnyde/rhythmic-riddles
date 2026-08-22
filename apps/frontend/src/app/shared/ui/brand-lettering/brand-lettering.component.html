@@ -1,0 +1,104 @@
+<div class="brand-lettering" [style.gap.px]="lineGap()">
+  <svg
+    *ngFor="let line of lines(); trackBy: trackLine"
+    class="brand-lettering__line"
+    xmlns="http://www.w3.org/2000/svg"
+    [attr.viewBox]="'0 0 ' + line.width + ' ' + line.height"
+    [style.width.px]="line.width"
+    [style.height.px]="line.height"
+    preserveAspectRatio="xMinYMin meet"
+    aria-hidden="true"
+  >
+    <defs>
+      <linearGradient [attr.id]="line.mainGradientId" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#F9C538" />
+        <stop offset="34.33%" stop-color="#FB8C4B" />
+        <stop offset="59.33%" stop-color="#F84760" />
+        <stop offset="81.16%" stop-color="#BE2B8B" />
+        <stop offset="100%" stop-color="#813294" />
+      </linearGradient>
+
+      <linearGradient [attr.id]="line.bevelGradientId" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#FDE593" />
+        <stop offset="41.67%" stop-color="#FDB665" />
+        <stop offset="55.21%" stop-color="#FE855F" />
+        <stop offset="65.63%" stop-color="#FE5B63" />
+        <stop offset="79.17%" stop-color="#F93D74" />
+        <stop offset="100%" stop-color="#ED3189" />
+      </linearGradient>
+
+      <linearGradient [attr.id]="line.edgeGradientId" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f9dc8f" />
+        <stop offset="42%" stop-color="#f5b575" />
+        <stop offset="100%" stop-color="#ee6f80" />
+      </linearGradient>
+
+      <clipPath *ngFor="let glyph of line.glyphs; trackBy: trackGlyph" [attr.id]="glyph.clipId">
+        <path [attr.d]="glyph.data.face" [attr.transform]="glyph.transform" fill-rule="evenodd" />
+      </clipPath>
+    </defs>
+
+    <g *ngIf="outline()" class="brand-lettering__outline-shadow" fill="#211735" opacity="0.52">
+      <path
+        *ngFor="let glyph of line.glyphs; trackBy: trackGlyph"
+        [attr.d]="glyph.data.shadow"
+        [attr.transform]="glyph.transform"
+      />
+    </g>
+
+    <g *ngIf="outline()" class="brand-lettering__outline-backdrop" fill="#2a163c">
+      <path
+        *ngFor="let glyph of line.glyphs; trackBy: trackGlyph"
+        [attr.d]="glyph.data.backdrop"
+        [attr.transform]="glyph.transform"
+      />
+    </g>
+
+    <g class="brand-lettering__faces">
+      <path
+        *ngFor="let glyph of line.glyphs; trackBy: trackGlyph"
+        [attr.d]="glyph.data.face"
+        [attr.transform]="glyph.transform"
+        [attr.fill]="'url(#' + line.mainGradientId + ')'"
+        fill-rule="evenodd"
+      />
+    </g>
+
+    <g class="brand-lettering__bevels">
+      <g
+        *ngFor="let glyph of line.glyphs; trackBy: trackGlyph"
+        [attr.clip-path]="'url(#' + glyph.clipId + ')'"
+      >
+        <path
+          [attr.d]="glyph.data.face"
+          [attr.transform]="glyph.transform"
+          fill="none"
+          [attr.stroke]="'url(#' + line.bevelGradientId + ')'"
+          stroke-width="5.4"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        />
+        <path
+          [attr.d]="glyph.data.face"
+          [attr.transform]="glyph.transform + ' translate(-0.32 -0.32)'"
+          fill="none"
+          [attr.stroke]="'url(#' + line.edgeGradientId + ')'"
+          stroke-width="1.02"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          opacity="0.58"
+        />
+        <path
+          [attr.d]="glyph.data.face"
+          [attr.transform]="glyph.transform + ' translate(0.45 0.45)'"
+          fill="none"
+          stroke="#7c214d"
+          stroke-width="0.92"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          opacity="0.36"
+        />
+      </g>
+    </g>
+  </svg>
+</div>

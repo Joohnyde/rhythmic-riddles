@@ -1,16 +1,50 @@
-<main class="page shell" data-testid="tv-lobby-page">
-  @let vm = store.vm();
+<main
+  class="tv-lobby-page relative min-h-dvh overflow-hidden bg-black text-foreground"
+  data-testid="tv-lobby-page"
+>
+  <div
+    class="pointer-events-none absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
+    style="background-image: url('/images/background_tv_lobby.jpg')"
+    aria-hidden="true"
+  ></div>
+  <rr-tv-music-lines />
 
-  <header>
-    <p class="kicker">Lobby</p>
-    <h1 class="title">Teams</h1>
-  </header>
-  <section class="grid two">
-    @for (team of vm.teams; track team.id) {
-      <article class="card" [attr.data-testid]="'tv-team-card-' + team.id">
-        <img [src]="team.image" width="64" />
-        <h2 [attr.data-testid]="'tv-team-name-' + team.id">{{ team.name }}</h2>
-      </article>
-    }
+  <div
+    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_90%,rgba(169,77,251,0.08),transparent_26%),radial-gradient(circle_at_92%_34%,rgba(62,184,240,0.05),transparent_24%)]"
+    aria-hidden="true"
+  ></div>
+  <section class="relative z-10 min-h-dvh w-full">
+    <aside
+      class="tv-room-card absolute left-[3.4%] top-[5.8%] w-[18.5%] min-w-[210px] max-w-[265px] px-6 py-5"
+    >
+      <p class="text-sm font-semibold text-primary-200 sm:text-base">Room code:</p>
+      <rr-brand-lettering class="mt-1 block" [text]="session.code" [height]="64" />
+      <img
+        class="mx-auto mt-3 block w-[74%] max-w-[170px] rounded-md bg-cosmic-100 p-1 shadow-[0_0_14px_rgba(242,233,255,0.28)]"
+        src="https://boofcv.org/images/thumb/b/bb/Example_render_microqr.png/400px-Example_render_microqr.png"
+        alt="QR code for joining the room"
+      />
+    </aside>
+
+    <section class="tv-lobby__teams" aria-label="Teams in the lobby">
+      @for (team of visibleTeams(); track team.id; let i = $index) {
+        <article
+          class="tv-team tv-team--{{ i }}"
+          [attr.data-testid]="'tv-team-card-' + team.id"
+          [attr.data-team-id]="team.id"
+          [style.--team-color]="getTeamColor(team.image)"
+        >
+          <div class="tv-team__icon-wrap">
+            <img class="tv-team__icon" [src]="team.image" [alt]="team.name" />
+          </div>
+          <div class="tv-team__info">
+            <h2 [attr.data-testid]="'tv-team-name-' + team.id">{{ team.name }}</h2>
+            <div class="tv-team__line" aria-hidden="true">
+              <span class="tv-team__line-dot"></span>
+            </div>
+          </div>
+        </article>
+      }
+    </section>
   </section>
 </main>

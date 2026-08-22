@@ -1,0 +1,108 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tv-room-card {
+  z-index: 20;
+  border: 1px solid color-mix(in srgb, var(--primary) 80%, transparent);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgb(6 3 15 / 82%), rgb(4 2 10 / 70%)),
+    radial-gradient(circle at 50% 100%, rgb(242 233 255 / 8%), transparent 65%);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 3.5%) inset,
+    0 0 18px color-mix(in srgb, var(--primary) 34%, transparent),
+    0 0 32px rgb(242 233 255 / 8%),
+    inset 0 -10px 30px rgb(255 237 163 / 5%);
+}
+
+.tv-room-card::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgb(242 233 255 / 8%);
+  border-radius: 0.82rem;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 12px rgb(242 233 255 / 8%),
+    0 0 8px rgb(242 233 255 / 5%);
+}
+
+.tv-lobby__teams {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tv-team {
+  position: absolute;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.tv-team__icon-wrap {
+  display: grid;
+  flex: 0 0 auto;
+  width: clamp(62px, 6.6vw, 96px);
+  height: clamp(62px, 6.6vw, 96px);
+  place-items: center;
+  filter: drop-shadow(0 0 13px color-mix(in srgb, var(--team-color) 55%, transparent));
+}
+
+.tv-team__icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.tv-team__info h2 {
+  margin: 0;
+  color: var(--team-color);
+  font-family: 'Novecento Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1rem, 1.65vw, 1.55rem);
+  font-weight: 600;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--team-color) 38%, transparent);
+}
+
+.tv-team__line {
+  position: relative;
+  width: calc(100% + 30px);
+  height: 5px;
+  margin-top: 0.55rem;
+}
+
+.tv-team__line::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  clip-path: polygon(0 20%, 60% 20%, 100% 50%, 60% 80%, 0 80%);
+  background: linear-gradient(
+    90deg,
+    var(--team-color) 35%,
+    color-mix(in srgb, var(--team-color) 30%, #fff) 45%,
+    var(--team-color) 70%
+  );
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--team-color) 65%, transparent));
+}
+
+.tv-team__line-dot {
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 4px #fff,
+    0 0 9px color-mix(in srgb, var(--team-color) 85%, #fff),
+    0 0 14px color-mix(in srgb, var(--team-color) 55%, transparent);
+}

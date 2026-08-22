@@ -17,6 +17,7 @@ const schemaFileByType: Record<string, string> = {
   welcome: 'welcome.schema.json',
   new_team: 'new_team.schema.json',
   kick_team: 'kick_team.schema.json',
+  button_clicked: 'button_clicked.schema.json',
   album_picked: 'album_picked.schema.json',
   pause: 'pause.schema.json',
   answer: 'answer.schema.json',

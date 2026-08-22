@@ -1,0 +1,108 @@
+@let vm = store.vm();
+<div class="flex h-full min-h-0 flex-col">
+  <div class="flex justify-center">
+    <rr-brand-lettering text="ADD NEW TEAM" [height]="42" />
+  </div>
+
+  <form
+    class="mt-4 flex min-h-0 flex-1 flex-col"
+    (ngSubmit)="createTeam()"
+    data-testid="admin-create-team-form"
+  >
+    <div
+      class="team-form-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
+      data-testid="admin-create-team-scroll-region"
+    >
+      <div class="flex justify-center py-1">
+        <button
+          type="button"
+          class="group relative grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full btn-transparent transition-transform hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98]"
+          aria-label="Choose another available team icon"
+          [disabled]="vm.availableIcons.length === 0"
+          [attr.title]="vm.availableIcons.length === 0 ? 'No unused team icon is available.' : null"
+          (click)="store.selectNextIcon()"
+          data-testid="admin-team-icon-picker"
+        >
+          <span
+            class="absolute inset-0 rounded-full border-2 border-primary-500/70 shadow-[0_0_18px_rgba(169,77,251,0.34),0_0_42px_rgba(169,77,251,0.18)]"
+            aria-hidden="true"
+          ></span>
+          @if (vm.draft.image) {
+            <img
+              class="relative z-10 h-[112px] w-[112px] object-contain drop-shadow-[0_0_18px_rgba(169,77,251,0.6)]"
+              [src]="vm.draft.image"
+              alt=""
+            />
+          }
+          <span
+            class="absolute bottom-0 left-1 z-20 grid h-9 w-9 place-items-center rounded-full border border-primary-300/70 bg-primary-900 text-primary-200 shadow-[0_0_18px_rgba(169,77,251,0.38)]"
+            aria-hidden="true"
+            >↻</span
+          >
+        </button>
+      </div>
+
+      <label class="mt-4 grid gap-2 text-left">
+        <span class="text-xs font-semibold uppercase tracking-[0.16em] text-primary-200"
+          >Team name</span
+        >
+        <input
+          class="input h-12 text-left text-base"
+          name="name"
+          autocomplete="off"
+          placeholder="Enter team name"
+          [ngModel]="vm.draft.name"
+          (ngModelChange)="store.setDraftName($event)"
+          data-testid="admin-create-team-name-input"
+        />
+      </label>
+
+      <p class="mt-4 text-sm leading-5 text-muted">
+        Double-click the buzzer to link it to this team.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 pt-6">
+      <button
+        class="btn btn-secondary min-h-12 uppercase tracking-[0.12em]"
+        type="button"
+        [disabled]="!vm.draft.name && !vm.draft.buttonCode"
+        (click)="store.clearDraft()"
+      >
+        {{ !vm.draft.name && vm.draft.buttonCode ? 'UNLINK' : 'CLEAR' }}
+      </button>
+      <span class="add-action-wrap">
+        @if (!vm.canAddTeam && !vm.inTransit) {
+          <span
+            class="tooltip tooltip--compact admin-add-tooltip"
+            data-testid="admin-add-team-tooltip"
+          >
+            <span class="tooltip-icon" aria-hidden="true"></span>
+            <span class="tooltip-text">
+              {{
+                !vm.draft.name.trim() && !vm.draft.buttonCode
+                  ? 'Enter a team name and link a buzzer before adding the team.'
+                  : !vm.draft.name.trim()
+                    ? 'Enter a team name before adding the team.'
+                    : !vm.draft.buttonCode
+                      ? 'Link a buzzer before adding the team.'
+                      : !vm.draft.image
+                        ? 'No unused team icon is available.'
+                        : ''
+              }}
+            </span>
+          </span>
+        }
+        <button
+          class="btn btn-secondary min-h-12 w-full uppercase tracking-[0.12em]"
+          type="submit"
+          [class.buzzer-pulse]="buzzerPulsing()"
+          [disabled]="!vm.canAddTeam"
+          data-testid="admin-create-team-button"
+        >
+          ADD
+        </button>
+      </span>
+    </div>
+  </form>
+</div>

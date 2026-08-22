@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { GameRealtimeService } from '../../../core/realtime/game-realtime.service';
 import { GameSession } from '../../../core/session/game-session.service';
-import { WelcomeMessage } from '../../../domain/game/messages/default.messages';
 import { ClientSurface } from '../../../domain/game/models/client-surface.model';
 import { routeForStage } from '../../../domain/game/models/game-stage.model';
 
@@ -29,23 +28,30 @@ export class LoginComponent {
 
   async login(): Promise<void> {
     const code = this.roomCode().trim().toUpperCase();
-    if (!this.roomCodeValid() || this.inTransit()) return;
+    if (!this.roomCodeValid() || this.inTransit()) {
+      return;
+    }
 
-    // Keep the UI, WebSocket handshake and in-memory session on one canonical code.
     this.roomCode.set(code);
     this.inTransit.set(true);
     this.error.set(null);
 
-    const messages$ = this.realtime.connect({ roomCode: code, surface: this.surface });
-    this.session.messages$ = messages$;
-
     try {
-      const first = (await firstValueFrom(messages$)) as WelcomeMessage;
-      if (first.type === 'welcome') {
-        this.session.code = code;
-        await this.router.navigate(routeForStage(this.surface, first.stage));
+      const messages$ = this.realtime.connect({ roomCode: code, surface: this.surface });
+      const first = await firstValueFrom(messages$);
+      if (first.type !== 'welcome') {
+        throw new Error(`Expected welcome frame, received ${first.type}`);
+      }
+
+      this.session.code = code;
+      this.session.messages$ = messages$;
+      const navigated = await this.router.navigate(routeForStage(this.surface, first.stage));
+      if (!navigated) {
+        throw new Error('Navigation after welcome was cancelled');
       }
     } catch {
+      this.realtime.disconnect();
+      this.session.clear();
       this.error.set('Could not connect to that room.');
     } finally {
       this.inTransit.set(false);

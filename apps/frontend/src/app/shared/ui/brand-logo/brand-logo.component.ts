@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 @Component({
-  selector: 'rr-brand-wordmark',
-  templateUrl: './brand-wordmark.component.html',
-  styleUrl: './brand-wordmark.component.scss',
+  selector: 'rr-brand-logo',
+  templateUrl: './brand-logo.component.html',
+  styleUrl: './brand-logo.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BrandWordmarkComponent {
+export class BrandLogoComponent {
   @Input() admin = false;
 }

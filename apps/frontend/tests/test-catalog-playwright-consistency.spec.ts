@@ -1,6 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+
+type FrontendFramework = 'playwright' | 'vitest';
 
 type TestKey = {
   file: string;
@@ -10,54 +12,67 @@ type TestKey = {
 
 type CatalogRow = Record<string, string>;
 
+type CatalogEntries = Record<FrontendFramework, TestKey[]>;
+type CatalogDuplicates = Record<FrontendFramework, TestKey[]>;
+
 const FRONTEND_ROOT = process.cwd();
 const REPO_ROOT = path.resolve(FRONTEND_ROOT, '../..');
 const TEST_CATALOG = path.join(REPO_ROOT, 'docs/developer-guide/testing/test-catalog.csv');
+const FRONTEND_FRAMEWORKS: readonly FrontendFramework[] = ['playwright', 'vitest'];
 
-test('playwright test catalog must match code', async () => {
+test('frontend test catalog must match Playwright and Vitest code', async () => {
   const catalog = parseCatalog(TEST_CATALOG);
-  const discovered = discoverPlaywrightTests(catalog.entries.map((entry) => entry.file));
-
-  const missingInCatalog = difference(discovered, catalog.entries);
-  const staleInCatalog = difference(catalog.entries, discovered);
+  const discovered: CatalogEntries = {
+    playwright: discoverPlaywrightTests(),
+    vitest: discoverVitestTests(),
+  };
 
   const errors: string[] = [];
 
-  if (catalog.duplicates.length > 0) {
-    errors.push(
-      'Duplicate playwright entries in test-catalog.csv:\n' +
-        catalog.duplicates
-          .map(formatKey)
-          .map((value) => ` - ${value}`)
-          .join('\n'),
-    );
-  }
+  for (const framework of FRONTEND_FRAMEWORKS) {
+    const missingInCatalog = difference(discovered[framework], catalog.entries[framework]);
+    const staleInCatalog = difference(catalog.entries[framework], discovered[framework]);
 
-  if (missingInCatalog.length > 0) {
-    errors.push(
-      'Playwright tests present in code but missing in test-catalog.csv:\n' +
-        missingInCatalog
-          .map(formatKey)
-          .map((value) => ` - ${value}`)
-          .join('\n'),
-    );
-  }
+    if (catalog.duplicates[framework].length > 0) {
+      errors.push(
+        `Duplicate ${framework} entries in test-catalog.csv:\n` +
+          formatKeys(catalog.duplicates[framework]),
+      );
+    }
 
-  if (staleInCatalog.length > 0) {
-    errors.push(
-      'Playwright entries present in test-catalog.csv but not found in code:\n' +
-        staleInCatalog
-          .map(formatKey)
-          .map((value) => ` - ${value}`)
-          .join('\n'),
-    );
+    if (missingInCatalog.length > 0) {
+      errors.push(
+        `${framework} tests present in code but missing in test-catalog.csv:\n` +
+          formatKeys(missingInCatalog),
+      );
+    }
+
+    if (staleInCatalog.length > 0) {
+      errors.push(
+        `${framework} entries present in test-catalog.csv but not found in code:\n` +
+          formatKeys(staleInCatalog),
+      );
+    }
   }
 
   expect(errors.join('\n\n')).toBe('');
 });
 
-function discoverPlaywrightTests(catalogFiles: string[]): TestKey[] {
-  const roots = candidateRoots(catalogFiles);
+function discoverPlaywrightTests(): TestKey[] {
+  return discoverTests(
+    [path.join(FRONTEND_ROOT, 'e2e'), path.join(FRONTEND_ROOT, 'tests')],
+    extractPlaywrightTestsFromFile,
+  );
+}
+
+function discoverVitestTests(): TestKey[] {
+  return discoverTests([path.join(FRONTEND_ROOT, 'src')], extractVitestTestsFromFile);
+}
+
+function discoverTests(
+  roots: string[],
+  extractor: (filePath: string, catalogFile: string) => TestKey[],
+): TestKey[] {
   const testFiles = new Set<string>();
 
   for (const root of roots) {
@@ -73,34 +88,43 @@ function discoverPlaywrightTests(catalogFiles: string[]): TestKey[] {
   }
 
   return [...testFiles]
-    .flatMap((file) => extractTestsFromFile(path.join(FRONTEND_ROOT, file), file))
+    .flatMap((file) => extractor(path.join(FRONTEND_ROOT, file), file))
     .sort(compareKeys);
 }
 
-function candidateRoots(catalogFiles: string[]): string[] {
-  const directories = new Set<string>();
+function extractPlaywrightTestsFromFile(filePath: string, catalogFile: string): TestKey[] {
+  const source = fs.readFileSync(filePath, 'utf8');
+  const suites = extractDescribeRanges(
+    source,
+    /test\.describe(?:\.(?:serial|parallel|only|skip))?\(\s*['"`]([^'"`]+)['"`]/g,
+  );
+  const tests = extractNamedCalls(
+    source,
+    /(?<!\.)\btest(?:\.(?:only|skip|fixme|slow))?\(\s*['"`]([^'"`]+)['"`]/g,
+  );
 
-  for (const file of catalogFiles) {
-    const normalized = normalizePath(file);
-    const directory = path.dirname(normalized);
-
-    if (directory && directory !== '.') {
-      directories.add(path.join(FRONTEND_ROOT, directory));
-    }
-  }
-
-  directories.add(path.join(FRONTEND_ROOT, 'e2e'));
-  directories.add(path.join(FRONTEND_ROOT, 'tests'));
-  directories.add(path.join(FRONTEND_ROOT, 'src'));
-
-  return [...directories];
+  return toTestKeys(catalogFile, suites, tests);
 }
 
-function extractTestsFromFile(filePath: string, catalogFile: string): TestKey[] {
+function extractVitestTestsFromFile(filePath: string, catalogFile: string): TestKey[] {
   const source = fs.readFileSync(filePath, 'utf8');
-  const suites = extractDescribeRanges(source);
-  const tests = extractTestCalls(source);
+  const suites = extractDescribeRanges(
+    source,
+    /(?<!\.)\bdescribe(?:\.(?:only|skip|concurrent|shuffle))?\(\s*['"`]([^'"`]+)['"`]/g,
+  );
+  const tests = extractNamedCalls(
+    source,
+    /(?<!\.)\b(?:it|test)(?:\.(?:only|skip|todo|fails|concurrent))?\(\s*['"`]([^'"`]+)['"`]/g,
+  );
 
+  return toTestKeys(catalogFile, suites, tests);
+}
+
+function toTestKeys(
+  catalogFile: string,
+  suites: Array<{ name: string; start: number; end: number }>,
+  tests: Array<{ name: string; index: number }>,
+): TestKey[] {
   return tests.map((foundTest) => {
     const suite =
       [...suites]
@@ -118,10 +142,9 @@ function extractTestsFromFile(filePath: string, catalogFile: string): TestKey[] 
 
 function extractDescribeRanges(
   source: string,
+  describeRegex: RegExp,
 ): Array<{ name: string; start: number; end: number }> {
   const ranges: Array<{ name: string; start: number; end: number }> = [];
-  const describeRegex =
-    /test\.describe(?:\.(?:serial|parallel|only|skip))?\(\s*['"`]([^'"`]+)['"`]/g;
 
   for (const match of source.matchAll(describeRegex)) {
     const start = match.index ?? 0;
@@ -135,18 +158,14 @@ function extractDescribeRanges(
   return ranges;
 }
 
-function extractTestCalls(source: string): Array<{ name: string; index: number }> {
-  const tests: Array<{ name: string; index: number }> = [];
-  const testRegex = /(?<!\.)\btest(?:\.(?:only|skip|fixme|slow))?\(\s*['"`]([^'"`]+)['"`]/g;
-
-  for (const match of source.matchAll(testRegex)) {
-    tests.push({
-      name: match[1],
-      index: match.index ?? 0,
-    });
-  }
-
-  return tests;
+function extractNamedCalls(
+  source: string,
+  callRegex: RegExp,
+): Array<{ name: string; index: number }> {
+  return [...source.matchAll(callRegex)].map((match) => ({
+    name: match[1],
+    index: match.index ?? 0,
+  }));
 }
 
 function findBlockEnd(source: string, start: number): number {
@@ -168,18 +187,25 @@ function findBlockEnd(source: string, start: number): number {
   return source.length;
 }
 
-function parseCatalog(catalogPath: string): { entries: TestKey[]; duplicates: TestKey[] } {
+function parseCatalog(catalogPath: string): {
+  entries: CatalogEntries;
+  duplicates: CatalogDuplicates;
+} {
   if (!fs.existsSync(catalogPath)) {
     throw new Error(`Test catalog not found: ${catalogPath}`);
   }
 
   const rows = parseCsv(fs.readFileSync(catalogPath, 'utf8'));
-  const entries: TestKey[] = [];
-  const duplicates: TestKey[] = [];
-  const seen = new Set<string>();
+  const entries: CatalogEntries = { playwright: [], vitest: [] };
+  const duplicates: CatalogDuplicates = { playwright: [], vitest: [] };
+  const seen: Record<FrontendFramework, Set<string>> = {
+    playwright: new Set<string>(),
+    vitest: new Set<string>(),
+  };
 
   for (const row of rows) {
-    if (normalize(row.framework) !== 'playwright') {
+    const framework = normalize(row.framework);
+    if (!isFrontendFramework(framework)) {
       continue;
     }
 
@@ -189,29 +215,35 @@ function parseCatalog(catalogPath: string): { entries: TestKey[]; duplicates: Te
 
     if (!file || !testName) {
       throw new Error(
-        'Malformed playwright row in test-catalog.csv. Required: framework,file,test_name',
+        `Malformed ${framework} row in test-catalog.csv. Required: framework,file,test_name`,
       );
     }
 
     if (!file.endsWith('.spec.ts')) {
-      throw new Error(`Unsupported playwright catalog file extension: ${file}`);
+      throw new Error(`Unsupported ${framework} catalog file extension: ${file}`);
     }
 
     const key = { file, suite, testName };
     const serialized = serializeKey(key);
 
-    if (seen.has(serialized)) {
-      duplicates.push(key);
+    if (seen[framework].has(serialized)) {
+      duplicates[framework].push(key);
     } else {
-      seen.add(serialized);
-      entries.push(key);
+      seen[framework].add(serialized);
+      entries[framework].push(key);
     }
   }
 
-  return {
-    entries: entries.sort(compareKeys),
-    duplicates: duplicates.sort(compareKeys),
-  };
+  for (const framework of FRONTEND_FRAMEWORKS) {
+    entries[framework].sort(compareKeys);
+    duplicates[framework].sort(compareKeys);
+  }
+
+  return { entries, duplicates };
+}
+
+function isFrontendFramework(value: string): value is FrontendFramework {
+  return FRONTEND_FRAMEWORKS.includes(value as FrontendFramework);
 }
 
 function walk(root: string): string[] {
@@ -232,6 +264,13 @@ function serializeKey(key: TestKey): string {
 
 function formatKey(key: TestKey): string {
   return `${key.file} | ${key.suite} | ${key.testName}`;
+}
+
+function formatKeys(keys: TestKey[]): string {
+  return keys
+    .map(formatKey)
+    .map((value) => ` - ${value}`)
+    .join('\n');
 }
 
 function compareKeys(a: TestKey, b: TestKey): number {

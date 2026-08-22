@@ -1,60 +1,69 @@
-<main class="page shell" data-testid="admin-lobby-page">
+<main
+  class="relative min-h-dvh overflow-x-hidden bg-background text-foreground lg:h-dvh lg:overflow-hidden"
+  data-testid="admin-lobby-page"
+>
   @let vm = store.vm();
+  <div
+    class="pointer-events-none absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
+    style="background-image: url('/images/background_admin_lobby.jpg')"
+    aria-hidden="true"
+  ></div>
+  <div
+    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(169,77,251,0.08),transparent_40%),linear-gradient(180deg,rgba(4,1,10,0.04),rgba(4,1,10,0.32))]"
+    aria-hidden="true"
+  ></div>
 
-  <header class="header">
-    <div>
-      <p class="kicker">Stage 0</p>
-      <h1 class="title">Lobby</h1>
-    </div>
-    <button
-      data-testid="admin-start-game-button"
-      [disabled]="vm.inTransit"
-      (click)="store.startAdminGame()"
-    >
-      Start
-    </button>
-  </header>
-  <section class="grid two">
-    <form class="card grid" (ngSubmit)="createTeam()" data-testid="admin-create-team-form">
-      <input
-        name="name"
-        placeholder="Team name"
-        [ngModel]="form().name"
-        (ngModelChange)="form.update((f) => ({ ...f, name: $event }))"
-        data-testid="admin-create-team-name-input"
+  <section
+    class="relative z-10 mx-auto flex min-h-dvh w-full lg:h-dvh max-w-[1080px] flex-col px-5 py-6 sm:px-8 lg:px-10"
+  >
+    <header class="mx-auto flex w-full max-w-2xl flex-col items-center text-center">
+      <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-500">
+        ROOM: <span class="text-primary-200">{{ session.code }}</span>
+      </p>
+      <rr-brand-lettering class="mt-1" text="LOBBY" [height]="82" [letterSpacing]="-10" />
+      <p class="mt-2 max-w-xl text-sm leading-6 text-primary-300 sm:text-base">
+        Add teams, link their buzzers, and start the game when everyone is ready.
+      </p>
+    </header>
+
+    <section class="mt-6 grid min-h-0 flex-1 items-stretch gap-4 lg:grid-cols-2 lg:gap-5">
+      <rr-admin-team-form
+        class="admin-panel min-h-0 overflow-hidden rounded-2xl border border-primary-500/70 bg-primary-950/80 px-5 py-5 shadow-2xl sm:px-7 sm:py-6"
       />
-      <input
-        name="image"
-        placeholder="Image URL"
-        [ngModel]="form().image"
-        (ngModelChange)="form.update((f) => ({ ...f, image: $event }))"
-        data-testid="admin-create-team-image-input"
+      <rr-admin-team-list
+        class="admin-panel min-h-0 overflow-hidden rounded-2xl border border-primary-500/70 bg-primary-950/80 px-5 py-5 shadow-2xl sm:px-7 sm:py-6"
       />
-      <input
-        name="buttonCode"
-        placeholder="Button code"
-        [ngModel]="form().buttonCode"
-        (ngModelChange)="form.update((f) => ({ ...f, buttonCode: $event }))"
-        data-testid="admin-create-team-button-code-input"
-      />
-      <button type="submit" [disabled]="vm.inTransit" data-testid="admin-create-team-button">
-        Create team
-      </button>
-    </form>
-    <section class="card grid" data-testid="admin-team-list">
-      @for (team of vm.teams; track team.id) {
-        <article class="header" [attr.data-testid]="'admin-team-row-' + team.id">
-          <span [attr.data-testid]="'admin-team-name-' + team.id">{{ team.name }}</span>
-          <img [src]="team.image" width="64" />
-          <button
-            class="danger"
-            [attr.data-testid]="'admin-kick-team-button-' + team.id"
-            (click)="store.kickTeam(team.id)"
-          >
-            Kick
-          </button>
-        </article>
-      }
     </section>
+
+    <div class="mt-4 flex justify-center pb-1">
+      <button
+        class="btn btn-primary min-w-48 px-10 py-3 uppercase tracking-[0.14em]"
+        type="button"
+        [disabled]="!vm.canStartGame"
+        data-testid="admin-start-game-button"
+        (click)="startDialog.showModal()"
+      >
+        START GAME
+      </button>
+    </div>
+
+    <dialog #startDialog class="admin-confirm-dialog">
+      <div class="dialog">
+        <h3 class="dialog-title text-primary-100">Start the game?</h3>
+        <p class="mt-2">
+          All teams are ready? Starting the game will move everyone to the next stage.
+        </p>
+        <div class="dialog-actions">
+          <button class="btn btn-soft" type="button" (click)="startDialog.close()">CANCEL</button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            (click)="store.startAdminGame(); startDialog.close()"
+          >
+            START GAME
+          </button>
+        </div>
+      </div>
+    </dialog>
   </section>
 </main>

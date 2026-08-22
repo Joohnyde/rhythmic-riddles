@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.admin-panel {
+  background:
+    linear-gradient(180deg, rgb(10 4 20 / 0.76), rgb(7 3 15 / 0.88)),
+    radial-gradient(circle at 50% 0%, rgb(255 220 145 / 0.05), transparent 44%);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.03) inset,
+    0 0 26px color-mix(in srgb, var(--primary) 14%, transparent),
+    0 14px 35px rgb(0 0 0 / 0.22);
+}
+
+.admin-confirm-dialog {
+  width: min(520px, calc(100vw - 32px));
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.admin-confirm-dialog::backdrop {
+  background: rgb(5 2 12 / 0.78);
+  backdrop-filter: blur(4px);
+}
+
+.admin-confirm-dialog .dialog {
+  border: 1px solid var(--border-strong);
+}

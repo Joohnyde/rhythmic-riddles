@@ -24,6 +24,7 @@ test.describe('Runtime contracts', () => {
     expect(knownFrontendWsTypes()).toEqual([
       'album_picked',
       'answer',
+      'button_clicked',
       'error_solved',
       'kick_team',
       'new_team',

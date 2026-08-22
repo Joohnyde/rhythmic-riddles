@@ -1,12 +1,18 @@
 {
   "name": "cestereg",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "scripts": {
+    "generate:team-icons": "tsx scripts/generate-team-icons.ts",
     "ng": "ng",
+    "prestart": "npm run generate:team-icons",
     "start": "ng serve --host 0.0.0.0 --port 4200 --poll 1000",
+    "prebuild": "npm run generate:team-icons",
     "build": "ng build",
+    "prewatch": "npm run generate:team-icons",
     "watch": "ng build --watch --configuration development",
+    "pretest": "npm run generate:team-icons",
     "test": "ng test",
+    "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -16,7 +22,7 @@
     "e2e:headed": "playwright test --headed",
     "e2e:debug": "playwright test --debug",
     "e2e:report": "playwright show-report",
-    "test:catalog:playwright": "playwright test --config=playwright.catalog.config.ts"
+    "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
   },
   "prettier": {
     "printWidth": 100,
@@ -60,8 +66,15 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
+    "tsx": "^4.23.12",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "esbuild@0.28.2": true,
+    "lmdb@3.5.6": true,
+    "msgpackr-extract@3.0.4": true
   }
 }

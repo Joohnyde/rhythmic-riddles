@@ -1,0 +1,68 @@
+@let vm = store.vm();
+<div class="flex h-full min-h-0 flex-col" data-testid="admin-team-list">
+  <div class="flex items-end justify-center gap-2">
+    <rr-brand-lettering text="YOUR TEAMS" [height]="42" />
+    <span class="pb-1 font-semibold text-primary-200" data-testid="admin-team-count">
+      ({{ vm.teams.length }})
+    </span>
+  </div>
+
+  <div class="team-list mt-5 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+    @for (team of vm.teams; track team.id) {
+      <article
+        class="flex min-h-[70px] items-center gap-3 rounded-xl border border-primary-500/25 bg-primary-950/45 px-3 py-2.5 transition-shadow hover:border-primary-500/50 hover:shadow-[0_0_16px_rgba(169,77,251,0.1)]"
+        [attr.data-testid]="'admin-team-row-' + team.id"
+      >
+        <img class="h-12 w-12 shrink-0 object-contain" [src]="team.image" [alt]="team.name" />
+        <span
+          class="min-w-0 flex-1 truncate text-left text-base font-semibold text-primary-200"
+          [attr.data-testid]="'admin-team-name-' + team.id"
+          >{{ team.name }}</span
+        >
+        <button
+          type="button"
+          class="btn icon btn-secondary !h-10 !min-h-10 !w-10 shrink-0"
+          [attr.data-testid]="'admin-kick-team-button-' + team.id"
+          [attr.aria-label]="'Remove ' + team.name"
+          (click)="kickDialog.showModal()"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5 fill-none stroke-current"
+            stroke-width="1.8"
+            aria-hidden="true"
+          >
+            <path d="M9 4h6" stroke-linecap="round" />
+            <path d="M5 7h14" stroke-linecap="round" />
+            <path d="M8 7l1 13h6l1-13" stroke-linejoin="round" />
+            <path d="M10 10v6M14 10v6" stroke-linecap="round" />
+          </svg>
+        </button>
+        <dialog #kickDialog class="admin-confirm-dialog">
+          <div class="dialog">
+            <h3 class="dialog-title text-primary-100">Remove {{ team.name }}?</h3>
+            <p class="mt-2">
+              This team will be removed from the lobby and will need to be added again.
+            </p>
+            <div class="dialog-actions">
+              <button class="btn btn-soft" type="button" (click)="kickDialog.close()">
+                CANCEL
+              </button>
+              <button
+                class="btn btn-primary"
+                type="button"
+                (click)="store.kickTeam(team.id); kickDialog.close()"
+              >
+                REMOVE
+              </button>
+            </div>
+          </div>
+        </dialog>
+      </article>
+    } @empty {
+      <div class="grid flex-1 place-items-center px-5 text-center">
+        <p class="text-sm text-primary-300">No teams yet. Add the first one on the left.</p>
+      </div>
+    }
+  </div>
+</div>
