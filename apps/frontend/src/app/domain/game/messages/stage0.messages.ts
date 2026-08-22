@@ -13,4 +13,9 @@ export interface S0KickTeamMessage extends DefaultMessage<'kick_team'> {
   uuid: string;
 }
 
-export type Stage0Message = S0WelcomeMessage | S0NewTeamMessage | S0KickTeamMessage;
+export interface S0ButtonClickedMessage extends DefaultMessage<'button_clicked'> {
+  buttonCode: string;
+}
+
+export type Stage0Message =
+  S0WelcomeMessage | S0NewTeamMessage | S0KickTeamMessage | S0ButtonClickedMessage;

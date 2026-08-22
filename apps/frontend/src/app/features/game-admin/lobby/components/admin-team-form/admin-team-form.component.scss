@@ -1,0 +1,82 @@
+:host {
+  display: block;
+}
+
+.team-form-scroll-region {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary) 75%, transparent) transparent;
+}
+
+.add-action-wrap {
+  position: relative;
+}
+
+.admin-add-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 11px);
+  z-index: 40;
+  width: min(270px, calc(200% + 12px));
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 120ms ease,
+    visibility 120ms ease;
+  pointer-events: none;
+}
+
+.add-action-wrap:has(button:disabled:hover) .admin-add-tooltip,
+.add-action-wrap:has(button:disabled:focus-visible) .admin-add-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Keep the original Stage 0 pulse: a button pop plus an expanding green ring. */
+.buzzer-pulse {
+  position: relative;
+  isolation: isolate;
+  animation: buzzer-pulse-pop 300ms ease-out;
+}
+
+.buzzer-pulse::after,
+.buzzer-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  z-index: -1;
+  border-radius: inherit;
+  border: 2px solid rgb(69 189 142 / 0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.buzzer-pulse::before {
+  animation: buzzer-pulse-wave 300ms ease-out;
+}
+
+@keyframes buzzer-pulse-pop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  18% {
+    transform: translateY(-2px) scale(1.02);
+  }
+  38% {
+    transform: translateY(0) scale(0.99);
+  }
+  58% {
+    transform: translateY(-1px) scale(1.015);
+  }
+}
+
+@keyframes buzzer-pulse-wave {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}

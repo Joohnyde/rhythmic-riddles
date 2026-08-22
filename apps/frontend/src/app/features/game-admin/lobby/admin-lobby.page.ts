@@ -1,19 +1,22 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { GameSession } from '../../../core/session/game-session.service';
 import { LobbyStore } from '../../../domain/game/state/lobby.store';
+import { BrandLetteringComponent } from '../../../shared/ui/brand-lettering/brand-lettering.component';
+import { AdminTeamFormComponent } from './components/admin-team-form/admin-team-form.component';
+import { AdminTeamListComponent } from './components/admin-team-list/admin-team-list.component';
+
 @Component({
   selector: 'rr-admin-lobby-page',
-  imports: [FormsModule],
+  imports: [BrandLetteringComponent, AdminTeamFormComponent, AdminTeamListComponent],
   templateUrl: './admin-lobby.page.html',
   styleUrl: './admin-lobby.page.scss',
 })
 export class AdminLobbyPage implements OnInit, OnDestroy {
-  private readonly session = inject(GameSession);
-  private readonly router = inject(Router);
+  readonly session = inject(GameSession);
   readonly store = inject(LobbyStore);
-  readonly form = signal({ name: '', image: '', buttonCode: '1671' });
+  private readonly router = inject(Router);
+
   ngOnInit(): void {
     if (!this.session.code || !this.session.messages$) {
       void this.router.navigate(['admin']);
@@ -21,11 +24,8 @@ export class AdminLobbyPage implements OnInit, OnDestroy {
     }
     this.store.connect(this.session.messages$, 'admin');
   }
+
   ngOnDestroy(): void {
     this.store.disconnect();
-  }
-  async createTeam(): Promise<void> {
-    await this.store.createTeam(this.form());
-    this.form.set({ name: '', image: '', buttonCode: '1671' });
   }
 }

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-protocolVersion": "implicit-v1",
+  "$id": "https://cestereg.local/websocket-contracts/v1/schema/button_clicked.schema.json",
+  "title": "WebSocket button_clicked frame",
+  "description": "Unassigned hardware buzzer observed while the admin is linking lobby teams.",
+  "x-recipients": ["admin"],
+  "x-replaySafe": false,
+  "type": "object",
+  "required": ["type", "buttonCode"],
+  "properties": {
+    "type": {
+      "const": "button_clicked"
+    },
+    "buttonCode": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false
+}

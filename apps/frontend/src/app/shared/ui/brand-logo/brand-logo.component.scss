@@ -25,7 +25,7 @@
  * The SVG is deliberately inlined instead of rendered through <img>.
  * External SVG images have their own cached document/animation timeline, so
  * recreating the Angular component does not reliably restart per-letter CSS
- * animations. Inline SVG gives every BrandWordmarkComponent instance fresh DOM
+ * animations. Inline SVG gives every BrandLogoComponent instance fresh DOM
  * nodes and therefore a fresh animation timeline on reload/navigation.
  */
 [id^='letter-top_'],

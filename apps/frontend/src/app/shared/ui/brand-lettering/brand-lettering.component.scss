@@ -1,0 +1,22 @@
+:host {
+  display: inline-block;
+}
+
+.brand-lettering {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.brand-lettering__line {
+  display: block;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
+.brand-lettering__outline-shadow,
+.brand-lettering__outline-backdrop,
+.brand-lettering__faces,
+.brand-lettering__bevels {
+  pointer-events: none;
+}
