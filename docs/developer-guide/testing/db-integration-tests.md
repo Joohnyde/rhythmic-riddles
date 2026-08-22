@@ -62,6 +62,8 @@ src/test/java/com/cevapinxile/cestereg/
 
 `EmbeddedPostgresTestDatabase` starts one ephemeral PostgreSQL process for the test JVM and applies `db_01` followed by `db_04`. `ProductionSchemaSql` is the shared locator/reader for these repository-level SQL scripts.
 
+The Spring full-stack application test reuses this database, `DatabaseTestCleaner`, and `QuizPersistenceFixture`. Because requests execute on server threads, it does not use a test-managed `@Transactional`; assertions inspect application-committed PostgreSQL state after each HTTP request.
+
 The ordinary JPA integration suites use transaction rollback for isolation. Transaction-boundary, cache-consistency, and concurrency suites deliberately opt out when the behavior under test requires service-owned transactions to finish independently; `DatabaseTestCleaner` gives those suites an empty database before and after each test. The overall DB integration layer remains intentionally sequential because the PostgreSQL process is shared.
 
 ## Interrupt concurrency semantics
@@ -98,6 +100,12 @@ Run only the DB integration layer during development with:
 mvn -Dplatform=linux \
   -Dtest='*RepositoryIntegrationTest,*RecoveryIntegrationTest,*InvariantIntegrationTest,*OwnershipIntegrationTest,*AtomicityIntegrationTest,*SchemaIntegrationTest,*ConcurrencyIntegrationTest,*LifecycleIntegrationTest,*ConsistencyIntegrationTest' \
   test
+```
+
+Run only the Spring full-stack application test with:
+
+```bash
+mvn -Dplatform=linux -Dtest=RhytmicRiddlesApplicationTests test
 ```
 
 ## Current coverage

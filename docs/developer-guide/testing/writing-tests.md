@@ -181,6 +181,12 @@ Controller tests should also validate malformed request handling and confirm
 that service-layer methods are not called when the request is rejected at
 the controller boundary.
 
+## Writing Spring full-stack integration tests
+
+Use a random-port `@SpringBootTest` only for a composition risk that narrower tests cannot already demonstrate. Enter through real HTTP and keep Spring services, repositories, PostgreSQL, application transactions, and serialization real; substitute only genuine external boundaries such as the physical serial adapter.
+
+Do not use a test-managed `@Transactional` around HTTP scenarios. Arrange prerequisite state directly when appropriate, then verify the externally visible contract and meaningful persisted state after the request. Prefer one representative test per distinct composition mechanism over endpoint-by-endpoint duplication, and extract shared support only after multiple test files actually need it.
+
 
 ## How to add a new WebSocket integration test
 
