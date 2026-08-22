@@ -303,10 +303,30 @@ cd apps/frontend
 npm run e2e:ws
 ```
 
+Run the complete frontend unit + E2E validation:
+
+```bash
+cd apps/frontend
+npm run test:all
+```
+
+### Playwright worker limit
+
+These E2E tests isolate application data by room, but every worker still shares the same Angular server, Spring Boot process, PostgreSQL instance, and connection pool. Playwright otherwise defaults to half of the machine's logical CPUs, which can overload this integration stack and make parallel tests substantially slower than a bounded run.
+
+`playwright.config.ts` therefore uses four workers locally and two on CI by default. Override the limit only when intentionally tuning a capable environment:
+
+```bash
+E2E_WORKERS=2 npm run e2e
+```
+
+`E2E_WORKERS` must be a positive integer. Keep `fullyParallel` disabled so tests inside one spec file continue to execute in declaration order.
+
 Recommended scripts in `apps/frontend/package.json`:
 
 ```json
 {
+  "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
   "e2e": "playwright test",
   "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\"",
   "e2e:headed": "playwright test --headed",
@@ -323,8 +343,9 @@ Common variables:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PLAYWRIGHT_BASE_URL` | `http://localhost:4200` | Angular frontend URL. |
+| `E2E_FRONTEND_URL` | `http://localhost:4200` | Angular frontend URL. |
 | `E2E_BACKEND_URL` | `http://localhost:8080` | Spring Boot backend URL. |
+| `E2E_WORKERS` | `4` locally / `2` on CI | Positive integer overriding the Playwright worker cap. |
 
 Keep these in one helper such as `e2e/utils/env.ts`. Do not scatter hardcoded ports across specs.
 

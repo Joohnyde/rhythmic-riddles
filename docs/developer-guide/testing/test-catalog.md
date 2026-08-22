@@ -17,14 +17,21 @@ Current columns:
 
 | Field | Meaning |
 |---|---|
-| `framework` | Test runner/framework. Use `junit` for Java/Spring tests and `playwright` for Angular/browser E2E tests. |
+| `framework` | Test runner/framework. Use `junit` for Java/Spring tests, `vitest` for Angular unit/component tests, and `playwright` for browser E2E tests. |
 | `file` | Source file that contains the test, relative to the owning project test root. |
-| `suite` | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Playwright this is usually the `test.describe(...)` group. |
+| `suite` | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group. |
 | `test_name` | Short stable name of the test or parameterized test family. |
 | `description` | One-sentence explanation of the behavior protected by the test. |
 | `importance` | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior. |
 
 The catalog is not supposed to replace the source code. It is a map for reviewers and contributors.
+
+Use `importance` consistently:
+
+- `10`: business-critical invariants, data/state integrity, protocol compatibility, or historically fragile behavior;
+- `8-9`: major feature behavior and high-value regression protection;
+- `6-7`: meaningful supporting behavior and boundary coverage;
+- `1-5`: low-risk or primarily presentational checks whose failure does not directly threaten feature behavior.
 
 Use it to answer:
 
@@ -35,7 +42,7 @@ Use it to answer:
 
 ## Test runners and ownership
 
-The repository has two main automated test worlds.
+The repository has three main automated test worlds.
 
 ### Java / Spring tests
 
@@ -64,6 +71,31 @@ These tests should own:
 
 
 
+### Angular / Vitest tests
+
+Frontend unit and component tests are owned by Vitest through Angular's `ng test` integration.
+
+Typical location:
+
+```text
+apps/frontend/src/**/*.spec.ts
+```
+
+Typical runner:
+
+```bash
+cd apps/frontend
+npm test -- --watch=false
+```
+
+Vitest tests should own fast frontend behavior such as:
+
+- Signal Store state transitions and derived state;
+- Angular component rendering and interaction;
+- login handshake behavior that can be isolated from a real browser backend;
+- pagination and deterministic layout helpers;
+- icon allocation, buzzer-linking, and animation trigger semantics.
+
 ### Angular / Playwright tests
 
 Browser tests are owned by Playwright and run inside the frontend project.
@@ -74,18 +106,18 @@ Typical location:
 apps/frontend/e2e/...
 ```
 
-Typical runner:
+Frontend catalog governance checks both Vitest and Playwright rows:
 
 ```bash
 cd apps/frontend
-npm run test:catalog:playwright
+npm run test:catalog:frontend
 ```
 
 Expected script:
 
 ```json
 {
-  "test:catalog:playwright": "playwright test --config=playwright.catalog.config.ts"
+  "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
 }
 ```
 
@@ -405,26 +437,24 @@ Before writing new tests:
 
 When reviewing a new test, ask:
 
-- does this test belong in JUnit or Playwright?
+- does this test belong in JUnit, Vitest, or Playwright?
 - does it assert the most meaningful observable effect?
 - does it cover a new rule or just repeat an existing case?
 - does it use a valid fixture or reachable runtime state?
-- does it need to be in the catalog?
+- is its `test-catalog.csv` row present and correctly classified?
 
 ## Catalog maintenance
 
-When adding, merging, or deleting tests:
+When adding, renaming, merging, or deleting tests:
 
-- update `test-catalog.csv`;
+- update `test-catalog.csv` in the same change; this is required for every JUnit, Vitest, and Playwright test, not optional documentation cleanup;
 - keep descriptions short and behavior-focused;
 - note the test suite/group where the test belongs;
-- keep `importance` realistic;
+- keep `importance` realistic: reserve `10` for business-critical or highly regression-prone behavior and do not inflate cosmetic assertions;
 - update this file when a new major test family is added.
+
+The backend consistency test enforces JUnit rows. The frontend catalog-governance check independently enforces both `vitest` and `playwright` rows, so a new test without a catalog entry must fail validation.
 
 ## Future expansion
 
-This catalog should later expand to include:
-
-- full-stack Spring integration tests;
-- full product E2E regression tests;
-- frontend unit and integration tests.
+This catalog should later expand further as new test families are introduced, including full product E2E regression coverage beyond the current seeded WebSocket suite.

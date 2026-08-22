@@ -27,6 +27,7 @@ class WebSocketProtocolGovernanceIntegrationTest extends AbstractWebSocketIntegr
           "welcome",
           "new_team",
           "kick_team",
+          "button_clicked",
           "album_picked",
           "song_next",
           "song_repeat",

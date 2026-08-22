@@ -34,6 +34,9 @@ import java.util.stream.Collectors;
 @NamedQueries({
   @NamedQuery(name = "GameEntity.findAll", query = "SELECT g FROM GameEntity g"),
   @NamedQuery(
+      name = "GameEntity.findActive",
+      query = "SELECT g FROM GameEntity g WHERE g.stage != 3 ORDER BY g.date DESC LIMIT 1"),
+  @NamedQuery(
       name = "GameEntity.findByDate",
       query = "SELECT g FROM GameEntity g WHERE g.date = :date"),
   @NamedQuery(

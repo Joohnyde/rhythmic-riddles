@@ -67,6 +67,7 @@ The frontend should treat `welcome` as a state recovery message. Runtime events 
 | `welcome` | Admin + TV | Immediately after successful connect/reconnect, and sometimes after stage transitions |
 | `new_team` | TV | A new team joins the lobby |
 | `kick_team` | TV | A team is removed from the game |
+| `button_clicked` | Admin | An unassigned hardware buzzer is pressed in the lobby |
 | `album_picked` | TV | Admin/team picks an album/category |
 | `song_next` | Admin + TV | Next scheduled song starts |
 | `song_repeat` | Admin + TV | Snippet replay is triggered |
@@ -412,6 +413,24 @@ Sent to TV when a team is removed.
 
 
 
+## `button_clicked`
+
+Sent only to Admin during the lobby when a hardware buzzer that is not yet assigned to a team is pressed. Admin uses the code to link the physical buzzer to the team currently being configured. Assigned buzzer presses are not broadcast from the lobby.
+
+```json
+{
+  "type": "button_clicked",
+  "buttonCode": 1671
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `type` | string | Always `button_clicked` |
+| `buttonCode` | integer | Numeric hardware buzzer code emitted by the current local receiver integration |
+
+
+
 ## `album_picked`
 
 Sent to TV when an album/category is picked.
@@ -596,6 +615,7 @@ Example files:
 ```text
 album_picked.schema.json
 answer.schema.json
+button_clicked.schema.json
 error_solved.schema.json
 kick_team.schema.json
 new_team.schema.json

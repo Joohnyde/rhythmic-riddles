@@ -201,6 +201,29 @@ This allows:
 If no image is found → `Optional.empty()` is returned.
 
 
+
+## Generated Team Icon Catalog
+
+Team icons used by the Stage 0 lobby live in `apps/frontend/public/team-icons/`. The frontend does not keep a second hand-maintained icon list. Instead, `scripts/generate-team-icons.ts` scans that directory and writes `src/app/domain/game/generated/team-icons.generated.ts`.
+
+Icon filenames are part of the UI contract and must end in a six-digit hexadecimal color followed by `.png` or `.jpg`, for example:
+
+```text
+cat_A94DFB.png
+record_FF6A5F.jpg
+```
+
+The suffix is used as the team text/accent color, keeping the visual treatment paired with the icon asset itself. Invalid image filenames make generation fail instead of silently producing an icon without a usable color.
+
+Generation runs automatically before the normal npm entry points that need the catalog:
+
+- `npm start`
+- `npm run build`
+- `npm run watch`
+- `npm test`
+
+The generated TypeScript file is intentionally gitignored. The source icon directory remains tracked so a fresh checkout has an authoritative place for icon assets. If an icon is added or renamed, rerun `npm run generate:team-icons` (or use one of the commands above). Direct Angular CLI commands such as `ng serve` bypass npm lifecycle hooks and therefore require generation to be run manually first. Adding icons while the application is already running is not supported; regenerate and rebuild/restart instead.
+
 ## Error Handling Strategy
 
 Audio methods throw `DerivedException` subclasses:
@@ -238,7 +261,8 @@ The base path is logged at startup.
 
 - `data/` is gitignored
 - Never commit MP3 files
-- Never commit images
+- Never commit runtime/user-provided images from `data/`
+- Frontend-owned static assets (including `public/team-icons/`) are committed with the application
 - Dev data must be seeded via scripts
 
 This keeps repository clean and lightweight.

@@ -11,11 +11,13 @@ import static org.mockito.Mockito.when;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
 import com.cevapinxile.cestereg.config.WebSocketConfig;
 import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
+import com.cevapinxile.cestereg.core.service.BuzzerService;
 import com.cevapinxile.cestereg.core.service.CategoryService;
 import com.cevapinxile.cestereg.core.service.GameService;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import com.cevapinxile.cestereg.core.service.ScheduleService;
 import com.cevapinxile.cestereg.core.service.TeamService;
+import com.cevapinxile.cestereg.core.service.impl.BuzzerServiceImpl;
 import com.cevapinxile.cestereg.core.service.impl.InterruptServiceImpl;
 import com.cevapinxile.cestereg.core.service.impl.ScheduleServiceImpl;
 import com.cevapinxile.cestereg.persistence.entity.AlbumEntity;
@@ -28,6 +30,7 @@ import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
+import com.cevapinxile.cestereg.persistence.repository.TeamRepository;
 import com.cevapinxile.cestereg.runtime.broadcast.WebSocketBroadcastGateway;
 import com.cevapinxile.cestereg.runtime.websocket.GameCodeExtractor;
 import com.cevapinxile.cestereg.runtime.websocket.SessionRegistry;
@@ -79,6 +82,7 @@ abstract class AbstractWebSocketIntegrationTestSupport {
     GameCodeExtractor.class,
     SessionRegistry.class,
     WebSocketBroadcastGateway.class,
+    BuzzerServiceImpl.class,
     ScheduleServiceImpl.class,
     InterruptServiceImpl.class
   })
@@ -87,6 +91,7 @@ abstract class AbstractWebSocketIntegrationTestSupport {
   @LocalServerPort protected int port;
 
   @Autowired protected BroadcastGateway broadcastGateway;
+  @Autowired protected BuzzerService buzzerService;
   @Autowired protected ScheduleService scheduleService;
   @Autowired protected InterruptService interruptService;
   @Autowired protected SessionRegistry sessionRegistry;
@@ -97,6 +102,7 @@ abstract class AbstractWebSocketIntegrationTestSupport {
   @MockitoBean protected TeamService teamService;
   @MockitoBean protected ScheduleRepository scheduleRepository;
   @MockitoBean protected InterruptRepository interruptRepository;
+  @MockitoBean protected TeamRepository teamRepository;
 
   protected final ObjectMapper mapper = new ObjectMapper();
   protected final StandardWebSocketClient client = new StandardWebSocketClient();
@@ -335,6 +341,10 @@ abstract class AbstractWebSocketIntegrationTestSupport {
         assertValueMatchesContract("remaining", frame.get("remaining"), "number");
       }
       case "song_reveal" -> assertExactKeys(frame, "type");
+      case "button_clicked" -> {
+        assertExactKeys(frame, "type", "buttonCode");
+        assertValueMatchesContract("buttonCode", frame.get("buttonCode"), "number");
+      }
       case "song_next" -> {
         assertExactKeys(
             frame,

@@ -60,6 +60,37 @@ mvn -Dplatform=linux test
 
 The `platform` Maven property selects the native binary used by embedded PostgreSQL. Use `-Dplatform=windows` on Windows or `-Dplatform=macos` on macOS. A bare `mvn test` does not select one of these platform-specific dependencies. See `db-integration-tests.md` for suite structure and troubleshooting.
 
+## Running frontend tests
+
+Run the complete frontend test suite with:
+
+```bash
+cd apps/frontend
+npm run test:all
+```
+
+This runs the frontend checks in sequence:
+
+1. Angular unit and component tests through **Vitest**;
+2. frontend `test-catalog.csv` consistency checks for both **Vitest** and **Playwright** tests;
+3. the complete **Playwright** E2E suite.
+
+Individual layers can also be run separately:
+
+```bash
+npm test -- --watch=false
+npm run test:catalog:frontend
+npm run e2e
+```
+
+The Playwright suite uses a bounded worker count because the E2E tests share the same backend, PostgreSQL instance, and frontend server. Set `E2E_WORKERS` to override the default when needed:
+
+```bash
+E2E_WORKERS=2 npm run e2e
+```
+
+Any frontend test that is added, renamed, or removed must be reflected in `docs/developer-guide/testing/test-catalog.csv` in the same change. The frontend catalog consistency check enforces this independently for Vitest and Playwright.
+
 ## Why `contextFetch` matters
 
 `GameServiceImpl.contextFetch(...)` is one of the most important parts of the backend because it is responsible for reconstructing the current state of the game for clients.
@@ -163,15 +194,15 @@ This layer protects:
 
 This is not full product E2E. REST calls and fixture endpoints may be used as triggers. The important assertions are browser-observed WebSocket effects.
 
+#### 6. Frontend unit and component tests
+
+Angular unit and component tests run through Vitest and cover frontend behavior that does not require a real backend WebSocket connection. Current coverage includes Signal Store Stage 0 behavior, login handshakes, team-icon allocation, Admin lobby components, buzzer animation triggers, and TV lobby pagination/layout helpers.
+
+These tests should stay faster and narrower than Playwright tests and should not duplicate browser-level WebSocket coverage.
+
 ### Planned layers
 
-#### 1. Frontend unit and integration tests
-
-Frontend unit tests should cover component and domain-store behavior that does not require a real backend WebSocket connection.
-
-Good candidates include recovery-state mapping, song-round transitions, duplicate-action guards, route guards, form validation, and error rendering. These tests should stay smaller than Playwright tests and should not duplicate browser-level WebSocket coverage.
-
-#### 2. Small number of full-stack integration tests
+#### 1. Small number of full-stack integration tests
 
 A few high-value ones:
 
@@ -182,7 +213,7 @@ A few high-value ones:
 
 This layer should be small. The point is not to duplicate every service test, but to prove that Spring wiring and infrastructure behave correctly together.
 
-#### 3. E2E regression
+#### 2. E2E regression
 
 Then cover the user-visible product flow:
 
@@ -238,9 +269,9 @@ Future additions may include:
 A catalog of the current test suite should be maintained separately in:
 
 - `test-catalog.md` for human-readable overview;
-- `test-catalog.csv` for detailed inventory.
+- `test-catalog.csv` for the detailed JUnit, Vitest, and Playwright inventory.
 
-This allows contributors to understand what is already covered and where gaps remain.
+Every test addition, rename, or deletion must update the CSV in the same change. Backend and frontend consistency checks enforce that source and catalog remain synchronized. This allows contributors to understand what is already covered and where gaps remain.
 
 ## Document ownership
 

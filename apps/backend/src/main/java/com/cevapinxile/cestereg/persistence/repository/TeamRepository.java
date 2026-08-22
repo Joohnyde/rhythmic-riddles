@@ -9,6 +9,7 @@ import com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse;
 import com.cevapinxile.cestereg.api.quiz.dto.response.TeamScoreProjection;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -64,4 +65,6 @@ public interface TeamRepository extends JpaRepository<TeamEntity, UUID> {
         """,
       nativeQuery = true)
   List<TeamScoreProjection> getTeamScores(String roomCode);
+
+  Optional<UUID> findIdByButtonAndGameId(String buttonCode, UUID gameId);
 }
