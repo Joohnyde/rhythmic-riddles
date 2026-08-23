@@ -108,6 +108,7 @@ JSON uses camelCase naming:
 |---|---|---|
 | `roomCode` | string | 4 uppercase letters, e.g. `AKKU` |
 | `songId` | UUID | RFC 4122 |
+| `albumId` | UUID | RFC 4122 |
 | `categoryId` | UUID | RFC 4122 |
 | `scheduleId` | UUID | RFC 4122 |
 | `teamId` | UUID | RFC 4122 |
@@ -194,6 +195,7 @@ Transactional WebSocket side effects are registered after the database work and 
 | UI | PUT | [`/api/v1/games/{roomCode}/ui/scenario`](#put-apiv1gamesroomcodeuiscenario) | Persist UI scenario for recovery |
 | Assets | GET | [`/assets/v1/audio/snippets/{songId}`](#get-assetsv1audiosnippetssongid) | Snippet MP3 |
 | Assets | GET | [`/assets/v1/audio/answers/{songId}`](#get-assetsv1audioanswerssongid) | Answer MP3 |
+| Assets | GET | [`/assets/v1/image/albums/{albumId}`](#get-assetsv1imagealbumsalbumid) | Album image |
 | E2E fixtures | POST | [`/api/e2e/v1/game-fixtures`](#post-apie2ev1game-fixtures) | Create a deterministic game fixture for browser tests |
 | E2E fixtures | DELETE | [`/api/e2e/v1/game-fixtures/{roomCode}`](#delete-apie2ev1game-fixturesroomcode) | Delete a fixture room and dependent runtime state |
 
@@ -465,6 +467,26 @@ Headers:
 Content-Type: audio/mpeg
 Accept-Ranges: bytes
 ```
+
+
+## GET /assets/v1/image/albums/{albumId}
+
+Returns the raw album image resolved from `data/images/albums`. The filename is the album UUID and the backend resolves the first existing supported extension in this order: `.png`, `.jpg`, `.jpeg`, `.webp`.
+
+Successful response:
+
+- `200 OK`
+- body: exact image bytes
+- `Content-Type`: `image/png`, `image/jpeg`, or `image/webp` according to the resolved file
+
+Error responses:
+
+- `404 Not Found` — `E007 - Asset Not Found` when no supported image file exists for the album UUID
+- `503 Service Unavailable` — `E008 - Asset Unavailable` when the resolved image cannot be read
+- `500 Internal Server Error` — `E999 - Internal Server Error` for an unexpected server failure
+- malformed `albumId` values are rejected as `400 Bad Request` before `ImageService` is invoked
+
+The endpoint is cross-origin enabled in the same way as the existing asset endpoints. Team images use the same filesystem resolver internally, but there is currently no public team-image HTTP endpoint.
 
 
 # E2E fixture API endpoint details

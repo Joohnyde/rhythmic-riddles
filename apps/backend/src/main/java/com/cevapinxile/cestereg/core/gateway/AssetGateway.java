@@ -4,9 +4,8 @@
  */
 package com.cevapinxile.cestereg.core.gateway;
 
+import com.cevapinxile.cestereg.api.quiz.dto.response.ImageAsset;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
-import java.io.IOException;
-import java.util.Optional;
 import java.util.UUID;
 
 /*
@@ -15,14 +14,12 @@ import java.util.UUID;
 public interface AssetGateway {
 
   // ---- Audio ----
-
   byte[] readSnippetMp3(UUID songId) throws DerivedException;
 
   byte[] readAnswerMp3(UUID songId) throws DerivedException;
 
   // ---- Images (teams/albums) ----
+  ImageAsset readTeamImage(UUID teamId) throws DerivedException;
 
-  Optional<byte[]> readTeamImage(UUID teamId) throws IOException;
-
-  Optional<byte[]> readAlbumImage(UUID albumId) throws IOException;
+  ImageAsset readAlbumImage(UUID albumId) throws DerivedException;
 }

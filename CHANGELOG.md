@@ -16,6 +16,7 @@ a SemVer-like versioning scheme will be used.
 - Editor configuration and formatting standards documentation.
 - Build and packaging documentation for cross-platform desktop distribution (Linux, Windows, macOS).
 - Root-level README files across key directories to clarify repository structure and responsibilities.
+- Added MIME-aware album image delivery through `GET /assets/v1/image/albums/{albumId}`, backed by the filesystem asset gateway and the shared E007/E008 asset error contract.
 
 ### E2E testing
 - The E2E fixture API - test infrastructure and must remain gated behind the `e2e` Spring profile.
@@ -72,7 +73,9 @@ a SemVer-like versioning scheme will be used.
   - `CategoryServiceImpl`
   - `TeamServiceImpl`
   - `SongServiceImpl`
+  - `ImageServiceImpl`
 - Service tests validate rule-heavy logic including stage transitions, interrupt handling and resolution, schedule progression, category selection, state reconstruction, and WebSocket broadcast side effects.
+- Added focused filesystem asset-gateway tests for image extension precedence, MIME mapping, team/album directory resolution, and missing-asset contracts.
 - Added structured controller-level tests to verify the HTTP contract of REST endpoints. These tests validate:
   - happy path responses
   - `DerivedException` responses

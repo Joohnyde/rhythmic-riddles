@@ -53,8 +53,8 @@ Notes:
 | E004 | 503 | App not reachable | `AppNotRegisteredException` | Required client not connected (Admin/TV presence gate) |
 | E005 | 401 | Unauthorized request | `UnauthorizedException` | Team tries to act outside its game |
 | E006 | 409 | Guess wasn't allowed | `GuessNotAllowedException` | Guess not allowed (paused / already guessed / song ended / etc.) |
-| E007 | 404 | Asset Not Found | `AssetAccessException(Reason.NOT_FOUND)` | MP3 missing |
-| E008 | 503 | Asset Unavailable | `AssetAccessException(Reason.UNREADABLE)` | MP3 exists but cannot be read / storage issue |
+| E007 | 404 | Asset Not Found | `AssetAccessException(Reason.NOT_FOUND)` | Requested audio/image asset is missing |
+| E008 | 503 | Asset Unavailable | `AssetAccessException(Reason.UNREADABLE)` | Resolved audio/image asset cannot be read / storage issue |
 | E009 | 400 | Invalid e2e game fixture | `E2eGameFixtureValidationException` | E2E seed fixture is syntactically valid but semantically impossible |
 | E010 | 423 | Room busy | `RoomBusyException` | Another request already owns the room mutation lock; retry against the latest state |
 | E999 | 500 | Internal Server Error | `InternalServerErrorException` | Unexpected internal error occured |
@@ -108,10 +108,12 @@ Buzz/answer rules reject the action:
 
 ### E007 / E008 — Asset errors (404 / 503)
 
-Thrown by `AssetAccessException`:
+Thrown by `AssetAccessException` for both audio and image assets:
 
-- `NOT_FOUND` → E007 / 404
-- `UNREADABLE` → E008 / 503
+- `NOT_FOUND` → E007 / 404 when the requested asset file is absent
+- `UNREADABLE` → E008 / 503 when the resolved asset cannot be read
+
+Album image requests surface the same contract through `GET /assets/v1/image/albums/{albumId}`.
 
 ### E009 — Invalid E2E game fixture (400)
 

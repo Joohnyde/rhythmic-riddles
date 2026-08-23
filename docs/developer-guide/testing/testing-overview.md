@@ -16,7 +16,7 @@ The goal of the test suite is not just to prove that code works on the happy pat
 
 ## Current Test Focus
 
-The current safety net now has three complementary integration boundaries in addition to the existing focused service/controller tests:
+The current safety net now has three complementary integration boundaries in addition to the existing focused service/controller/adapter tests:
 
 ### 1. Real-PostgreSQL repository and recovery integration
 
@@ -130,7 +130,11 @@ This layer protects:
 
 Service tests should stay fast and focused. They are the right place to prove that a method rejects invalid state, updates the correct entities, and calls collaborators correctly.
 
-#### 2. Controller/API tests
+#### 2. Backend infrastructure adapter tests
+
+Focused adapter tests protect behavior at non-database infrastructure boundaries without starting the full application. For example, `LocalAssetGatewayTest` uses a temporary filesystem to prove image directory resolution, supported extension/MIME mapping, deterministic extension precedence, and canonical missing-asset errors. These tests should exercise the adapter contract directly and should not duplicate controller or service assertions.
+
+#### 3. Controller/API tests
 
 Controller tests validate the HTTP contract of REST endpoints.
 
@@ -152,7 +156,7 @@ com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException
 
 That behavior is considered part of the API contract.
 
-#### 3. Repository/query integration
+#### 4. Repository/query integration
 
 The persistence integration suite runs against real PostgreSQL and protects semantics that mocked repositories cannot prove:
 
@@ -165,7 +169,7 @@ The persistence integration suite runs against real PostgreSQL and protects sema
 
 Do not add integration tests for trivial inherited CRUD behavior. A repository integration test should protect a meaningful query contract.
 
-#### 4. DB-backed recovery integration
+#### 5. DB-backed recovery integration
 
 `GameRecoveryIntegrationTest` builds reachable persisted states directly in PostgreSQL and calls `GameServiceImpl.contextFetch(...)` through real repositories and services.
 
@@ -181,11 +185,11 @@ This layer proves recovery for:
 
 This is deliberately separate from the E2E fixture API so fixture infrastructure is not part of the assertion chain.
 
-#### 5. Spring full-stack application integration
+#### 6. Spring full-stack application integration
 
 `RhytmicRiddlesApplicationTests` is the narrow real-HTTP composition layer. Add tests here only when crossing the running Spring application exposes a risk not already demonstrated by controller, service, repository, transaction, concurrency, recovery, or WebSocket suites. The application owns the request transaction, and committed state is verified directly in PostgreSQL afterward.
 
-#### 6. Seeded browser WebSocket integration tests
+#### 7. Seeded browser WebSocket integration tests
 
 The frontend Playwright suite under `apps/frontend/e2e` validates real browser WebSocket behavior using the backend `e2e` profile and deterministic fixtures.
 
@@ -202,7 +206,7 @@ This layer protects:
 
 This is not full product E2E. REST calls and fixture endpoints may be used as triggers. The important assertions are browser-observed WebSocket effects.
 
-#### 7. Frontend unit and component tests
+#### 8. Frontend unit and component tests
 
 Angular unit and component tests run through Vitest and cover frontend behavior that does not require a real backend WebSocket connection. Current coverage includes Signal Store Stage 0 behavior, login handshakes, team-icon allocation, Admin lobby components, buzzer animation triggers, and TV lobby pagination/layout helpers.
 
