@@ -6,8 +6,10 @@ This document defines how RhythmicRiddles manages audio snippets, answer tracks,
 It replaces previous fragmented documentation and aligns strictly with the current implementation:
 
 - `AssetProperties`
-- `LocalAssetGateway`
+- `AssetGateway` / `LocalAssetGateway`
 - `SongServiceImpl`
+- `ImageServiceImpl`
+- `ImageAssetController`
 
 This is the **single source of truth** for how assets are stored, resolved, accessed, and abstracted.
 
@@ -79,18 +81,18 @@ This matches `LocalAssetGateway` exactly.
 
 `AssetGateway` is an abstraction layer between:
 
-- Business logic (SongService, controllers)
-- Physical storage (filesystem)
+- application services (`SongServiceImpl`, `ImageServiceImpl`)
+- physical storage (the local filesystem today)
 
 Current implementation:
 
+```text
+AudioAssetController -> SongServiceImpl  --+
+                                          +-> AssetGateway -> LocalAssetGateway
+ImageAssetController -> ImageServiceImpl --+
 ```
-SongServiceImpl
-    ↓
-AssetGateway (interface)
-    ↓
-LocalAssetGateway (filesystem implementation)
-```
+
+The gateway returns raw `byte[]` for MP3 assets and an `ImageAsset` record for images. `ImageAsset` carries both the exact bytes and the MIME type selected from the resolved extension, so HTTP code does not need to guess the image format.
 
 Example:
 
@@ -181,24 +183,26 @@ readAnswerMp3(UUID songId)
 
 ## Image Handling
 
-Images are resolved dynamically by extension.
+Images are resolved dynamically by extension. `LocalAssetGateway` checks supported formats in this deterministic order:
 
-Supported extensions:
+| Extension | MIME type |
+|---|---|
+| `.png` | `image/png` |
+| `.jpg` | `image/jpeg` |
+| `.jpeg` | `image/jpeg` |
+| `.webp` | `image/webp` |
 
-- png
-- jpg
-- jpeg
-- webp
+The first regular file found is returned as `ImageAsset(byte[] bytes, String mimeType)`. If multiple files exist for the same UUID, the extension order above defines which one wins.
 
-Resolution logic:
+Album images are exposed through:
 
-The gateway checks each extension in order and returns the first existing match.
+```text
+GET /assets/v1/image/albums/{albumId}
+```
 
-This allows:
-- flexible image formats
-- no hardcoded extension assumptions
+The controller returns the exact stored bytes and uses the `ImageAsset.mimeType()` value as the HTTP `Content-Type`. Team images use the same gateway resolution under `images/teams`, but no public team-image HTTP endpoint exists yet.
 
-If no image is found → `Optional.empty()` is returned.
+Missing images are not represented by `Optional.empty()`. A missing supported file is a public asset error (`E007 / 404`), while a file that resolves but cannot be read is `E008 / 503`.
 
 
 
@@ -226,16 +230,12 @@ The generated TypeScript file is intentionally gitignored. The source icon direc
 
 ## Error Handling Strategy
 
-Audio methods throw `DerivedException` subclasses:
+Audio and image gateway methods use the same `AssetAccessException` contract:
 
-- `AssetAccessException.Reason.NOT_FOUND`
-- `AssetAccessException.Reason.UNREADABLE`
+- `AssetAccessException.Reason.NOT_FOUND` → `E007 - Asset Not Found` / HTTP `404`
+- `AssetAccessException.Reason.UNREADABLE` → `E008 - Asset Unavailable` / HTTP `503`
 
-This integrates cleanly with the global exception mapping.
-
-Images return Optional:
-- absence is not necessarily an error
-- teams/albums may legitimately have no image
+The asset controllers pass these `DerivedException` responses through the standard API error handler. Unexpected controller failures use `E999 - Internal Server Error` / HTTP `500`.
 
 
 ## Absolute Path Normalization

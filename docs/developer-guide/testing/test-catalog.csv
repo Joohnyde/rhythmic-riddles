@@ -259,6 +259,8 @@ junit,core/service/impl/SongServiceImplTest.java,SongCombinedGatewayDelegation,p
 junit,core/service/impl/SongServiceImplTest.java,SongReturnValueRegression,playSnippetDelegatesToAssetGateway,Play snippet delegates to asset gateway.,5
 junit,core/service/impl/SongServiceImplTest.java,SongReturnValueRegression,playAnswerDelegatesToAssetGateway,Play answer delegates to asset gateway.,5
 junit,core/service/impl/SongServiceImplTest.java,SongExactBytePayloads,playSnippetAndAnswerReturnExactGatewayBytes,Play snippet and answer return exact gateway bytes.,5
+junit,core/service/impl/ImageServiceImplTest.java,AlbumImageAccess,returnsGatewayImageAssetWithoutLosingPayloadOrMimeMetadata,ImageService preserves the gateway ImageAsset instance so image bytes and MIME metadata reach the API layer unchanged.,8
+junit,core/service/impl/ImageServiceImplTest.java,AlbumImageAccess,propagatesAssetFailureWithoutRemappingItsPublicErrorContract,ImageService does not replace the gateway AssetAccessException and therefore preserves its public error contract.,8
 junit,core/service/impl/TeamServiceImplTest.java,TeamCreationAndCaching,createTeamRejectsBlankNameOrImage,Create team rejects blank name or image.,8
 junit,core/service/impl/TeamServiceImplTest.java,TeamCreationAndCaching,createTeamPersistsTeamAndBroadcastsToTv,Create team persists team and broadcasts to tv.,9
 junit,core/service/impl/TeamServiceImplTest.java,TeamCreationAndCaching,getTeamScoresUsesCacheAfterFirstLoad,Get team scores uses cache after first load.,7
@@ -453,6 +455,11 @@ junit,api/assets/controller/AudioAssetControllerTest.java,,answerOptionsPrefligh
 junit,api/assets/controller/AudioAssetControllerTest.java,,snippetResponseDoesNotPretendToBeJson,Snippet Response Does Not Pretend To Be JSON.,8
 junit,api/assets/controller/AudioAssetControllerTest.java,,malformedSnippetUuidDoesNotCallService,Malformed Snippet UUID Does Not Call Service.,8
 junit,api/assets/controller/AudioAssetControllerTest.java,,malformedAnswerUuidDoesNotCallService,Malformed Answer UUID Does Not Call Service.,8
+junit,api/assets/controller/ImageAssetControllerTest.java,AlbumImageResponses,returnsExactImageBytesWithResolvedContentType,"Album image responses preserve exact bytes and expose PNG, JPEG, and WebP with the MIME type supplied by the image asset.",10
+junit,api/assets/controller/ImageAssetControllerTest.java,AlbumImageResponses,mapsAssetAccessFailuresToTheirPublicHttpContract,Album image asset failures retain the canonical E007/404 and E008/503 JSON contracts.,10
+junit,api/assets/controller/ImageAssetControllerTest.java,AlbumImageResponses,returnsInternalServerErrorForUnexpectedException,Unexpected image-service failures are mapped to the canonical E999 internal-server response.,9
+junit,api/assets/controller/ImageAssetControllerTest.java,AlbumImageRequestContract,malformedAlbumUuidIsRejectedBeforeServiceInvocation,Malformed album UUIDs fail request binding before the image service is invoked.,9
+junit,api/assets/controller/ImageAssetControllerTest.java,AlbumImageRequestContract,corsPreflightAllowsAlbumImageReads,Album image reads retain the cross-origin preflight contract used by asset endpoints.,7
 junit,core/service/impl/GameServiceImplWebSocketTest.java,IsChangeStageLegalNonEmissionSignals,unknownRoomThrowsAndDoesNotTouchPresenceOrBroadcasting,Unknown Room Throws And Does Not Touch Presence Or Broadcasting.,6
 junit,core/service/impl/GameServiceImplWebSocketTest.java,IsChangeStageLegalNonEmissionSignals,invalidTargetStageThrowsBeforePresenceCheck,Invalid Target Stage Throws Before Presence Check.,7
 junit,core/service/impl/GameServiceImplWebSocketTest.java,IsChangeStageLegalNonEmissionSignals,wrongCurrentStateThrowsAndDoesNotCheckPresence,Wrong Current State Throws And Does Not Check Presence.,6
@@ -997,6 +1004,11 @@ junit,io/buzzer/BuzzerSerialAdapterTest.java,BuzzerSerialAdapterTest,disconnectE
 junit,io/buzzer/BuzzerSerialAdapterTest.java,BuzzerSerialAdapterTest,buzzerServiceFailurePropagatesFromTheSerialCallback,The adapter test locks the current callback behavior when BuzzerService throws.,7
 junit,io/buzzer/BuzzerSerialAdapterTest.java,BuzzerSerialAdapterTest,candidateThatCannotOpenIsRejectedWithoutAttachingAListener,A candidate port that cannot open is rejected before a listener is attached.,8
 junit,io/buzzer/BuzzerSerialAdapterTest.java,BuzzerSerialAdapterTest,connectRegistersNewlineDelimitedMessageListener,The connected receiver uses newline-delimited data and disconnect events.,8
+junit,io/assets/LocalAssetGatewayTest.java,AlbumImages,resolvesSupportedExtensionsWithTheirMimeTypes,"Album image resolution supports PNG, JPG, JPEG, and WebP and maps every extension to the correct MIME type.",10
+junit,io/assets/LocalAssetGatewayTest.java,AlbumImages,prefersFirstSupportedExtensionWhenDuplicateAlbumAssetsExist,"When duplicate album formats exist, deterministic extension precedence selects PNG before JPG, JPEG, and WebP.",8
+junit,io/assets/LocalAssetGatewayTest.java,AlbumImages,missingAlbumImageUsesAssetNotFoundContract,A missing album image produces the canonical album-specific E007 asset-not-found response.,10
+junit,io/assets/LocalAssetGatewayTest.java,TeamImages,resolvesTeamImagesFromTheTeamDirectoryWithMimeMetadata,Team image resolution uses the team directory and returns image bytes together with MIME metadata.,9
+junit,io/assets/LocalAssetGatewayTest.java,TeamImages,missingTeamImageUsesTeamSpecificAssetNotFoundContract,A missing team image produces the canonical team-specific E007 asset-not-found response.,9
 junit,core/service/impl/BuzzerServiceImplTest.java,LobbyStage,unassignedButtonIsPublishedToAdminOnly,An unassigned lobby buzzer emits the current numeric button_clicked payload to Admin.,10
 junit,core/service/impl/BuzzerServiceImplTest.java,LobbyStage,assignedButtonIsIgnored,An already assigned buzzer is ignored while the game is in the lobby.,9
 junit,core/service/impl/BuzzerServiceImplTest.java,SongsStage,assignedButtonInterruptsForItsTeam,An assigned buzzer delegates to InterruptService during the songs stage.,10

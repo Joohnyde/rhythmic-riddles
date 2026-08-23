@@ -143,6 +143,7 @@ The most extensive backend coverage is concentrated in service-level tests for:
 - `CategoryServiceImpl`
 - `TeamServiceImpl`
 - `SongServiceImpl`
+- `ImageServiceImpl`
 
 These tests are expected to cover the main gameplay rules and state transitions.
 
@@ -169,7 +170,7 @@ Controller endpoints are expected to have tests covering:
 
 For JSON endpoints, tests should verify `application/json` media type for both success and controller-handled error responses.
 
-Controller tests should not retest every service rule. They should prove that HTTP wiring, validation, serialization, and exception handling are correct.
+Controller tests should not retest every service rule. They should prove that HTTP wiring, validation, serialization, and exception handling are correct. Binary asset controllers additionally lock the returned bytes/MIME contract and asset-specific HTTP errors without duplicating filesystem resolution tests.
 
 ### Spring full-stack application integration
 
@@ -234,13 +235,14 @@ See `db-integration-tests.md` for the local runner and fixture conventions.
 
 Additional tests may exist for:
 
+- filesystem/storage adapters such as `LocalAssetGateway`;
 - WebSocket handshake helpers;
 - cached DTO behavior;
 - application/full-stack composition sanity;
 - request/response DTO behavior;
 - utility classes.
 
-These tests should stay small. If a supporting test starts describing full gameplay, it probably belongs in a service or integration layer instead.
+These tests should stay small. Storage-adapter tests should use temporary directories and prove path/format/error contracts at the gateway boundary rather than retesting controller behavior. If a supporting test starts describing full gameplay, it probably belongs in a service or integration layer instead.
 
 ## Current Playwright WebSocket integration tests
 
