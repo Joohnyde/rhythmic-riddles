@@ -200,7 +200,7 @@ Album images are exposed through:
 GET /assets/v1/image/albums/{albumId}
 ```
 
-The controller returns the exact stored bytes and uses the `ImageAsset.mimeType()` value as the HTTP `Content-Type`. Team images use the same gateway resolution under `images/teams`, but no public team-image HTTP endpoint exists yet.
+The controller returns the exact stored bytes and uses the `ImageAsset.mimeType()` value as the HTTP `Content-Type`. Album image files under `images/albums` use the album UUID as their basename and may be stored as PNG, JPG/JPEG, or WebP. `CategorySimple.image` and `LastCategory.chosenCategoryPreview.image` carry that album UUID, which clients pass to the endpoint above; the backend resolves the matching file extension and MIME type. Team images use the same gateway resolution under `images/teams`, but no public team-image HTTP endpoint exists yet.
 
 Missing images are not represented by `Optional.empty()`. A missing supported file is a public asset error (`E007 / 404`), while a file that resolves but cannot be read is `E008 / 503`.
 

@@ -2,6 +2,7 @@ import { Team } from './team.model';
 
 export interface CategoryPreview {
   title: string;
+  /** Album UUID used by the album image endpoint to locate the matching stored cover file. */
   image: string;
 }
 

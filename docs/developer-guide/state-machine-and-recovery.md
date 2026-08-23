@@ -46,10 +46,20 @@ Reconnect simply resends the current team list.
 
 ## Stage 1: Albums (`stage = "albums"`)
 
-Stage 1 has two UI sub-states, determined by the “last chosen category” record.
+Stage 1 has two normal UI sub-states, determined by the last chosen category. Every Stage 1
+snapshot includes the complete `albums` list so a reconnecting client can rebuild the album grid
+and, when necessary, the selected-album reveal from the same snapshot.
 
 ### When
-- `game.getStage() == 1` 
+- `game.getStage() == 1`
+
+### Always-present fields
+- `stage: "albums"`
+- `albums`: prepared categories for this game
+
+Each `albums[].image` value is the **album UUID** used as the basename of the corresponding stored
+image asset. Clients pass that UUID directly to `GET /assets/v1/image/albums/{albumId}`; the asset
+endpoint resolves whether the stored file is PNG, JPG/JPEG, or WebP and returns the matching MIME type.
 
 ### Sub-state A: Selecting a new album (picker turn)
 
@@ -57,40 +67,52 @@ Stage 1 has two UI sub-states, determined by the “last chosen category” reco
 A new selection is needed if:
 
 - `lastChosenCategory == null`, OR
-- `lastChosenCategory.isDone() == true` AND `lastChosenCategory.ordinalNumber != game.maxAlbums` 
+- `lastChosenCategory.isStarted() == true` AND `lastChosenCategory.ordinalNumber != game.maxAlbums`
 
-*(In other words: there is no last selection yet, or the last selection was already started and we haven’t reached the configured album limit.)*
+*(In other words: there is no last selection yet, or the previous selection has already started and
+the configured album limit has not been reached.)*
 
-#### Snapshot fields
-- `stage: "albums"`
-- `albums`: prepared categories for this game
-- `team`: the next team that should pick (or `null` if admin choice)
+#### Additional snapshot field
+- `team`: the next team that should pick, or `null` when Admin picks
 
-`team` is returned as a `CreateTeamResponse` derived from `ChoosingTeam`. 
+`team` is returned as a `CreateTeamResponse` derived from `ChoosingTeam`.
 
 #### UI behavior
-- Show available albums/categories.
-- Show who is picking (if applicable).
+- Render the album/category grid from `albums`.
+- Show who is picking, if applicable.
 
 ### Sub-state B: Album picked but not started yet (choice display)
 
 #### Condition
-- `lastChosenCategory != null` AND `lastChosenCategory.isDone() == false` 
+- `lastChosenCategory != null` AND `lastChosenCategory.isStarted() == false`
 
-#### Snapshot fields
-- `stage: "albums"`
+#### Additional snapshot field
 - `selected`: the chosen album/category (`LastCategory`)
 
+`selected.chosenCategoryPreview.image` carries the same album UUID; the corresponding cover uses
+that UUID as its basename and is resolved through the same album-image endpoint.
+
 #### UI behavior
-- Show the “selected album reveal” screen.
-- Only after this should the admin “start” the category (which moves into stage 2 later via normal flow).
+- Keep the album list available in client state.
+- Show the selected-album reveal.
+- Only after this should the admin start the category.
+
+### Defensive final-album state
+
+If the final selected category is already started while the persisted game is still in Stage 1,
+`contextFetch` returns the normal `stage` and `albums` fields without `team` or `selected`. Normal
+stage progression should prevent this state; the shape exists only so recovery remains
+self-consistent if persisted state is stale.
 
 ### Recovery behavior (stage 1)
-On reconnect, the server resends either:
-- the “picker selection view” payload (Sub-state A), or
-- the “picked but not started” payload (Sub-state B),
 
-so the UI can continue exactly where it left off.
+On reconnect, `albums` is always present. The sub-state is then identified by:
+
+- `team` for the picker view;
+- `selected` for a picked-but-not-started reveal;
+- neither field only for the defensive final-album state described above.
+
+This lets the UI reconstruct Stage 1 without relying on state retained from before the disconnect.
 
 
 ## Stage 2: Songs (`stage = "songs"`)

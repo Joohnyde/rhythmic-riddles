@@ -112,6 +112,8 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
   @Test
   void welcomeSchemaAcceptsOnlyGroundTruthStageSnapshots() throws Exception {
     final String teamId = UUID.randomUUID().toString();
+    final String categoryId = UUID.randomUUID().toString();
+    final String albumId = UUID.randomUUID().toString();
     final String scheduleId = UUID.randomUUID().toString();
     final String songId = UUID.randomUUID().toString();
     final String interruptId = UUID.randomUUID().toString();
@@ -121,6 +123,30 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
         "{\"type\":\"welcome\",\"stage\":\"lobby\",\"teams\":["
             + team(teamId, "Team A", "team.png")
             + "]}");
+    final String album =
+        "{\"id\":\""
+            + categoryId
+            + "\",\"name\":\"Album A\",\"image\":\""
+            + albumId
+            + "\",\"pickedByTeam\":null,\"ordinalNumber\":null}";
+    assertSchemaValid(
+        "welcome",
+        "{\"type\":\"welcome\",\"stage\":\"albums\",\"albums\":["
+            + album
+            + "],\"team\":"
+            + team(teamId, "Team A", "team.png")
+            + "}");
+    assertSchemaValid(
+        "welcome",
+        "{\"type\":\"welcome\",\"stage\":\"albums\",\"albums\":["
+            + album
+            + "],\"selected\":{\"categoryId\":\""
+            + categoryId
+            + "\",\"chosenCategoryPreview\":{\"title\":\"Album A\",\"image\":\""
+            + albumId
+            + "\"},\"pickedByTeam\":null,\"started\":false,\"ordinalNumber\":1}}");
+    assertSchemaValid(
+        "welcome", "{\"type\":\"welcome\",\"stage\":\"albums\",\"albums\":[" + album + "]}");
     assertSchemaValid(
         "welcome",
         "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
@@ -165,9 +191,26 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
   }
 
   @Test
-  void welcomeSchemaRejectsLegacyNumericRecoveryShape() throws Exception {
+  void welcomeSchemaRejectsLegacyRecoveryShapes() throws Exception {
+    final String categoryId = UUID.randomUUID().toString();
+    final String albumId = UUID.randomUUID().toString();
+
     assertSchemaInvalid(
         "welcome", "{\"type\":\"welcome\",\"roomCode\":\"AKKU\",\"stage\":2,\"recovery\":true}");
+    assertSchemaInvalid(
+        "welcome",
+        "{\"type\":\"welcome\",\"stage\":\"albums\",\"selected\":{\"categoryId\":\""
+            + categoryId
+            + "\",\"chosenCategoryPreview\":{\"title\":\"Album A\",\"image\":\""
+            + albumId
+            + "\"},\"pickedByTeam\":null,\"started\":false,\"ordinalNumber\":1}}");
+    assertSchemaInvalid(
+        "welcome",
+        "{\"type\":\"welcome\",\"stage\":\"albums\",\"albums\":[{\"id\":\""
+            + categoryId
+            + "\",\"name\":\"Album A\",\"image\":\""
+            + albumId
+            + ".png\",\"pickedByTeam\":null,\"ordinalNumber\":null}],\"team\":null}");
   }
 
   @Test

@@ -37,65 +37,93 @@
       "type": "object",
       "required": [
         "type",
-        "stage"
+        "stage",
+        "albums"
       ],
-      "additionalProperties": false,
       "properties": {
         "type": {
           "const": "welcome"
         },
         "stage": {
           "const": "albums"
-        }
-      },
-      "oneOf": [
-        {
-          "required": [
-            "albums",
-            "team"
-          ],
-          "properties": {
-            "albums": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": [
-                  "id",
-                  "name",
-                  "image",
-                  "pickedByTeam",
-                  "ordinalNumber"
-                ],
-                "properties": {
-                  "id": {
-                    "$ref": "#/$defs/uuid"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "image": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "pickedByTeam": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  },
-                  "ordinalNumber": {
-                    "type": [
-                      "integer",
-                      "null"
-                    ]
-                  }
-                },
-                "additionalProperties": true
+        },
+        "albums": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "image",
+              "pickedByTeam",
+              "ordinalNumber"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "image": {
+                "$ref": "#/$defs/uuid"
+              },
+              "pickedByTeam": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ordinalNumber": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
               }
             },
-            "team": {
+            "additionalProperties": true
+          }
+        },
+        "team": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/team"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selected": {
+          "type": "object",
+          "required": [
+            "categoryId",
+            "chosenCategoryPreview",
+            "pickedByTeam",
+            "started",
+            "ordinalNumber"
+          ],
+          "properties": {
+            "categoryId": {
+              "$ref": "#/$defs/uuid"
+            },
+            "chosenCategoryPreview": {
+              "type": "object",
+              "required": [
+                "title",
+                "image"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "image": {
+                  "$ref": "#/$defs/uuid"
+                }
+              },
+              "additionalProperties": false
+            },
+            "pickedByTeam": {
               "oneOf": [
                 {
                   "$ref": "#/$defs/team"
@@ -104,73 +132,59 @@
                   "type": "null"
                 }
               ]
+            },
+            "started": {
+              "type": "boolean"
+            },
+            "ordinalNumber": {
+              "type": [
+                "integer",
+                "null"
+              ]
             }
           },
           "additionalProperties": false
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "team"
+          ],
+          "not": {
+            "required": [
+              "selected"
+            ]
+          }
         },
         {
           "required": [
             "selected"
           ],
-          "properties": {
-            "selected": {
-              "type": "object",
-              "required": [
-                "categoryId",
-                "chosenCategoryPreview",
-                "pickedByTeam",
-                "started",
-                "ordinalNumber"
-              ],
-              "properties": {
-                "categoryId": {
-                  "$ref": "#/$defs/uuid"
-                },
-                "chosenCategoryPreview": {
-                  "type": "object",
-                  "required": [
-                    "title",
-                    "image"
-                  ],
-                  "properties": {
-                    "title": {
-                      "type": "string"
-                    },
-                    "image": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    }
-                  },
-                  "additionalProperties": false
-                },
-                "pickedByTeam": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/$defs/team"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
-                },
-                "started": {
-                  "type": "boolean"
-                },
-                "ordinalNumber": {
-                  "type": [
-                    "integer",
-                    "null"
-                  ]
-                }
+          "not": {
+            "required": [
+              "team"
+            ]
+          }
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "team"
+                ]
               },
-              "additionalProperties": false
-            }
-          },
-          "additionalProperties": false
+              {
+                "required": [
+                  "selected"
+                ]
+              }
+            ]
+          }
         }
-      ]
+      ],
+      "additionalProperties": false
     },
     {
       "type": "object",

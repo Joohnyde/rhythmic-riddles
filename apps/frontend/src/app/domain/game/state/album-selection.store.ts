@@ -89,19 +89,10 @@ export class AlbumSelectionStore {
       return;
     }
 
-    if (message.albums) {
-      this.patchState({
-        albums: message.albums,
-        pickedByTeam: message.team ?? null,
-        selectedAlbum: null,
-        loaded: true,
-      });
-      return;
-    }
-
     this.patchState({
+      albums: message.albums,
       selectedAlbum: message.selected ?? null,
-      pickedByTeam: message.selected?.pickedByTeam ?? null,
+      pickedByTeam: message.selected?.pickedByTeam ?? message.team ?? null,
       loaded: true,
     });
   }

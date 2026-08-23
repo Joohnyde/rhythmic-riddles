@@ -56,6 +56,7 @@ Workflow:
 - Validates the game exists, is in stage 1, and that the teamId (if provided) belongs to this game.
 - Validates the chosen category exists and belongs to the given roomCode (it must have been added during game creation).
 - Marks the selected category with the next ordinal number (incremental), used to differentiate picked categories.
+- Returns the selected album UUID consumed by the image endpoint to get the album thumbnail.
 - Persists who picked the category and notifies the TV via socket.
 """)
   @ApiResponses({
@@ -72,8 +73,8 @@ Workflow:
 """
 {
   "categoryId":"2f2c2b9b-6f7b-4d57-a3a5-0a6d1d3a9d61",
-  "chosenCategoryPreview":{"name":"Best of 2000s","image":"https://example.com/cat.png"},
-  "pickedByTeam":{"id":"b8c57c1d-4e91-4a1f-9a0d-0a65c3f4d2d1","name":"Team Cyan","picture":"https://example.com/team.png"},
+  "chosenCategoryPreview":{"title":"Best of 2000s","image":"7d26d0ea-dbc1-44fe-976f-88186f86a3aa"},
+  "pickedByTeam":{"id":"b8c57c1d-4e91-4a1f-9a0d-0a65c3f4d2d1","name":"Team Cyan","image":"https://example.com/team.png"},
   "started":false,
   "ordinalNumber":1
 }

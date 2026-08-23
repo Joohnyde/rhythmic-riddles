@@ -21,6 +21,11 @@ import com.cevapinxile.cestereg.core.service.impl.TeamServiceImpl;
 import com.cevapinxile.cestereg.persistence.integration.support.FixedTestClockConfiguration;
 import com.cevapinxile.cestereg.persistence.integration.support.PostgresJpaIntegrationTest;
 import com.cevapinxile.cestereg.persistence.integration.support.QuizPersistenceFixture;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Import({
@@ -44,6 +50,10 @@ import tools.jackson.databind.ObjectMapper;
 class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
 
   private static final LocalDateTime NOW = FixedTestClockConfiguration.NOW;
+
+  private final ObjectMapper schemaMapper = new ObjectMapper();
+  private final SchemaRegistry schemaRegistry =
+      SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
   @Autowired private GameService gameService;
   @Autowired private InterruptService interruptService;
@@ -227,7 +237,8 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     final UUID picker = fixture.team(gameId, "Picker", "picker.png");
     final UUID selectedAlbum = fixture.album("Selected Album");
     final UUID selectedCategory = fixture.category(gameId, selectedAlbum, picker, 1, false);
-    fixture.category(gameId, fixture.album("Open Album"), null, null, false);
+    final UUID openAlbum = fixture.album("Open Album");
+    fixture.category(gameId, openAlbum, null, null, false);
 
     final HashMap<String, Object> context = gameService.contextFetch("RSEL");
 
@@ -238,8 +249,17 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     assertEquals(selectedCategory, selected.getCategoryId());
     assertEquals(picker, selected.getPickedByTeam().getId());
     assertEquals("Selected Album", selected.getChosenCategoryPreview().title());
-    assertFalse(context.containsKey("albums"));
+    assertEquals(selectedAlbum.toString(), selected.getChosenCategoryPreview().image());
+    final List<?> albums = (List<?>) context.get("albums");
+    assertEquals(2, albums.size());
+    assertEquals(
+        Set.of(selectedAlbum.toString(), openAlbum.toString()),
+        albums.stream()
+            .map(CategorySimple.class::cast)
+            .map(CategorySimple::getImage)
+            .collect(Collectors.toSet()));
     assertFalse(context.containsKey("team"));
+    assertWelcomeSchema(context);
   }
 
   @Test
@@ -275,6 +295,7 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
             .collect(Collectors.toSet());
     assertTrue(categoryIds.contains(openA));
     assertTrue(categoryIds.contains(openB));
+    assertWelcomeSchema(context);
   }
 
   @Test
@@ -295,7 +316,7 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     assertEquals("welcome", context.get("type"));
     assertEquals("winner", context.get("stage"));
     assertNotNull(context.get("scores"));
-    final String scoresJson = new ObjectMapper().writeValueAsString(context.get("scores"));
+    final String scoresJson = schemaMapper.writeValueAsString(context.get("scores"));
     assertTrue(scoresJson.contains(red.toString()));
     assertTrue(scoresJson.contains(blue.toString()));
     assertTrue(scoresJson.contains("\"score\":60"));
@@ -317,6 +338,20 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
     fixture.schedule(categoryId, null, 1, NOW.minusSeconds(4), null);
 
     assertThrows(DerivedException.class, () -> gameService.contextFetch("RBRO"));
+  }
+
+  private void assertWelcomeSchema(final HashMap<String, Object> context) throws Exception {
+    final String resource = "/websocket-contracts/v1/schema/welcome.schema.json";
+    try (InputStream in = getClass().getResourceAsStream(resource)) {
+      assertNotNull(in, "missing websocket JSON schema resource " + resource);
+      final JsonNode schemaNode = schemaMapper.readTree(in);
+      final Schema schema = schemaRegistry.getSchema(schemaNode);
+      final List<Error> violations =
+          schema.validate(schemaMapper.readTree(schemaMapper.writeValueAsString(context)));
+      assertTrue(
+          violations.isEmpty(),
+          "real contextFetch payload must satisfy welcome schema: " + violations);
+    }
   }
 
   private Round round(

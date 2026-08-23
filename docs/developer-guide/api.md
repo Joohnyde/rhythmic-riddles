@@ -303,6 +303,8 @@ Response:
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `LastCategory` preview object
 
+`LastCategory.chosenCategoryPreview.image` contains the selected album UUID. Album cover files use that UUID as their basename, and clients pass it directly to `GET /assets/v1/image/albums/{albumId}` so the backend can resolve the stored format.
+
 WS side-effect:
 - TV receives `album_picked`
 
@@ -471,7 +473,7 @@ Accept-Ranges: bytes
 
 ## GET /assets/v1/image/albums/{albumId}
 
-Returns the raw album image resolved from `data/images/albums`. The filename is the album UUID and the backend resolves the first existing supported extension in this order: `.png`, `.jpg`, `.jpeg`, `.webp`.
+Returns the raw album image from `data/images/albums`. Album image files use the album UUID as their basename, for example `<albumId>.png` or `<albumId>.webp`. The backend receives the UUID and resolves the first existing supported extension in this order: `.png`, `.jpg`, `.jpeg`, `.webp`.
 
 Successful response:
 
@@ -485,6 +487,8 @@ Error responses:
 - `503 Service Unavailable` — `E008 - Asset Unavailable` when the resolved image cannot be read
 - `500 Internal Server Error` — `E999 - Internal Server Error` for an unexpected server failure
 - malformed `albumId` values are rejected as `400 Bad Request` before `ImageService` is invoked
+
+`CategorySimple.image` and `LastCategory.chosenCategoryPreview.image` carry the album UUID. The corresponding cover is stored as `<albumId>.<supported extension>`, and clients pass the UUID directly to this endpoint so the backend can find the file and return its actual MIME type.
 
 The endpoint is cross-origin enabled in the same way as the existing asset endpoints. Team images use the same filesystem resolver internally, but there is currently no public team-image HTTP endpoint.
 

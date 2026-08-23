@@ -90,7 +90,7 @@ npm test -- --watch=false
 
 Vitest tests should own fast frontend behavior such as:
 
-- Signal Store state transitions and derived state;
+- Signal Store state transitions and derived state, including Stage 1 picker/selected recovery hydration;
 - Angular component rendering and interaction;
 - login handshake behavior that can be isolated from a real browser backend;
 - pagination and deterministic layout helpers;
@@ -265,6 +265,7 @@ These tests protect:
 
 - frontend registry completeness;
 - loadability of shared WebSocket schema files;
+- bundled frontend schema copies staying synchronized with the backend source;
 - type discriminator consistency;
 - browser-observed runtime frames matching published schemas.
 
@@ -282,7 +283,7 @@ These tests protect:
 - team creation and kick WebSocket side effects;
 - TV-only lobby frame routing;
 - room isolation for lobby activity;
-- album-stage recovery data;
+- album-stage recovery data, including reconnect after an album is picked but before it starts;
 - `album_picked` and album-to-songs transitions.
 
 ### Recovery snapshots

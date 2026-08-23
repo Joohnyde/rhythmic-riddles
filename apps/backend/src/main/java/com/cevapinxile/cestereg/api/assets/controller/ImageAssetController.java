@@ -50,10 +50,10 @@ public class ImageAssetController {
 
           Workflow:
           - Album images are stored on disk in: data/images/albums
-          - File name is the UUID of the album.
-          - Supported image formats are PNG, JPEG, and WebP.
-          - The endpoint reads the image from disk and returns the raw image bytes
-            with the corresponding image MIME type.
+          - Each album image uses the album UUID as its basename.
+          - The stored file may be PNG, JPG/JPEG, or WebP.
+          - The endpoint receives the album UUID, resolves the matching file extension, and returns
+            the raw image bytes with the corresponding image MIME type.
           """)
   @ApiResponses({
     @ApiResponse(
