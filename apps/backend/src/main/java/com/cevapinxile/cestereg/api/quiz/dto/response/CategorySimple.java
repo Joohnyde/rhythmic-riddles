@@ -23,7 +23,7 @@ public class CategorySimple {
   public CategorySimple(CategoryEntity c) {
     this.id = c.getId();
     this.name = c.getAlbumId().getName();
-    this.image = c.getAlbumId().getId().toString() + ".png";
+    this.image = c.getAlbumId().getId().toString();
     if (c.getPickedByTeamId() != null) {
       this.pickedByTeam = c.getPickedByTeamId().getImage();
     }

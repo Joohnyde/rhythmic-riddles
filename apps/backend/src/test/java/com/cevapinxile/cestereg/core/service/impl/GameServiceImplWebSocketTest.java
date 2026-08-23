@@ -540,23 +540,26 @@ class GameServiceImplWebSocketTest {
         final GameEntity game = mock(GameEntity.class);
         final LastCategory selected = new LastCategory();
         final UUID gameId = UUID.randomUUID();
+        final List<CategorySimple> albums = List.of(mock(CategorySimple.class));
 
         selected.setCategoryId(UUID.randomUUID());
         selected.setStarted(false);
         selected.setOrdinalNumber(2);
-        selected.setChosenCategoryPreview(new CategoryPreview("Rock", "rock.png"));
+        selected.setChosenCategoryPreview(
+            new CategoryPreview("Rock", UUID.randomUUID().toString()));
 
         when(gameRepository.findByCode("ROOM")).thenReturn(Optional.of(game));
         when(game.getStage()).thenReturn(1);
         when(game.getId()).thenReturn(gameId);
         when(categoryRepository.findLastCategory(gameId)).thenReturn(selected);
+        when(categoryRepository.findByGameId(gameId)).thenReturn(albums);
 
         final HashMap<?, ?> payload = service.contextFetch("ROOM");
 
         assertEquals("welcome", payload.get("type"));
         assertEquals("albums", payload.get("stage"));
+        assertSame(albums, payload.get("albums"));
         assertSame(selected, payload.get("selected"));
-        assertFalse(payload.containsKey("albums"));
         assertFalse(payload.containsKey("team"));
       }
 
@@ -566,6 +569,7 @@ class GameServiceImplWebSocketTest {
         final GameEntity game = mock(GameEntity.class);
         final LastCategory last = mock(LastCategory.class);
         final UUID gameId = UUID.randomUUID();
+        final List<CategorySimple> albums = List.of(mock(CategorySimple.class));
 
         when(gameRepository.findByCode("ROOM")).thenReturn(Optional.of(game));
         when(game.getStage()).thenReturn(1);
@@ -574,12 +578,13 @@ class GameServiceImplWebSocketTest {
         when(categoryRepository.findLastCategory(gameId)).thenReturn(last);
         when(last.isStarted()).thenReturn(true);
         when(last.getOrdinalNumber()).thenReturn(4);
+        when(categoryRepository.findByGameId(gameId)).thenReturn(albums);
 
         final HashMap<?, ?> payload = service.contextFetch("ROOM");
 
         assertEquals("welcome", payload.get("type"));
         assertEquals("albums", payload.get("stage"));
-        assertFalse(payload.containsKey("albums"));
+        assertSame(albums, payload.get("albums"));
         assertFalse(payload.containsKey("team"));
         assertFalse(payload.containsKey("selected"));
       }
@@ -666,7 +671,7 @@ class GameServiceImplWebSocketTest {
         final CategorySimple album = new CategorySimple();
         album.setId(UUID.randomUUID());
         album.setName("Album 1");
-        album.setImage("album1.png");
+        album.setImage(album.getId().toString());
         album.setOrdinalNumber(1);
         final List<CategorySimple> albums = List.of(album);
 
@@ -701,24 +706,27 @@ class GameServiceImplWebSocketTest {
         final GameEntity game = mock(GameEntity.class);
         final UUID gameId = UUID.randomUUID();
         final LastCategory selected = new LastCategory();
+        final List<CategorySimple> albums = List.of(mock(CategorySimple.class));
         selected.setCategoryId(UUID.randomUUID());
         selected.setStarted(false);
         selected.setOrdinalNumber(2);
-        selected.setChosenCategoryPreview(new CategoryPreview("Rock", "rock.png"));
+        selected.setChosenCategoryPreview(
+            new CategoryPreview("Rock", UUID.randomUUID().toString()));
 
         when(gameRepository.findByCode("ROOM")).thenReturn(Optional.of(game));
         when(game.getStage()).thenReturn(1);
         when(game.getId()).thenReturn(gameId);
         when(categoryRepository.findLastCategory(gameId)).thenReturn(selected);
+        when(categoryRepository.findByGameId(gameId)).thenReturn(albums);
 
         final HashMap<?, ?> payload = service.contextFetch("ROOM");
 
         assertEquals("welcome", payload.get("type"));
         assertEquals("albums", payload.get("stage"));
+        assertSame(albums, payload.get("albums"));
         assertTrue(payload.containsKey("selected"));
         assertSame(selected, payload.get("selected"));
         assertFalse(payload.containsKey("team"));
-        assertFalse(payload.containsKey("albums"));
         assertForbiddenPlaybackKeys(payload);
       }
 
@@ -728,6 +736,7 @@ class GameServiceImplWebSocketTest {
         final GameEntity game = mock(GameEntity.class);
         final UUID gameId = UUID.randomUUID();
         final LastCategory last = mock(LastCategory.class);
+        final List<CategorySimple> albums = List.of(mock(CategorySimple.class));
 
         when(gameRepository.findByCode("ROOM")).thenReturn(Optional.of(game));
         when(game.getStage()).thenReturn(1);
@@ -736,12 +745,13 @@ class GameServiceImplWebSocketTest {
         when(categoryRepository.findLastCategory(gameId)).thenReturn(last);
         when(last.isStarted()).thenReturn(true);
         when(last.getOrdinalNumber()).thenReturn(4);
+        when(categoryRepository.findByGameId(gameId)).thenReturn(albums);
 
         final HashMap<?, ?> payload = service.contextFetch("ROOM");
 
         assertEquals("welcome", payload.get("type"));
         assertEquals("albums", payload.get("stage"));
-        assertFalse(payload.containsKey("albums"));
+        assertSame(albums, payload.get("albums"));
         assertFalse(payload.containsKey("team"));
         assertFalse(payload.containsKey("selected"));
         assertForbiddenPlaybackKeys(payload);
@@ -756,12 +766,12 @@ class GameServiceImplWebSocketTest {
         final CategorySimple albumA = new CategorySimple();
         albumA.setId(UUID.randomUUID());
         albumA.setName("Album A");
-        albumA.setImage("a.png");
+        albumA.setImage(albumA.getId().toString());
         albumA.setOrdinalNumber(1);
         final CategorySimple albumB = new CategorySimple();
         albumB.setId(UUID.randomUUID());
         albumB.setName("Album B");
-        albumB.setImage("b.png");
+        albumB.setImage(albumB.getId().toString());
         albumB.setOrdinalNumber(2);
         final List<CategorySimple> albums = List.of(albumA, albumB);
 

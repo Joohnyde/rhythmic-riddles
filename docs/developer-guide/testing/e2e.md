@@ -397,7 +397,7 @@ Keep these in one helper such as `e2e/utils/env.ts`. Do not scatter hardcoded po
 ### Recovery snapshots
 
 - Lobby recovery.
-- Albums recovery.
+- Albums recovery, including reconnect after a category is picked but before it starts.
 - Songs/listening recovery.
 - Songs/revealed recovery.
 - Team-pause recovery.
@@ -410,6 +410,7 @@ Keep these in one helper such as `e2e/utils/env.ts`. Do not scatter hardcoded po
 - Every observed frame has a registered type.
 - Every runtime frame type has a schema file.
 - Every schema declares the matching `type.const`.
+- Frontend-bundled schema files match the backend schema source.
 - Browser-observed frames validate against the bundled shared schema files.
 
 ## What does not belong here

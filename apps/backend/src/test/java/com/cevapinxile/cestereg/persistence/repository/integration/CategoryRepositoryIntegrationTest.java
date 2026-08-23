@@ -64,6 +64,7 @@ class CategoryRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
     assertFalse(result.isStarted());
     assertEquals(teamId, result.getPickedByTeam().getId());
     assertEquals("Latest", result.getChosenCategoryPreview().title());
+    assertEquals(expectedAlbum.toString(), result.getChosenCategoryPreview().image());
   }
 
   @Test
@@ -113,7 +114,7 @@ class CategoryRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
             .orElseThrow();
 
     assertEquals("Picked album", picked.getName());
-    assertEquals(pickedAlbum + ".png", picked.getImage());
+    assertEquals(pickedAlbum.toString(), picked.getImage());
     assertEquals("picker.png", picked.getPickedByTeam());
     assertEquals(2, picked.getOrdinalNumber());
 

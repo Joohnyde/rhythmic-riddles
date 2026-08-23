@@ -54,7 +54,8 @@ class CategoryControllerTest extends ControllerTestSupport {
       UUID teamId = UUID.randomUUID();
       LastCategory response = new LastCategory();
       response.setCategoryId(categoryId);
-      response.setChosenCategoryPreview(new CategoryPreview("Best of 2000s", "cat.png"));
+      response.setChosenCategoryPreview(
+          new CategoryPreview("Best of 2000s", "7d26d0ea-dbc1-44fe-976f-88186f86a3aa"));
       response.setPickedByTeam(new CreateTeamResponse(teamId, "Team Cyan", "team.png"));
       response.setStarted(true);
       response.setOrdinalNumber(7);
@@ -70,7 +71,9 @@ class CategoryControllerTest extends ControllerTestSupport {
           .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
           .andExpect(jsonPath("$.categoryId").value(categoryId.toString()))
           .andExpect(jsonPath("$.chosenCategoryPreview.title").value("Best of 2000s"))
-          .andExpect(jsonPath("$.chosenCategoryPreview.image").value("cat.png"))
+          .andExpect(
+              jsonPath("$.chosenCategoryPreview.image")
+                  .value("7d26d0ea-dbc1-44fe-976f-88186f86a3aa"))
           .andExpect(jsonPath("$.pickedByTeam.id").value(teamId.toString()))
           .andExpect(jsonPath("$.pickedByTeam.name").value("Team Cyan"))
           .andExpect(jsonPath("$.pickedByTeam.image").value("team.png"))

@@ -48,7 +48,7 @@ The Playwright suite under `apps/frontend/e2e` verifies the real browser/WebSock
 - duplicate socket handling;
 - disconnect/reconnect behavior;
 - browser-observed frame ordering;
-- recovery `welcome` snapshots;
+- recovery `welcome` snapshots, including Stage 1 snapshots that carry `albums` together with `team` or `selected`;
 - schema compliance for reachable WebSocket frames.
 
 Together, the DB-backed suite protects persistence semantics, the Spring full-stack layer proves HTTP/application composition, and the browser suite proves the runtime protocol reaches real clients correctly.
@@ -208,7 +208,7 @@ This is not full product E2E. REST calls and fixture endpoints may be used as tr
 
 #### 8. Frontend unit and component tests
 
-Angular unit and component tests run through Vitest and cover frontend behavior that does not require a real backend WebSocket connection. Current coverage includes Signal Store Stage 0 behavior, login handshakes, team-icon allocation, Admin lobby components, buzzer animation triggers, and TV lobby pagination/layout helpers.
+Angular unit and component tests run through Vitest and cover frontend behavior that does not require a real backend WebSocket connection. Current coverage includes Signal Store Stage 0 behavior, Stage 1 recovery hydration for both picker and selected-album snapshots, login handshakes, team-icon allocation, Admin lobby components, buzzer animation triggers, and TV lobby pagination/layout helpers.
 
 These tests should stay faster and narrower than Playwright tests and should not duplicate browser-level WebSocket coverage.
 

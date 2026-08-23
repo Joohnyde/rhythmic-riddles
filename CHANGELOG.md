@@ -99,6 +99,8 @@ a SemVer-like versioning scheme will be used.
 - Added a small real-HTTP Spring full-stack integration layer covering committed writes, expected business rejection, and PostgreSQL room-lock contention.
 
 ### Changed
+- Stage 1 recovery snapshots now always include the complete album list; picker and selected-album state are carried alongside it as the active sub-state.
+- Album cover files use the album UUID as their basename, while the stored format may be PNG, JPG/JPEG, or WebP; category/selection payloads pass that UUID to the MIME-aware image endpoint for resolution.
 - Consolidated and removed outdated documentation to align with current implementation.
 - Refined asset handling documentation to reflect AssetGateway abstraction and runtime base-dir configuration.
 - Clarified database bootstrap and idempotent SQL execution strategy.

@@ -118,31 +118,29 @@ public class GameServiceImpl implements GameService {
         break;
       case 1:
         final LastCategory lastChosenCategory = categoryRepository.findLastCategory(game.getId());
-        /* Stage 1 category handling:
-        If the previous category has already started, we must advance to the next one
-        (unless the game is finished).
-        The end check is defensive: stage 2 should already enforce completion,
-        but this protects against edge cases (e.g., empty or inconsistent setup).
-        Response structure:
-        - If selecting a new category:
-           return album metadata (name, image, pickedBy) and the current picker
-        - If a category was selected but not started yet:
-           return the selected album and who selected it
-        Picker rotation follows the predefined button order. */
+        /* Stage 1 always returns the complete album list so reconnecting clients can rebuild
+        both the grid and the selected-album animation from one snapshot. The remaining field
+        identifies the current sub-state:
+        - team: no album is waiting to start, so this team picks next (null means Admin picks)
+        - selected: an album was picked but has not started yet
+        A started final album while the game is still in stage 1 is a defensive inconsistent-state
+        case; it returns the albums list without a picker or selection. Picker rotation follows the
+        predefined button order. */
         if (lastChosenCategory == null
             || lastChosenCategory.isStarted()
                 && lastChosenCategory.getOrdinalNumber() != game.getMaxAlbums()) {
-          // Caclucate whose turn it is to choose
+          // Calculate whose turn it is to choose.
           final ChoosingTeam choosingTeam =
               teamService.findNextChoosingTeam(game.getId(), game.getMaxAlbums());
-          json.put("albums", categoryRepository.findByGameId(game.getId()));
           json.put(
               "team", choosingTeam == null ? choosingTeam : new CreateTeamResponse(choosingTeam));
         } else if (!lastChosenCategory.isStarted()) {
-          // We chose a category but we didn't start -- Choice display
+          // A category was chosen but has not started yet -- show the choice display.
           json.put("selected", lastChosenCategory);
         }
-        // Else would mean that it's the end and we are in stage 1. Impossible!
+        // Otherwise the final album is already complete while the persisted game still says
+        // stage 1.
+        json.put("albums", categoryRepository.findByGameId(game.getId()));
         json.put("stage", "albums");
         break;
       case 2:

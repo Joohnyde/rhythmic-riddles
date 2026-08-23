@@ -23,7 +23,7 @@ public class LastCategory {
   public LastCategory(CategoryEntity c) {
     this.categoryId = c.getId();
     this.chosenCategoryPreview =
-        new CategoryPreview(c.getAlbumId().getName(), c.getAlbumId().getId() + ".png");
+        new CategoryPreview(c.getAlbumId().getName(), c.getAlbumId().getId().toString());
     final TeamEntity choosingTeam = c.getPickedByTeamId();
     if (choosingTeam != null) {
       this.pickedByTeam = new CreateTeamResponse(choosingTeam);

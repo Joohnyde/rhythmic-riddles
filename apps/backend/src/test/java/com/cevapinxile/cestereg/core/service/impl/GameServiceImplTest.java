@@ -214,12 +214,16 @@ public class GameServiceImplTest {
       final LastCategory selected = new LastCategory();
       selected.setStarted(false);
       selected.setOrdinalNumber(1);
+      final List<CategorySimple> albums =
+          new ArrayList<>(List.of(categorySimple(UUID.randomUUID(), "Album A")));
       when(gameRepository.findByCode("AKKU")).thenReturn(Optional.of(game));
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(selected);
+      when(categoryRepository.findByGameId(game.getId())).thenReturn(albums);
 
       final HashMap<String, Object> json = gameService.contextFetch("AKKU");
 
       assertEquals("albums", json.get("stage"));
+      assertSame(albums, json.get("albums"));
       assertSame(selected, json.get("selected"));
     }
 
@@ -514,7 +518,7 @@ public class GameServiceImplTest {
       final CategorySimple simple = new CategorySimple();
       simple.setId(id);
       simple.setName(name);
-      simple.setImage(id + ".png");
+      simple.setImage(id.toString());
       return simple;
     }
 
@@ -584,20 +588,22 @@ public class GameServiceImplTest {
     }
 
     @Test
-    void contextFetchStageOneStopsAddingAlbumSelectionDataWhenAllAlbumsWereAlreadyPlayed()
-        throws Exception {
+    void contextFetchStageOneKeepsAlbumsWhenAllAlbumsWereAlreadyPlayed() throws Exception {
       final GameEntity game = gameWithStage(1);
       final LastCategory last = new LastCategory();
       last.setStarted(true);
       last.setOrdinalNumber(game.getMaxAlbums());
+      final List<CategorySimple> albums =
+          new ArrayList<>(List.of(categorySimple(UUID.randomUUID(), "Played")));
       when(gameRepository.findByCode("AKKU")).thenReturn(Optional.of(game));
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(last);
+      when(categoryRepository.findByGameId(game.getId())).thenReturn(albums);
 
       final HashMap<String, Object> json = gameService.contextFetch("AKKU");
 
       assertEquals("welcome", json.get("type"));
       assertEquals("albums", json.get("stage"));
-      assertFalse(json.containsKey("albums"));
+      assertSame(albums, json.get("albums"));
       assertFalse(json.containsKey("team"));
       assertFalse(json.containsKey("selected"));
     }
@@ -717,7 +723,7 @@ public class GameServiceImplTest {
       final CategorySimple category = new CategorySimple();
       category.setId(id);
       category.setName(name);
-      category.setImage(id + ".png");
+      category.setImage(id.toString());
       return category;
     }
 
@@ -770,7 +776,7 @@ public class GameServiceImplTest {
     }
 
     @Test
-    void contextFetchStageOneReturnsSelectionPayloadWhenPreviousStartedButAlbumsRemain()
+    void contextFetchStageOneReturnsPickerPayloadWhenPreviousStartedButAlbumsRemain()
         throws Exception {
       final GameEntity game = gameWithStage(1);
       game.setMaxAlbums(4);
@@ -804,14 +810,17 @@ public class GameServiceImplTest {
       final LastCategory lastCategory = new LastCategory();
       lastCategory.setStarted(true);
       lastCategory.setOrdinalNumber(3);
+      final List<CategorySimple> albums =
+          new ArrayList<>(List.of(categorySimple(UUID.randomUUID(), "Final")));
 
       when(gameRepository.findByCode("AKKU")).thenReturn(Optional.of(game));
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(lastCategory);
+      when(categoryRepository.findByGameId(game.getId())).thenReturn(albums);
 
       final HashMap<String, Object> json = gameService.contextFetch("AKKU");
 
       assertEquals("albums", json.get("stage"));
-      assertFalse(json.containsKey("albums"));
+      assertSame(albums, json.get("albums"));
       assertFalse(json.containsKey("team"));
       assertFalse(json.containsKey("selected"));
       verify(teamService, never()).findNextChoosingTeam(game.getId(), game.getMaxAlbums());
@@ -1060,7 +1069,7 @@ public class GameServiceImplTest {
       final CategorySimple simple = new CategorySimple();
       simple.setId(id);
       simple.setName(name);
-      simple.setImage(id + ".png");
+      simple.setImage(id.toString());
       return simple;
     }
 
@@ -1455,16 +1464,19 @@ public class GameServiceImplTest {
       category.setOrdinalNumber(2);
       category.setDone(false);
       final LastCategory selected = new LastCategory(category);
+      final List<CategorySimple> albums =
+          new ArrayList<>(List.of(categorySimple(category.getId(), "Selected")));
 
       when(gameRepository.findByCode("AKKU")).thenReturn(Optional.of(game));
       when(categoryRepository.findLastCategory(game.getId())).thenReturn(selected);
+      when(categoryRepository.findByGameId(game.getId())).thenReturn(albums);
 
       final HashMap<String, Object> result = gameService.contextFetch("AKKU");
 
       assertEquals("welcome", result.get("type"));
       assertEquals("albums", result.get("stage"));
+      assertSame(albums, result.get("albums"));
       assertSame(selected, result.get("selected"));
-      assertFalse(result.containsKey("albums"));
       assertFalse(result.containsKey("team"));
     }
 
@@ -1661,6 +1673,14 @@ public class GameServiceImplTest {
       team.setImage(name.toLowerCase() + ".png");
       team.setButtonCode(name.substring(0, 1));
       return team;
+    }
+
+    private CategorySimple categorySimple(final UUID id, final String name) {
+      final CategorySimple simple = new CategorySimple();
+      simple.setId(id);
+      simple.setName(name);
+      simple.setImage(id.toString());
+      return simple;
     }
   }
 

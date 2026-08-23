@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  assertBundledSchemasMatchBackendWorkspace,
   assertKnownBackendSchemasAreLoadable,
   knownBackendSchemaTypes,
   loadBackendSchemaForType,
@@ -37,6 +38,10 @@ test.describe('Schema governance', () => {
 
     const registryTypes = loadPublishedFrameRegistry().publishedFrameTypes;
     expect(registryTypes).toEqual(knownBackendSchemaTypes());
+  });
+
+  test('bundled schemas match backend source', async () => {
+    assertBundledSchemasMatchBackendWorkspace();
   });
 
   test('schema type discriminator', async () => {

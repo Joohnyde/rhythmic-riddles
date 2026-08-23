@@ -130,9 +130,13 @@ Team object:
 
 ## `welcome` in albums stage
 
-The albums stage is used when the game is choosing or displaying categories/albums.
+The albums stage is used both while choosing the next album/category and while displaying a choice
+that has been picked but not started yet.
 
-Example when albums are available for choosing:
+Every albums-stage `welcome` contains the complete `albums` array. The `team` and `selected` fields
+identify the current Stage 1 sub-state and are mutually exclusive during normal gameplay.
+
+Example while choosing:
 
 ```json
 {
@@ -142,16 +146,16 @@ Example when albums are available for choosing:
     {
       "id": "329144f2-2f14-4c92-97aa-ef20acfdc561",
       "name": "YU Rock",
-      "image": "https://example.com/yu-rock.png",
+      "image": "7d26d0ea-dbc1-44fe-976f-88186f86a3aa",
       "pickedByTeam": null,
-      "ordinalNumber": null,
+      "ordinalNumber": null
     },
     {
       "id": "4a59084a-6d64-4583-b56a-e7016ad5939d",
-      "title": "Eurovision",
-      "name": "https://example.com/eurovision.png",
+      "name": "Eurovision",
+      "image": "bb7e6e7d-6c0a-4f64-a536-f7476ee38ddd",
       "pickedByTeam": "https://example.com/team-cyan.png",
-      "ordinalNumber": 1,      
+      "ordinalNumber": 1
     }
   ],
   "team": null
@@ -162,25 +166,30 @@ Example when albums are available for choosing:
 |---|---|---|
 | `type` | string | Always `welcome` |
 | `stage` | string | Current stage, here `albums` |
-| `albums` | array | All albums/categories for the night |
-| `team` | object/null | Team that should choose next; `null` means Admin chooses manually |
+| `albums` | array | Complete prepared album/category list for the game |
+| `team` | object/null | Present in the picker sub-state; `null` means Admin chooses |
+| `selected` | object | Present in the picked-but-not-started sub-state |
 
 Album/category object:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `id` | UUID string | Album/category id |
-| `name` | string | Display name |
-| `image` | string | Cover image |
-| `pickedByTeam` | string/null | Icon of the team that already chose this album; `null` means the admin chose it |
-| `ordinalNumber` | number/null | Ordinal number of the choice; `null` means it can still be chosen |
+| `id` | UUID string | Category id used for category actions |
+| `name` | string | Album display name |
+| `image` | UUID string | Album UUID; the matching cover is stored as `<albumId>.<supported extension>` and resolved through `/assets/v1/image/albums/{albumId}` |
+| `pickedByTeam` | string/null | Picker team image value for an already chosen album; `null` when Admin chose it |
+| `ordinalNumber` | number/null | Choice order; `null` means the category is still available |
 
 Important rules:
 
+- `albums` is present in every Stage 1 recovery snapshot.
 - `ordinalNumber = null` means the album/category is still available.
-- `pickedByTeam = null` means it was selected by an admin.
+- `pickedByTeam = null` on an already chosen entry means Admin selected it.
 - `team = null` means it is Admin's choice.
 - `team = { ... }` means that team currently has the right to choose.
+- `selected = { ... }` means a category has been picked but has not started yet.
+- A defensive stale final-album snapshot may contain neither `team` nor `selected`, but still contains `albums`.
+- Album image files are stored using the album UUID as the basename (for example `<albumId>.png` or `<albumId>.webp`); the image endpoint receives that UUID and resolves the stored format.
 
 Example when an album has already been picked but not started:
 
@@ -188,11 +197,20 @@ Example when an album has already been picked but not started:
 {
   "type": "welcome",
   "stage": "albums",
+  "albums": [
+    {
+      "id": "329144f2-2f14-4c92-97aa-ef20acfdc561",
+      "name": "YU Rock",
+      "image": "7d26d0ea-dbc1-44fe-976f-88186f86a3aa",
+      "pickedByTeam": null,
+      "ordinalNumber": 1
+    }
+  ],
   "selected": {
     "categoryId": "329144f2-2f14-4c92-97aa-ef20acfdc561",
     "chosenCategoryPreview": {
       "title": "YU Rock",
-      "image": "https://example.com/yu-rock.png"
+      "image": "7d26d0ea-dbc1-44fe-976f-88186f86a3aa"
     },
     "pickedByTeam": null,
     "started": false,
@@ -200,16 +218,17 @@ Example when an album has already been picked but not started:
   }
 }
 ```
+
 Selected object:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `categoryId` | UUID string | Picked album/category id |
+| `categoryId` | UUID string | Picked category id |
 | `chosenCategoryPreview` | object | Small display object for the picked album/category |
+| `chosenCategoryPreview.image` | UUID string | Album UUID used to locate the corresponding stored cover through the album-image endpoint |
 | `pickedByTeam` | object/null | Team that picked it; `null` means Admin picked it |
 | `started` | boolean | Whether the category already started |
 | `ordinalNumber` | number | Display order/round number |
-
 
 
 ## `welcome` in songs stage
@@ -442,7 +461,7 @@ Sent to TV when an album/category is picked.
     "categoryId": "329144f2-2f14-4c92-97aa-ef20acfdc561",
     "chosenCategoryPreview": {
       "title": "YU Rock",
-      "image": "https://example.com/yu-rock.png"
+      "image": "7d26d0ea-dbc1-44fe-976f-88186f86a3aa"
     },
     "pickedByTeam": null,
     "started": false,
@@ -455,6 +474,8 @@ Sent to TV when an album/category is picked.
 |---|---|---|
 | `type` | string | Always `album_picked` |
 | `selected` | object | Selected album/category details |
+
+`selected.chosenCategoryPreview.image` contains the album UUID. The corresponding cover is stored using that UUID as its basename and is resolved through `GET /assets/v1/image/albums/{albumId}`.
 
 
 
@@ -672,6 +693,8 @@ The registry file is:
 _published-frame-registry.schema.json
 ```
 
-When a WebSocket frame payload changes, update the runtime code, schema file, registry, frontend handling, and at least one browser-level test path together.
+The bundled frontend copy is checked against the backend schema source by the schema-governance suite so browser tests cannot silently validate against a stale contract.
+
+When a WebSocket frame payload changes, update the runtime code, schema file, bundled frontend schema copy, frontend handling, and at least one browser-level test path together.
 
 Schema validation should only be performed for frames produced through reachable game states. Do not weaken a schema to accept a frame produced by an impossible test setup.
