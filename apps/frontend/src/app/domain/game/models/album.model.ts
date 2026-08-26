@@ -5,7 +5,6 @@
 export interface CategorySimple {
   id: string;
   name: string;
-  /** Album UUID used by the album image endpoint to locate the matching stored cover file. */
   image: string;
   pickedByTeam: string | null;
   ordinalNumber: number | null;

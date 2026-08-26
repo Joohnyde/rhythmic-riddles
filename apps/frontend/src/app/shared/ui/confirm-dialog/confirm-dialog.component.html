@@ -1,0 +1,14 @@
+<dialog #dialog class="admin-confirm-dialog">
+  <div class="dialog">
+    <h3 class="dialog-title text-primary-100">{{ title() }}</h3>
+    <p class="mt-2">{{ message() }}</p>
+    <div class="dialog-actions">
+      <button class="btn btn-soft" type="button" (click)="cancel()">
+        {{ cancelLabel() }}
+      </button>
+      <button class="btn btn-primary" type="button" [disabled]="disabled()" (click)="confirm()">
+        {{ confirmLabel() }}
+      </button>
+    </div>
+  </div>
+</dialog>

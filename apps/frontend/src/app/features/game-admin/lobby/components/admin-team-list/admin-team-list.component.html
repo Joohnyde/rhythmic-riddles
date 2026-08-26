@@ -24,7 +24,7 @@
           class="btn icon btn-secondary !h-10 !min-h-10 !w-10 shrink-0"
           [attr.data-testid]="'admin-kick-team-button-' + team.id"
           [attr.aria-label]="'Remove ' + team.name"
-          (click)="kickDialog.showModal()"
+          (click)="kickDialog.open()"
         >
           <svg
             viewBox="0 0 24 24"
@@ -38,26 +38,13 @@
             <path d="M10 10v6M14 10v6" stroke-linecap="round" />
           </svg>
         </button>
-        <dialog #kickDialog class="admin-confirm-dialog">
-          <div class="dialog">
-            <h3 class="dialog-title text-primary-100">Remove {{ team.name }}?</h3>
-            <p class="mt-2">
-              This team will be removed from the lobby and will need to be added again.
-            </p>
-            <div class="dialog-actions">
-              <button class="btn btn-soft" type="button" (click)="kickDialog.close()">
-                CANCEL
-              </button>
-              <button
-                class="btn btn-primary"
-                type="button"
-                (click)="store.kickTeam(team.id); kickDialog.close()"
-              >
-                REMOVE
-              </button>
-            </div>
-          </div>
-        </dialog>
+        <rr-confirm-dialog
+          #kickDialog
+          [title]="'Remove ' + team.name + '?'"
+          [message]="'This team will be removed from the lobby and will need to be added again.'"
+          confirmLabel="REMOVE"
+          (confirmed)="store.kickTeam(team.id)"
+        />
       </article>
     } @empty {
       <div class="grid flex-1 place-items-center px-5 text-center">

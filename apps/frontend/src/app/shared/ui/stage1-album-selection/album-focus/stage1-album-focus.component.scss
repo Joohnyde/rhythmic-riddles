@@ -1,0 +1,122 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stage1-focus-viewport {
+  --album-size: clamp(7rem, 9.2vw, 8.5rem);
+  /* Keep enough scene spacing for only the immediate neighbors to peek into focus. */
+  --album-gap: clamp(1rem, 1.35vw, 1.5rem);
+  --album-radius: clamp(0.7rem, 0.95vw, 0.95rem);
+
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  contain: layout paint;
+  overscroll-behavior: contain;
+  isolation: isolate;
+}
+
+.stage1-focus-scene {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--album-size));
+  grid-auto-rows: calc(var(--album-size) + 1.5rem);
+  gap: var(--album-gap);
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  align-content: center;
+  justify-content: center;
+  padding: 0 max(2vw, 1.5rem);
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.stage1-focus-viewport--absolute .stage1-focus-scene {
+  display: block;
+  height: 100%;
+  min-height: 100%;
+  padding: 0;
+}
+
+.stage1-focus-viewport:not(.stage1-focus-viewport--ready) .stage1-focus-scene {
+  opacity: 0;
+}
+
+.stage1-focus-album-card {
+  display: block;
+  opacity: 1;
+  filter: none;
+  overflow: visible;
+  pointer-events: none;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  will-change: opacity, filter, mask-image;
+}
+
+.stage1-focus-viewport--absolute .stage1-focus-album-card {
+  position: absolute;
+}
+
+.stage1-focus-viewport--focused .stage1-focus-album-card--selected {
+  position: relative;
+  z-index: 40;
+  opacity: 1 !important;
+  filter: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.stage1-focus-viewport--absolute.stage1-focus-viewport--focused .stage1-focus-album-card--selected {
+  position: absolute;
+}
+
+.stage1-focus-viewport--settled .stage1-focus-scene,
+.stage1-focus-viewport--settled .stage1-focus-album-card {
+  will-change: auto;
+}
+
+.stage1-focus-name-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stage1-focus-viewport:not(.stage1-focus-viewport--ready) .stage1-focus-name-layer {
+  opacity: 0;
+}
+
+.stage1-focus-name-overlay {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-primary-200);
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 900px) {
+  .stage1-focus-viewport {
+    --album-size: clamp(6.25rem, 16vw, 7.5rem);
+  }
+}

@@ -1,0 +1,41 @@
+<section #viewport class="stage1-tv-album-marquee">
+  <div
+    class="stage1-tv-album-track"
+    [class.stage1-tv-album-track--looping]="shouldLoop()"
+    [class.stage1-tv-album-track--positioning]="positioningForFocus()"
+    [style.--loop-distance.px]="loopDistance()"
+    [style.--focus-offset.px]="focusOffset()"
+  >
+    <div
+      #group
+      class="stage1-tv-album-group"
+      [style.--layout-columns]="layoutColumns()"
+      [style.--layout-rows]="layoutRows()"
+    >
+      @for (album of albums(); track album.id) {
+        <rr-stage1-album-card
+          [album]="album"
+          [imageUrl]="albumImage(album)"
+          [disabled]="album.ordinalNumber !== null"
+        />
+      }
+    </div>
+
+    @if (shouldLoop()) {
+      <div
+        class="stage1-tv-album-group"
+        [style.--layout-columns]="layoutColumns()"
+        [style.--layout-rows]="layoutRows()"
+        aria-hidden="true"
+      >
+        @for (album of albums(); track album.id) {
+          <rr-stage1-album-card
+            [album]="album"
+            [imageUrl]="albumImage(album)"
+            [disabled]="album.ordinalNumber !== null"
+          />
+        }
+      </div>
+    }
+  </div>
+</section>

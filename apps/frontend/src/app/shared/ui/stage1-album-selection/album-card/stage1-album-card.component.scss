@@ -1,0 +1,281 @@
+:host {
+  display: block;
+}
+
+.stage1-album-card {
+  position: relative;
+  z-index: 1;
+  width: var(--album-size);
+  min-width: 0;
+  text-align: center;
+  transition:
+    opacity 700ms ease,
+    filter 700ms ease,
+    transform 1200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stage1-album-card--disabled {
+  opacity: 0.42;
+  filter: grayscale(0.78) saturate(0.5);
+}
+
+.stage1-album-card[data-selected='true'] {
+  opacity: 1;
+  filter: none;
+}
+
+.stage1-album-art-wrap {
+  --album-frame-purple: #a94dfb;
+  --album-frame-width: var(--stage1-album-frame-width, clamp(1px, 0.16vw, 2px));
+  --album-frame-gradient: linear-gradient(
+    135deg,
+    var(--album-frame-purple),
+    var(--secondary) 38%,
+    var(--accent) 68%,
+    var(--warm)
+  );
+
+  position: relative;
+  width: var(--album-size);
+  aspect-ratio: 1;
+  overflow: visible;
+  isolation: isolate;
+  filter: var(--stage1-focus-visual-filter, none);
+}
+
+/* A thin frame sits outside the cover, so the art keeps exactly the same dimensions. */
+.stage1-album-art-wrap::before {
+  position: absolute;
+  inset: calc(-1 * var(--album-frame-width));
+  z-index: 1;
+  border-radius: calc(var(--album-radius) + var(--album-frame-width));
+  background: var(--album-frame-gradient);
+  box-shadow: 0 0 0.35rem color-mix(in srgb, var(--primary) 16%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.stage1-album-art-wrap::after {
+  position: absolute;
+  inset: calc(-1 * var(--album-frame-width));
+  z-index: 0;
+  border-radius: calc(var(--album-radius) + var(--album-frame-width));
+  opacity: 0;
+  transform: scale(1);
+  transform-origin: center;
+  box-shadow:
+    0 0 0.45rem color-mix(in srgb, var(--primary-hover) 86%, transparent),
+    0 0 1.35rem color-mix(in srgb, var(--primary) 56%, transparent),
+    0 0 2.35rem color-mix(in srgb, var(--primary) 34%, transparent);
+  content: '';
+  pointer-events: none;
+}
+
+.stage1-album-card[data-frame-variant='1'] .stage1-album-art-wrap {
+  --album-frame-gradient: linear-gradient(
+    145deg,
+    var(--secondary),
+    var(--album-frame-purple) 34%,
+    var(--accent) 70%,
+    var(--warm)
+  );
+}
+
+.stage1-album-card[data-frame-variant='2'] .stage1-album-art-wrap {
+  --album-frame-gradient: linear-gradient(
+    125deg,
+    var(--album-frame-purple),
+    var(--accent) 46%,
+    var(--warm) 76%,
+    var(--secondary)
+  );
+}
+
+.stage1-album-card[data-frame-variant='3'] .stage1-album-art-wrap {
+  --album-frame-gradient: linear-gradient(
+    155deg,
+    var(--secondary),
+    var(--album-frame-purple) 30%,
+    var(--accent) 62%,
+    var(--warm)
+  );
+}
+
+.stage1-album-art {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--album-radius);
+  object-fit: cover;
+  transition: box-shadow 700ms ease;
+}
+
+/*
+ * Stage 1 focus dissolves a neighboring album with one card-space mask. The artwork, frame, and
+ * title sample that same mask at their own offsets, so the wave crosses the text at the same
+ * physical point it crosses the cover instead of using a separate title opacity animation.
+ */
+.stage1-album-art,
+.stage1-album-art-wrap::before {
+  opacity: var(--stage1-focus-content-opacity, 1);
+  mask-image: var(--stage1-focus-content-mask, none);
+  mask-composite: var(--stage1-focus-mask-composite, add);
+  mask-position: var(--stage1-focus-content-mask-position, 0 0);
+  mask-repeat: no-repeat;
+  mask-size: var(--stage1-focus-content-mask-size, 100% 100%);
+  -webkit-mask-image: var(--stage1-focus-content-mask, none);
+  -webkit-mask-composite: var(--stage1-focus-webkit-mask-composite, add);
+  -webkit-mask-position: var(--stage1-focus-content-mask-position, 0 0);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: var(--stage1-focus-content-mask-size, 100% 100%);
+}
+
+.stage1-album-team-icon {
+  opacity: var(--stage1-focus-icon-opacity, var(--stage1-focus-content-opacity, 1));
+  mask-image: var(--stage1-focus-icon-mask, var(--stage1-focus-content-mask, none));
+  mask-composite: var(--stage1-focus-mask-composite, add);
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  -webkit-mask-image: var(--stage1-focus-icon-mask, var(--stage1-focus-content-mask, none));
+  -webkit-mask-composite: var(--stage1-focus-webkit-mask-composite, add);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+}
+
+.stage1-album-card[data-selected='true'] .stage1-album-art {
+  box-shadow: none;
+}
+
+.stage1-album-card[data-glow='true'] .stage1-album-art-wrap::after {
+  opacity: 1;
+  animation:
+    stage1-selected-glow-grow 360ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    stage1-selected-glow-breathe 5.4s ease-in-out 360ms infinite;
+}
+
+.stage1-album-team-icon {
+  position: absolute;
+  right: var(--stage1-album-team-icon-offset, -0.35rem);
+  bottom: var(--stage1-album-team-icon-offset, -0.35rem);
+  z-index: 4;
+  width: var(--stage1-album-team-icon-size, clamp(1.6rem, 2.2vw, 2.1rem));
+  height: var(--stage1-album-team-icon-size, clamp(1.6rem, 2.2vw, 2.1rem));
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgb(0 0 0 / 0.95));
+}
+
+.stage1-album-name {
+  width: var(--stage1-album-name-width, 100%);
+  margin-left: var(--stage1-album-name-offset, 0);
+  margin-top: var(--stage1-album-name-margin-top, 0.35rem);
+  overflow: hidden;
+  opacity: var(--stage1-focus-name-opacity, 1);
+  color: var(--color-primary-200);
+  filter: var(--stage1-focus-visual-filter, none);
+  font-size: var(--stage1-album-name-font-size, clamp(0.62rem, 0.8vw, 0.78rem));
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  transform: scale(var(--stage1-album-content-counter-scale, 1));
+  transform-origin: top center;
+  white-space: nowrap;
+  mask-image: var(--stage1-focus-content-mask, none);
+  mask-composite: var(--stage1-focus-mask-composite, add);
+  mask-position: var(--stage1-focus-name-mask-position, 0 0);
+  mask-repeat: no-repeat;
+  mask-size: var(--stage1-focus-content-mask-size, 100% 100%);
+  -webkit-mask-image: var(--stage1-focus-content-mask, none);
+  -webkit-mask-composite: var(--stage1-focus-webkit-mask-composite, add);
+  -webkit-mask-position: var(--stage1-focus-name-mask-position, 0 0);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: var(--stage1-focus-content-mask-size, 100% 100%);
+}
+
+.stage1-album-select-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  box-shadow: none;
+  transform: none;
+}
+
+.stage1-album-select-button:hover:not(:disabled),
+.stage1-album-select-button:active:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.stage1-album-select-button:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage1-album-card,
+  .stage1-album-art,
+  .stage1-album-art-wrap::after {
+    animation: none;
+    transition: none;
+  }
+
+  .stage1-album-card[data-glow='true'] .stage1-album-art-wrap::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes stage1-selected-glow-grow {
+  0% {
+    opacity: 0.28;
+    transform: scale(1);
+    box-shadow:
+      0 0 0.18rem color-mix(in srgb, var(--primary-hover) 78%, transparent),
+      0 0 0.42rem color-mix(in srgb, var(--primary) 34%, transparent);
+  }
+
+  45% {
+    opacity: 0.76;
+    transform: scale(1);
+    box-shadow:
+      0 0 0.32rem color-mix(in srgb, var(--primary-hover) 84%, transparent),
+      0 0 0.9rem color-mix(in srgb, var(--primary) 48%, transparent),
+      0 0 1.45rem color-mix(in srgb, var(--primary) 24%, transparent);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow:
+      0 0 0.45rem color-mix(in srgb, var(--primary-hover) 86%, transparent),
+      0 0 1.35rem color-mix(in srgb, var(--primary) 56%, transparent),
+      0 0 2.35rem color-mix(in srgb, var(--primary) 34%, transparent);
+  }
+}
+
+@keyframes stage1-selected-glow-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow:
+      0 0 0.45rem color-mix(in srgb, var(--primary-hover) 86%, transparent),
+      0 0 1.35rem color-mix(in srgb, var(--primary) 56%, transparent),
+      0 0 2.35rem color-mix(in srgb, var(--primary) 34%, transparent);
+  }
+
+  50% {
+    opacity: 0.94;
+    transform: scale(1);
+    box-shadow:
+      0 0 0.52rem color-mix(in srgb, var(--primary-hover) 88%, transparent),
+      0 0 1.5rem color-mix(in srgb, var(--primary) 58%, transparent),
+      0 0 2.55rem color-mix(in srgb, var(--primary) 36%, transparent);
+  }
+}

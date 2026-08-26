@@ -1,0 +1,72 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stage1-tv-album-marquee {
+  --album-size: clamp(7rem, 9.2vw, 8.5rem);
+  --album-gap: clamp(0.7rem, 1.2vw, 1rem);
+  --album-radius: clamp(0.7rem, 0.95vw, 0.95rem);
+
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0, #000 2%, #000 98%, transparent 100%);
+}
+
+.stage1-tv-album-track {
+  display: flex;
+  width: max-content;
+  height: 100%;
+  gap: var(--album-gap);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.stage1-tv-album-track:not(.stage1-tv-album-track--looping) {
+  width: 100%;
+  justify-content: center;
+}
+
+.stage1-tv-album-track--looping {
+  animation: stage1-tv-album-loop 52s linear infinite;
+}
+
+.stage1-tv-album-track--positioning {
+  animation: none;
+  transform: translate3d(var(--focus-offset), 0, 0);
+}
+
+.stage1-tv-album-group {
+  display: grid;
+  grid-template-columns: repeat(var(--layout-columns), var(--album-size));
+  grid-template-rows: repeat(var(--layout-rows), calc(var(--album-size) + 1.5rem));
+  grid-auto-flow: row;
+  gap: var(--album-gap);
+  flex: 0 0 auto;
+  align-content: center;
+  justify-content: start;
+  width: max-content;
+  min-height: 100%;
+  padding: 0.5rem 0 3.5rem;
+}
+
+@keyframes stage1-tv-album-loop {
+  to {
+    transform: translate3d(calc(-1 * var(--loop-distance)), 0, 0);
+  }
+}
+
+@media (max-width: 900px) {
+  .stage1-tv-album-marquee {
+    --album-size: clamp(6.25rem, 16vw, 7.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage1-tv-album-track--looping {
+    animation: none;
+  }
+}

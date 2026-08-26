@@ -126,7 +126,7 @@ e2e/
 | `utils/fixture-api.ts`               | Creates common deterministic game fixtures.                    |
 | `utils/deterministic-fixture-api.ts` | Creates precise interrupt/seek fixtures.                       |
 | `utils/ws-contracts.ts`              | Validates browser-observed frames against the shared contract. |
-| `utils/backend-schema-governance.ts` | Loads bundled schemas and verifies they match backend sources. |
+| `utils/backend-schema-governance.ts` | Loads and checks bundled WebSocket schema files.               |
 
 ## Common commands
 

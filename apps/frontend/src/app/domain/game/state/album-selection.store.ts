@@ -17,6 +17,7 @@ interface AlbumSelectionState {
   readonly selectedAlbum: LastCategory | null;
   readonly loaded: boolean;
   readonly inTransit: boolean;
+  readonly animateSelectionFocus: boolean;
 }
 
 interface AlbumSelectionVm {
@@ -26,6 +27,14 @@ interface AlbumSelectionVm {
   readonly loaded: boolean;
   readonly inTransit: boolean;
   readonly showStartButton: boolean;
+  readonly animateSelectionFocus: boolean;
+}
+
+function stableAlbumOrder(albums: readonly CategorySimple[]): readonly CategorySimple[] {
+  return [...albums].sort((left, right) => {
+    const byName = left.name.localeCompare(right.name, undefined, { sensitivity: 'base' });
+    return byName !== 0 ? byName : left.id.localeCompare(right.id);
+  });
 }
 
 function createInitialAlbumSelectionState(): AlbumSelectionState {
@@ -35,7 +44,27 @@ function createInitialAlbumSelectionState(): AlbumSelectionState {
     selectedAlbum: null,
     loaded: false,
     inTransit: false,
+    animateSelectionFocus: false,
   };
+}
+
+function syncSelectedAlbumMetadata(
+  albums: readonly CategorySimple[],
+  selectedAlbum: LastCategory | null,
+): readonly CategorySimple[] {
+  if (!selectedAlbum) {
+    return albums;
+  }
+
+  return albums.map((album) =>
+    album.id === selectedAlbum.categoryId
+      ? {
+          ...album,
+          pickedByTeam: selectedAlbum.pickedByTeam?.image ?? null,
+          ordinalNumber: selectedAlbum.ordinalNumber,
+        }
+      : album,
+  );
 }
 
 @Injectable({ providedIn: 'root' })
@@ -48,12 +77,13 @@ export class AlbumSelectionStore {
   readonly vm = computed<AlbumSelectionVm>(() => {
     const state = this.state();
     return {
-      albums: state.albums.map(toAlbumCardVm),
+      albums: stableAlbumOrder(state.albums).map(toAlbumCardVm),
       pickedByTeam: state.pickedByTeam,
       selectedAlbum: state.selectedAlbum,
       loaded: state.loaded,
       inTransit: state.inTransit,
       showStartButton: state.selectedAlbum !== null,
+      animateSelectionFocus: state.animateSelectionFocus,
     };
   });
 
@@ -89,18 +119,23 @@ export class AlbumSelectionStore {
       return;
     }
 
+    const selectedAlbum = message.selected ?? null;
     this.patchState({
-      albums: message.albums,
-      selectedAlbum: message.selected ?? null,
-      pickedByTeam: message.selected?.pickedByTeam ?? message.team ?? null,
+      albums: syncSelectedAlbumMetadata(message.albums ?? [], selectedAlbum),
+      selectedAlbum,
+      pickedByTeam: selectedAlbum?.pickedByTeam ?? message.team ?? null,
+      animateSelectionFocus: false,
       loaded: true,
     });
   }
 
   private applyPickedAlbum(message: S1AlbumPickedMessage): void {
+    const selectedAlbum = message.selected ?? null;
     this.patchState({
-      selectedAlbum: message.selected ?? null,
-      pickedByTeam: message.selected?.pickedByTeam ?? null,
+      albums: syncSelectedAlbumMetadata(this.state().albums, selectedAlbum),
+      selectedAlbum,
+      pickedByTeam: selectedAlbum?.pickedByTeam ?? null,
+      animateSelectionFocus: true,
       loaded: true,
     });
   }
@@ -115,8 +150,10 @@ export class AlbumSelectionStore {
     try {
       const selectedAlbum = await firstValueFrom(this.categoryApi.pickAlbum(categoryId, teamId));
       this.patchState({
+        albums: syncSelectedAlbumMetadata(this.state().albums, selectedAlbum),
         selectedAlbum,
         pickedByTeam: selectedAlbum.pickedByTeam,
+        animateSelectionFocus: true,
       });
     } finally {
       this.patchState({ inTransit: false });

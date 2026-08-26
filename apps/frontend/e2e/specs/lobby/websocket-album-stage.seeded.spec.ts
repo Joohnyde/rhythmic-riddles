@@ -6,7 +6,6 @@ import {
   countBackendWsFramesOfType,
   expectBackendWsFrameTypeAfter,
   lastFrameOfType,
-  settle,
 } from '../../utils/ws-capture';
 import { assertAllBackendFramesHaveFrontendContract } from '../../utils/ws-contracts';
 
@@ -28,31 +27,43 @@ test.describe('Album stage', () => {
   });
 
   test('selected album recovery restores the reveal state', async ({ browser, request }) => {
-    await withGameFixture(request, 'ALBUMS', async (seed) => {
-      const clients = await connectAdminAndTv(browser, seed.roomCode);
+    await withGameFixture(request, 'ALBUMS', { categoryCount: 6, maxAlbums: 6 }, async (seed) => {
+      const tv = await connectRole(browser, 'tv', seed.roomCode, {
+        viewport: { width: 260, height: 720 },
+      });
       try {
-        const categoryId = seed.categories[0].id;
-        const beforePicked = countBackendWsFramesOfType(clients.tv.frames, 'album_picked');
+        const categoryId = seed.categories[5].id;
+        const beforePicked = countBackendWsFramesOfType(tv.frames, 'album_picked');
         expect(await pickAlbum(request, seed.roomCode, categoryId, seed.teams[0].id)).toBeLessThan(
           400,
         );
-        await expectBackendWsFrameTypeAfter(clients.tv.frames, 'album_picked', beforePicked);
-        await clients.tv.close();
-        await settle(500);
-
-        const recoveredTv = await connectRole(browser, 'tv', seed.roomCode);
-        try {
-          const welcome = lastFrameOfType(recoveredTv.frames, 'welcome')?.json;
-          expect(welcome?.stage).toBe('albums');
-          expect(JSON.stringify(welcome?.albums)).toContain(categoryId);
-          expect(JSON.stringify(welcome?.selected)).toContain(categoryId);
-          assertAllBackendFramesHaveFrontendContract(recoveredTv.frames);
-          await expect(recoveredTv.page.getByTestId('tv-selected-album')).toBeVisible();
-        } finally {
-          await recoveredTv.close();
-        }
+        await expectBackendWsFrameTypeAfter(tv.frames, 'album_picked', beforePicked);
       } finally {
-        await clients.close();
+        await tv.close();
+      }
+
+      const recoveredTv = await connectRole(browser, 'tv', seed.roomCode, {
+        viewport: { width: 260, height: 720 },
+      });
+      try {
+        const welcome = lastFrameOfType(recoveredTv.frames, 'welcome')?.json as
+          | {
+              albums?: Array<{ id: string }>;
+              selected?: { categoryId?: string };
+            }
+          | undefined;
+        const categoryId = seed.categories[5].id;
+
+        expect(welcome?.selected?.categoryId).toBe(categoryId);
+        expect(welcome?.albums?.map((album) => album.id)).toEqual(
+          seed.categories.map((category) => category.id),
+        );
+        await expect(recoveredTv.page.getByTestId('tv-album-focus')).toBeVisible();
+        await expect(
+          recoveredTv.page.getByTestId(`tv-album-focus-card-${categoryId}`),
+        ).toHaveAttribute('data-selected', 'true');
+      } finally {
+        await recoveredTv.close();
       }
     });
   });

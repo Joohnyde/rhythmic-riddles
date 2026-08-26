@@ -5,6 +5,8 @@ export type FixtureStage = 'LOBBY' | 'ALBUMS' | 'SONGS_LISTENING' | 'SONGS_REVEA
 
 export type FixtureBuildOptions = {
   roomPrefix?: string;
+  categoryCount?: number;
+  maxAlbums?: number;
   /** Offset from local now for the active/current song startedAt. Keep near 0 for legal team buzzes. */
   activeStartedOffsetMillis?: number;
   /** Offset from local now for revealedAt in revealed fixtures. */
@@ -129,6 +131,8 @@ function buildTrack(
 
 type E2eFixtureRequest = {
   stage?: number;
+  maxSongs?: number;
+  maxAlbums?: number;
   categories?: Array<{
     ordinalNumber?: number | null;
     album?: {
@@ -272,10 +276,15 @@ export function buildGameFixture(
   };
   const stage = stageOf(type);
   const times = fixtureTimes(options);
+  const categoryCount = options.categoryCount ?? 3;
+  const maxAlbums = options.maxAlbums ?? Math.min(3, categoryCount);
 
   const categories: Array<{ id: string; albumId: string; scheduleIds: string[] }> = [];
 
-  const categoryPayloads: CategoryPayload[] = [0, 1, 2].map((categoryIndex) => {
+  const categoryPayloads: CategoryPayload[] = Array.from(
+    { length: categoryCount },
+    (_, categoryIndex) => categoryIndex,
+  ).map((categoryIndex) => {
     const categoryId = uuid();
     const albumId = uuid();
     const trackIds = [uuid(), uuid()];
@@ -349,7 +358,7 @@ export function buildGameFixture(
     id: seed.gameId,
     roomCode: seed.roomCode,
     maxSongs: 2,
-    maxAlbums: 3,
+    maxAlbums,
     stage,
     teams: seed.teams,
     categories: categoryPayloads,

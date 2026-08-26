@@ -28,7 +28,7 @@
     },
     {
       "type": "object",
-      "required": ["type", "stage", "albums"],
+      "required": ["type", "stage"],
       "properties": {
         "type": {
           "const": "welcome"
@@ -40,31 +40,14 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["id", "name", "image", "pickedByTeam", "ordinalNumber"],
-            "properties": {
-              "id": {
-                "$ref": "#/$defs/uuid"
-              },
-              "name": {
-                "type": "string"
-              },
-              "image": {
-                "$ref": "#/$defs/uuid"
-              },
-              "pickedByTeam": {
-                "type": ["string", "null"]
-              },
-              "ordinalNumber": {
-                "type": ["integer", "null"]
-              }
-            },
             "additionalProperties": true
           }
         },
         "team": {
           "oneOf": [
             {
-              "$ref": "#/$defs/team"
+              "type": "object",
+              "additionalProperties": true
             },
             {
               "type": "null"
@@ -73,77 +56,10 @@
         },
         "selected": {
           "type": "object",
-          "required": [
-            "categoryId",
-            "chosenCategoryPreview",
-            "pickedByTeam",
-            "started",
-            "ordinalNumber"
-          ],
-          "properties": {
-            "categoryId": {
-              "$ref": "#/$defs/uuid"
-            },
-            "chosenCategoryPreview": {
-              "type": "object",
-              "required": ["title", "image"],
-              "properties": {
-                "title": {
-                  "type": "string"
-                },
-                "image": {
-                  "$ref": "#/$defs/uuid"
-                }
-              },
-              "additionalProperties": false
-            },
-            "pickedByTeam": {
-              "oneOf": [
-                {
-                  "$ref": "#/$defs/team"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "started": {
-              "type": "boolean"
-            },
-            "ordinalNumber": {
-              "type": ["integer", "null"]
-            }
-          },
-          "additionalProperties": false
+          "additionalProperties": true
         }
       },
-      "oneOf": [
-        {
-          "required": ["team"],
-          "not": {
-            "required": ["selected"]
-          }
-        },
-        {
-          "required": ["selected"],
-          "not": {
-            "required": ["team"]
-          }
-        },
-        {
-          "not": {
-            "anyOf": [
-              {
-                "required": ["team"]
-              },
-              {
-                "required": ["selected"]
-              }
-            ]
-          }
-        }
-      ],
-      "additionalProperties": false
+      "additionalProperties": true
     },
     {
       "type": "object",

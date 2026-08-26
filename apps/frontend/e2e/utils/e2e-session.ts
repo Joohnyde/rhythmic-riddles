@@ -1,4 +1,4 @@
-import { Browser, Page } from '@playwright/test';
+import { Browser, BrowserContextOptions, Page } from '@playwright/test';
 import { LoginPage } from '../pages/login-page';
 import { Role } from './env';
 import {
@@ -13,8 +13,9 @@ export async function connectRole(
   browser: Browser,
   role: Role,
   roomCode: string,
+  contextOptions: BrowserContextOptions = {},
 ): Promise<ConnectedClient> {
-  const context = await browser.newContext();
+  const context = await browser.newContext(contextOptions);
   const page = await context.newPage();
   const frames = captureReceivedWebSocketFrames(page);
   const login = new LoginPage(page);

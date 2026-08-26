@@ -1,0 +1,33 @@
+<article
+  class="stage1-album-card"
+  [class.stage1-album-card--disabled]="disabled()"
+  [attr.data-selected]="selected() ? 'true' : null"
+  [attr.data-glow]="glow() ? 'true' : null"
+  [attr.data-frame-variant]="frameVariant()"
+  [attr.data-testid]="testId()"
+  [attr.data-album-id]="album().id"
+>
+  @if (interactive()) {
+    <button
+      class="stage1-album-select-button"
+      type="button"
+      [disabled]="disabled()"
+      (click)="handleClick()"
+    >
+      <ng-container *ngTemplateOutlet="cardContent" />
+    </button>
+  } @else {
+    <ng-container *ngTemplateOutlet="cardContent" />
+  }
+</article>
+
+<ng-template #cardContent>
+  <div class="stage1-album-art-wrap">
+    <img class="stage1-album-art" [src]="imageUrl()" [alt]="album().name" />
+
+    @if (album().ordinalNumber !== null && album().pickedByTeam) {
+      <img class="stage1-album-team-icon" [src]="album().pickedByTeam" alt="" aria-hidden="true" />
+    }
+  </div>
+  <h2 class="stage1-album-name">{{ album().name }}</h2>
+</ng-template>

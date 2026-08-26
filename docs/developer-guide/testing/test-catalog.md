@@ -1,4 +1,3 @@
-
 # Test Catalog
 
 ## Purpose
@@ -15,14 +14,14 @@ A more detailed inventory of individual test cases is maintained in `test-catalo
 
 Current columns:
 
-| Field | Meaning |
-|---|---|
-| `framework` | Test runner/framework. Use `junit` for Java/Spring tests, `vitest` for Angular unit/component tests, and `playwright` for browser E2E tests. |
-| `file` | Source file that contains the test, relative to the owning project test root. |
-| `suite` | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group. |
-| `test_name` | Short stable name of the test or parameterized test family. |
-| `description` | One-sentence explanation of the behavior protected by the test. |
-| `importance` | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior. |
+| Field         | Meaning                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `framework`   | Test runner/framework. Use `junit` for Java/Spring tests, `vitest` for Angular unit/component tests, and `playwright` for browser E2E tests.                             |
+| `file`        | Source file that contains the test, relative to the owning project test root.                                                                                            |
+| `suite`       | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group. |
+| `test_name`   | Short stable name of the test or parameterized test family.                                                                                                              |
+| `description` | One-sentence explanation of the behavior protected by the test.                                                                                                          |
+| `importance`  | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior.                                                             |
 
 The catalog is not supposed to replace the source code. It is a map for reviewers and contributors.
 
@@ -69,8 +68,6 @@ These tests should own:
 - repository/query behavior when backed by integration tests;
 - Spring wiring and transaction behavior where needed.
 
-
-
 ### Angular / Vitest tests
 
 Frontend unit and component tests are owned by Vitest through Angular's `ng test` integration.
@@ -96,6 +93,11 @@ Vitest tests should own fast frontend behavior such as:
 - pagination and deterministic layout helpers;
 - icon allocation, buzzer-linking, and animation trigger semantics.
 
+Stage 1 album-selection coverage should keep the live-pick and welcome-recovery paths aligned.
+Fast unit tests own source-order preservation, image-gated focus measurement, rendered-grid neighbor
+geometry, carousel layout planning, card state, and picker-header presentation. Playwright keeps the
+browser WebSocket recovery path honest, including selected-album recovery through the TV carousel.
+
 ### Angular / Playwright tests
 
 Browser tests are owned by Playwright and run inside the frontend project.
@@ -117,7 +119,7 @@ Expected script:
 
 ```json
 {
-  "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
+    "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
 }
 ```
 
@@ -129,7 +131,6 @@ Playwright tests should own behavior that requires real browser clients:
 - replacement/reconnect behavior;
 - browser-observed WebSocket frame routing, ordering, and schemas;
 - high-value end-to-end user flows once full E2E regression is added.
-
 
 ## Current backend test groups
 

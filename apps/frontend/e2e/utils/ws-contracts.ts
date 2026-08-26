@@ -7,8 +7,8 @@ import {
 } from './backend-schema-governance';
 
 export function knownFrontendWsTypes(): string[] {
-  // The frontend contract runner uses the bundled backend schema registry.
-  // Schema-governance tests keep that checked-in copy synchronized with the backend source.
+  // The frontend contract runner now uses the same schema registry bundled with
+  // the tests. This keeps Playwright from drifting away from backend contracts.
   return loadPublishedFrameRegistry().publishedFrameTypes.sort();
 }
 

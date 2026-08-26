@@ -4,11 +4,8 @@ import { Team } from '../models/team.model';
 import { WelcomeMessage } from './default.messages';
 
 export interface S1WelcomeMessage extends WelcomeMessage<'welcome'> {
-  /** Complete Stage 1 album list; present in every albums-stage recovery snapshot. */
-  albums: CategorySimple[];
-  /** Next picker when choosing; null means Admin chooses. Absent while displaying a selection. */
-  team?: Team | null;
-  /** Album picked but not started yet. Absent while choosing the next album. */
+  albums?: CategorySimple[];
+  team?: Team;
   selected?: LastCategory;
 }
 
