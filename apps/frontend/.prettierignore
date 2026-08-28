@@ -1,5 +1,11 @@
 # dependencies / build
 node_modules
+.angular
 dist
 build
 coverage
+playwright-report
+test-results
+
+# generated
+src/app/domain/game/generated

@@ -1,0 +1,20 @@
+<dialog
+  #dialog
+  class="admin-confirm-dialog"
+  [attr.aria-labelledby]="titleId"
+  [attr.aria-describedby]="descriptionId"
+  (cancel)="onNativeCancel($event)"
+>
+  <div class="dialog">
+    <h3 class="dialog-title text-primary-100" [id]="titleId">{{ title() }}</h3>
+    <p class="mt-2" [id]="descriptionId">{{ message() }}</p>
+    <div class="dialog-actions">
+      <button #cancelButton class="btn btn-soft" type="button" autofocus (click)="cancel()">
+        {{ cancelLabel() }}
+      </button>
+      <button class="btn btn-primary" type="button" [disabled]="disabled()" (click)="confirm()">
+        {{ confirmLabel() }}
+      </button>
+    </div>
+  </div>
+</dialog>

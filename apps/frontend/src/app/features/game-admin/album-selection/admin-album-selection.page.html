@@ -1,56 +1,108 @@
-<main class="page shell" data-testid="admin-albums-page">
+<main
+  class="stage1-page relative min-h-dvh isolate overflow-hidden bg-cosmic-975 text-foreground"
+  data-testid="admin-albums-page"
+  [attr.data-focus-phase]="focusPhase()"
+>
   @let vm = store.vm();
 
-  <header class="header">
-    <div>
-      <p class="kicker">Stage 1</p>
-      <h1 class="title">Albums</h1>
-    </div>
-    @if (vm.showStartButton) {
-      <button
-        data-testid="admin-start-songs-button"
-        [disabled]="vm.inTransit"
-        (click)="store.start()"
+  <div
+    class="pointer-events-none absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
+    style="background-image: url('/images/background_admin_lobby.jpg')"
+    aria-hidden="true"
+  ></div>
+  <div
+    class="stage1-selection-backdrop pointer-events-none absolute inset-0"
+    aria-hidden="true"
+  ></div>
+
+  <section class="stage1-content relative z-10 flex min-h-dvh flex-col px-6 py-4 sm:px-10 lg:px-14">
+    <rr-stage1-category-header
+      class="relative z-20"
+      [roomCode]="session.code"
+      [pickedByTeam]="vm.pickedByTeam"
+      [loaded]="vm.loaded"
+      [selected]="!!vm.selectedAlbum"
+    />
+
+    @if (!vm.loaded) {
+      <section
+        class="mx-auto mt-10 rounded-2xl border border-primary-500/50 bg-cosmic-950/70 px-8 py-6 text-center text-primary-200 stage1-loading-panel"
+        data-testid="admin-albums-loading"
       >
-        Start songs
-      </button>
-    }
-  </header>
-  @if (!vm.loaded) {
-    <section class="card" data-testid="admin-albums-loading">Loading albums...</section>
-  } @else if (vm.selectedAlbum) {
-    <section class="card" data-testid="admin-selected-album">
-      <h2>{{ vm.selectedAlbum.chosenCategoryPreview.title }}</h2>
-      <p>
-        Picked by
-        <rr-picker-identity [team]="vm.pickedByTeam" />
-      </p>
-    </section>
-  } @else {
-    <p>
-      Now picking
-      <rr-picker-identity [team]="vm.pickedByTeam" />
-    </p>
-    <section class="grid two" data-testid="admin-album-list">
-      @for (album of vm.albums; track album.id) {
-        <article
-          class="card"
-          [class.card--disabled]="album.ordinalNumber !== null"
-          [attr.data-testid]="'admin-album-card-' + album.id"
+        Loading albums...
+      </section>
+    } @else {
+      @if (showNormalAlbums()) {
+        <section
+          class="stage1-admin-album-viewport mx-auto mt-4 min-h-0 w-full max-w-[1120px] flex-1 overflow-auto overscroll-contain"
+          data-testid="admin-album-list"
         >
-          <h2>{{ album.name }}</h2>
-          <img [src]="album.pickedByTeam" width="64" />
-          @if (album.ordinalNumber === null) {
-            <button
-              [attr.data-testid]="'admin-pick-album-button-' + album.id"
-              [disabled]="vm.inTransit"
-              (click)="store.pickAlbum(album.id)"
-            >
-              Pick
-            </button>
-          }
-        </article>
+          <div class="stage1-admin-album-grid">
+            @for (album of vm.albums; track album.id) {
+              <rr-stage1-album-card
+                [album]="album"
+                [imageUrl]="getAlbumImageUrl(album.image)"
+                [disabled]="
+                  album.ordinalNumber !== null ||
+                  vm.inTransit ||
+                  pickPreparing() ||
+                  !!vm.selectedAlbum
+                "
+                [interactive]="true"
+                [testId]="'admin-album-card-' + album.id"
+                (clickCard)="pickDialog.open()"
+              />
+
+              <rr-confirm-dialog
+                #pickDialog
+                [title]="'Choose ' + album.name + '?'"
+                [message]="'Are you sure you want to select this category for the team that is currently picking?'"
+                [disabled]="vm.inTransit || pickPreparing()"
+                (confirmed)="pickAlbum(album.id)"
+              />
+            }
+          </div>
+        </section>
       }
-    </section>
-  }
+
+      @if (vm.selectedAlbum && showFocusScene()) {
+        <section class="stage1-selection-stage absolute inset-0 z-[5] m-0 h-full min-h-0 w-full">
+          <div class="stage1-admin-focus-shell relative h-full min-h-0 w-full">
+            <rr-stage1-album-focus
+              [albums]="vm.albums"
+              [selectedId]="vm.selectedAlbum.categoryId"
+              [animateInitialFocus]="true"
+              [originRect]="focusLayout()?.selected ?? null"
+              [originLayout]="focusLayout()"
+              [imageUrl]="getAlbumImageUrl"
+              testId="admin-album-focus"
+              (ready)="onFocusReady()"
+              (animationSettled)="onFocusSettled()"
+              (failed)="onFocusFailed()"
+            />
+          </div>
+        </section>
+      }
+
+      <button
+        class="btn btn-primary absolute bottom-6 left-1/2 z-50 min-w-40 -translate-x-1/2 px-9 py-3 text-sm uppercase tracking-[0.14em]"
+        data-testid="admin-start-songs-button"
+        type="button"
+        [disabled]="!vm.selectedAlbum || vm.inTransit || pickPreparing()"
+        (click)="startDialog.open()"
+      >
+        Play
+      </button>
+
+      <rr-confirm-dialog
+        #startDialog
+        title="Start the game?"
+        message="You are about to start the game. Are you sure?"
+        confirmLabel="YES"
+        cancelLabel="NO"
+        [disabled]="!vm.selectedAlbum || vm.inTransit || pickPreparing()"
+        (confirmed)="start()"
+      />
+    }
+  </section>
 </main>

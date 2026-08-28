@@ -1,0 +1,38 @@
+<section
+  #viewport
+  class="stage1-focus-viewport"
+  [class.stage1-focus-viewport--focused]="focused()"
+  [class.stage1-focus-viewport--ready]="focusReady()"
+  [class.stage1-focus-viewport--absolute]="absoluteLayout()"
+  [class.stage1-focus-viewport--settled]="settled()"
+  [attr.data-focus-state]="
+    settled() ? 'settled' : focused() ? 'animating' : focusReady() ? 'ready' : 'preparing'
+  "
+  [attr.data-testid]="testId()"
+>
+  <div #scene class="stage1-focus-scene">
+    @for (album of focusAlbums(); track album.id) {
+      <rr-stage1-album-card
+        class="stage1-focus-album-card"
+        [album]="album"
+        [imageUrl]="albumImage(album)"
+        [disabled]="album.ordinalNumber !== null && album.id !== selectedId()"
+        [selected]="album.id === selectedId()"
+        [glow]="album.id === selectedId() && glowActive()"
+        [class.stage1-focus-album-card--neighbor]="focused() && neighborDirection(album.id)"
+        [class.stage1-focus-album-card--selected]="album.id === selectedId()"
+        [attr.data-selected]="album.id === selectedId() ? 'true' : null"
+        [attr.data-testid]="testId() + '-card-' + album.id"
+        [attr.data-album-id]="album.id"
+      />
+    }
+  </div>
+
+  <div #nameLayer class="stage1-focus-name-layer" aria-hidden="true">
+    @for (album of focusAlbums(); track album.id) {
+      <h2 class="stage1-focus-name-overlay" [attr.data-focus-name-album-id]="album.id">
+        {{ album.name }}
+      </h2>
+    }
+  </div>
+</section>

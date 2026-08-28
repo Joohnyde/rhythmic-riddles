@@ -17,6 +17,8 @@ export default [
             'build/**',
             'coverage/**',
             'node_modules/**',
+            'playwright-report/**',
+            'test-results/**',
             '**/*.min.*',
         ],
     },

@@ -1,37 +1,59 @@
-<main class="page shell" data-testid="tv-albums-page">
+<main
+  class="stage1-page relative min-h-dvh isolate overflow-hidden bg-cosmic-975 text-foreground"
+  data-testid="tv-albums-page"
+  [attr.data-focus-phase]="focusPhase()"
+>
+  <div
+    class="pointer-events-none absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
+    style="background-image: url('/images/background_admin_lobby.jpg')"
+    aria-hidden="true"
+  ></div>
+  <div
+    class="stage1-selection-backdrop pointer-events-none absolute inset-0"
+    aria-hidden="true"
+  ></div>
+
   @let vm = store.vm();
 
-  <header>
-    <p class="kicker">Stage 1</p>
-    <h1 class="title">Albums</h1>
-  </header>
-  @if (!vm.loaded) {
-    <section class="card" data-testid="tv-albums-loading">Loading albums...</section>
-  } @else if (vm.selectedAlbum) {
-    <section class="card" data-testid="tv-selected-album">
-      <h2>{{ vm.selectedAlbum.chosenCategoryPreview.title }}</h2>
-      <p>
-        Picked by
-        <rr-picker-identity [team]="vm.pickedByTeam" />
-      </p>
-    </section>
-  } @else {
-    <p>
-      Now picking
-      <rr-picker-identity [team]="vm.pickedByTeam" />
-    </p>
-    <section class="grid two" data-testid="tv-album-list">
-      @for (album of vm.albums; track album.id) {
-        <article
-          class="card"
-          [class.card--disabled]="album.ordinalNumber !== null"
-          [attr.data-testid]="'tv-album-card-' + album.id"
-        >
-          <h2>{{ album.name }}</h2>
+  <section class="stage1-content relative z-10 flex min-h-dvh flex-col px-6 py-4 sm:px-10 lg:px-14">
+    <rr-stage1-category-header
+      class="relative z-20"
+      [roomCode]="session.code"
+      [pickedByTeam]="vm.pickedByTeam"
+      [loaded]="vm.loaded"
+      [selected]="!!vm.selectedAlbum"
+    />
 
-          <img [src]="album.pickedByTeam" width="64" />
-        </article>
+    @if (!vm.loaded) {
+      <section
+        class="mx-auto mt-10 rounded-2xl border border-primary-500/50 bg-cosmic-950/70 px-8 py-6 text-center text-primary-200 stage1-loading-panel"
+        data-testid="tv-albums-loading"
+      >
+        Loading albums...
+      </section>
+    } @else {
+      @if (showNormalAlbums()) {
+        <section class="stage1-selection-stage absolute inset-0 z-[5] m-0 h-full min-h-0 w-full">
+          <rr-stage1-tv-album-marquee [albums]="vm.albums" [imageUrl]="getAlbumImageUrl" />
+        </section>
       }
-    </section>
-  }
+
+      @if (vm.selectedAlbum && showFocusScene()) {
+        <section class="stage1-selection-stage absolute inset-0 z-[5] m-0 h-full min-h-0 w-full">
+          <rr-stage1-album-focus
+            [albums]="vm.albums"
+            [selectedId]="vm.selectedAlbum.categoryId"
+            [animateInitialFocus]="true"
+            [originRect]="focusLayout()?.selected ?? null"
+            [originLayout]="focusLayout()"
+            [imageUrl]="getAlbumImageUrl"
+            testId="tv-album-focus"
+            (ready)="onFocusReady()"
+            (animationSettled)="onFocusSettled()"
+            (failed)="onFocusFailed()"
+          />
+        </section>
+      }
+    }
+  </section>
 </main>

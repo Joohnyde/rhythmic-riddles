@@ -1,4 +1,3 @@
-
 # Assets Architecture (Audio & Images)
 
 This document defines how RhythmicRiddles manages audio snippets, answer tracks, and image assets.
@@ -13,7 +12,6 @@ It replaces previous fragmented documentation and aligns strictly with the curre
 
 This is the **single source of truth** for how assets are stored, resolved, accessed, and abstracted.
 
-
 ## Design Goals
 
 The asset subsystem was designed with the following goals:
@@ -23,7 +21,6 @@ The asset subsystem was designed with the following goals:
 - Git-safe (large binaries not committed)
 - Replaceable storage backend (filesystem now, object storage later)
 - Clear separation of concerns (via Gateway pattern)
-
 
 ## Storage Strategy (Current Implementation)
 
@@ -50,10 +47,9 @@ Example (dev repo layout):
 
 ```yaml
 app:
-  assets:
-    base-dir: ../../../data
+    assets:
+        base-dir: ../../../data
 ```
-
 
 ## Folder Structure (Authoritative)
 
@@ -103,6 +99,7 @@ public byte[] playSnippet(UUID songId) {
 ```
 
 SongService does NOT know:
+
 - where files are stored
 - how paths are built
 - what extensions are used
@@ -110,12 +107,12 @@ SongService does NOT know:
 
 It only depends on the interface.
 
-
 ## Why Gateway Pattern Is Important
 
 Benefits:
 
 ### 1) Replaceable storage backend
+
 We can later introduce:
 
 - `S3AssetGateway`
@@ -125,9 +122,11 @@ We can later introduce:
 Without changing business logic.
 
 ### 2) Testability
+
 We can mock `AssetGateway` in unit tests without touching the filesystem.
 
 ### 3) Centralized path logic
+
 All resolution logic is inside one component:
 
 ```java
@@ -140,11 +139,11 @@ basePath
 No scattered string concatenation.
 
 ### 4) Future-proofing
+
 Today: single laptop model.
 Tomorrow: SaaS with object storage.
 
 Architecture already supports that transition.
-
 
 ## 6. Audio Handling
 
@@ -185,12 +184,12 @@ readAnswerMp3(UUID songId)
 
 Images are resolved dynamically by extension. `LocalAssetGateway` checks supported formats in this deterministic order:
 
-| Extension | MIME type |
-|---|---|
-| `.png` | `image/png` |
-| `.jpg` | `image/jpeg` |
-| `.jpeg` | `image/jpeg` |
-| `.webp` | `image/webp` |
+| Extension | MIME type    |
+| --------- | ------------ |
+| `.png`    | `image/png`  |
+| `.jpg`    | `image/jpeg` |
+| `.jpeg`   | `image/jpeg` |
+| `.webp`   | `image/webp` |
 
 The first regular file found is returned as `ImageAsset(byte[] bytes, String mimeType)`. If multiple files exist for the same UUID, the extension order above defines which one wins.
 
@@ -203,8 +202,6 @@ GET /assets/v1/image/albums/{albumId}
 The controller returns the exact stored bytes and uses the `ImageAsset.mimeType()` value as the HTTP `Content-Type`. Album image files under `images/albums` use the album UUID as their basename and may be stored as PNG, JPG/JPEG, or WebP. `CategorySimple.image` and `LastCategory.chosenCategoryPreview.image` carry that album UUID, which clients pass to the endpoint above; the backend resolves the matching file extension and MIME type. Team images use the same gateway resolution under `images/teams`, but no public team-image HTTP endpoint exists yet.
 
 Missing images are not represented by `Optional.empty()`. A missing supported file is a public asset error (`E007 / 404`), while a file that resolves but cannot be read is `E008 / 503`.
-
-
 
 ## Generated Team Icon Catalog
 
@@ -237,7 +234,6 @@ Audio and image gateway methods use the same `AssetAccessException` contract:
 
 The asset controllers pass these `DerivedException` responses through the standard API error handler. Unexpected controller failures use `E999 - Internal Server Error` / HTTP `500`.
 
-
 ## Absolute Path Normalization
 
 In constructor:
@@ -256,8 +252,7 @@ This avoids:
 
 The base path is logged at startup.
 
-
-##  Git & Repository Policy
+## Git & Repository Policy
 
 - `data/` is gitignored
 - Never commit MP3 files
@@ -304,4 +299,3 @@ The asset system is:
 - Environment-agnostic (via configuration)
 
 It balances pragmatism (3-dev team) with professional architectural discipline.
-

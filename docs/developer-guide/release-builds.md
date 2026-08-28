@@ -1,4 +1,3 @@
-
 # Release Builds and Desktop Packaging
 
 This document explains how **release mode** works for RhythmicRiddles (Cestereg), how to build production artifacts on each platform, and how embedded PostgreSQL + assets + frontend are bundled so end users can **click and run** without installing developer tooling.
@@ -9,15 +8,15 @@ This document explains how **release mode** works for RhythmicRiddles (Cestereg)
 
 - Produce **self-contained** builds that require **no system Java**.
 - Support two runtime modes:
-  - **Embedded PostgreSQL** (default for “end-user machines”)
-  - **External PostgreSQL** (for environments that already provide Postgres)
+    - **Embedded PostgreSQL** (default for “end-user machines”)
+    - **External PostgreSQL** (for environments that already provide Postgres)
 - Bundle **frontend** into the Spring Boot jar.
 - Bundle **assets** into the packaged application image.
 - Bind services to **localhost** only.
 - Provide at least:
-  - Linux **portable app-image** and **.deb**
-  - Windows **portable app-image** and **.msi**
-  - macOS **portable app-image** and **.dmg** (currently built on Intel macOS; Apple Silicon users can run the Intel build via Rosetta until a native Apple Silicon builder is available)
+    - Linux **portable app-image** and **.deb**
+    - Windows **portable app-image** and **.msi**
+    - macOS **portable app-image** and **.dmg** (currently built on Intel macOS; Apple Silicon users can run the Intel build via Rosetta until a native Apple Silicon builder is available)
 
 ### Non-goals
 
@@ -79,7 +78,7 @@ The production Maven profile performs these steps:
 2. Runs `npm ci`
 3. Runs the Angular production build
 4. Copies Angular output into the backend jar under:
-   - `target/classes/static`
+    - `target/classes/static`
 
 This is what makes the backend jar self-contained (it serves the SPA directly).
 
@@ -108,11 +107,11 @@ Execution model (`PsqlScriptRunner`):
 - All scripts under `classpath:db/*.sql` are extracted to a temp folder.
 - Scripts are sorted by filename to ensure deterministic ordering.
 - Script 0 is treated as an **admin phase**:
-  - connects as user `postgres` to DB `postgres`
-  - intended for tasks like creating the app DB/user
+    - connects as user `postgres` to DB `postgres`
+    - intended for tasks like creating the app DB/user
 - Remaining scripts are treated as an **app phase**:
-  - connects as the configured app user to the target database
-  - intended for schema + data setup
+    - connects as the configured app user to the target database
+    - intended for schema + data setup
 
 ### Run-once marker
 
@@ -179,9 +178,9 @@ The embedded Postgres configuration explicitly sets:
 To run against an external PostgreSQL, do not enable the `embeddb` profile:
 
 - Runtime:
-  - `--spring.profiles.active=production`
+    - `--spring.profiles.active=production`
 - Build packaging:
-  - `mvn -Pproduction -Dembeddb=false clean package`
+    - `mvn -Pproduction -Dembeddb=false clean package`
 
 To build a release without an embedded DB you run a builder script with an added parameter `--embeddb=false` .
 
@@ -218,7 +217,7 @@ The jar includes a tarball at:
 At runtime, `PgClientBundler`:
 
 - extracts this tarball into a writable directory under app data:
-  - `<appData>/pg-client/<platform>/v18/...`
+    - `<appData>/pg-client/<platform>/v18/...`
 - uses a marker file `.installed` to avoid extracting every startup
 - ensures executables are marked executable (non-Windows)
 
@@ -286,7 +285,7 @@ The Linux builder script is:
 - JDK with `jpackage` available (jpackage is part of modern JDK distributions)
 - Maven available
 - System Postgres client tooling to provide `psql` during pg-client bundling:
-  - the script expects a real psql at `/usr/lib/postgresql/18/bin/psql`
+    - the script expects a real psql at `/usr/lib/postgresql/18/bin/psql`
 - `dpkg-deb` since we want `.deb` output
 
 ### Build commands
@@ -306,7 +305,7 @@ bash build/build_linux_jpackage.sh --embeddb=false
 ### Outputs
 
 - Portable app-image:
-  - `dist/linux/out/cestereg/`
+    - `dist/linux/out/cestereg/`
 - `.deb`:
 - `dist/linux/out/*.deb` (only if `dpkg-deb` is available)
 
@@ -338,13 +337,13 @@ Helpful download sources (matching one working builder setup):
 - Apache [Maven 3.9.13](https://dlcdn.apache.org/maven/maven-3/3.9.13/binaries/apache-maven-3.9.13-bin.tar.gz)
 - Oracle [JDK 25](https://download.oracle.com/java/25/latest/jdk-25_windows-x64_bin.exe) (Windows x64) with `jpackage` available
 - WiX Toolset (required for `jpackage --type msi`)
-  - install via `winget install WiXToolset.WiXToolset` (PowerShell Admin)
-  - restart the shell and verify `candle.exe` / `light.exe` are on `PATH`.
-    > **Note:**
-    > winget will install the newest version. Make sure it's correct in PATH
+    - install via `winget install WiXToolset.WiXToolset` (PowerShell Admin)
+    - restart the shell and verify `candle.exe` / `light.exe` are on `PATH`.
+        > **Note:**
+        > winget will install the newest version. Make sure it's correct in PATH
 - [PostgreSQL 18.3](https://sbp.enterprisedb.com/getfile.jsp?fileid=1260041) (for `psql.exe`, used by the pg-client packer)
-  - the packer first tries `psql.exe` from PATH
-  - fallback: `C:\Program Files\PostgreSQL\18\bin\psql.exe`
+    - the packer first tries `psql.exe` from PATH
+    - fallback: `C:\Program Files\PostgreSQL\18\bin\psql.exe`
 - [Git](https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.1/Git-2.53.0-64-bit.exe) for Windows (recommended for build scripting + repo tooling)
 - [dumpbin](https://github.com/Delphier/dumpbin/releases/download/v14.50.35722/dumpbin-14.50.35722-x64.zip) (standalone)
 
@@ -365,9 +364,9 @@ powershell -ExecutionPolicy Bypass -File build\build_windows_jpackage.ps1 -embed
 ### Outputs
 
 - Portable `.exe` app-image:
-  - `dist\windows\out\cestereg\`
+    - `dist\windows\out\cestereg\`
 - `.msi`:
-  - created in `dist\windows\out\` if WiX is installed and the MSI build succeeds
+    - created in `dist\windows\out\` if WiX is installed and the MSI build succeeds
 
 ### Smoke test
 
@@ -517,4 +516,3 @@ Ensure the packaged app was launched with:
 - `--app.assets.base-dir=$APPDIR/resources/data`
 
 And verify `resources/data` exists inside the app-image.
-

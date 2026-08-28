@@ -204,11 +204,20 @@ This layer protects:
 - recovery `welcome` snapshots;
 - JSON/schema contract stability for browser-observed frames.
 
-This is not full product E2E. REST calls and fixture endpoints may be used as triggers. The important assertions are browser-observed WebSocket effects.
+Most seeded scenarios are WebSocket integration tests and may use REST/fixture triggers. Stage 1 also
+contains one intentionally higher-value real Admin UI journey (card → confirmation → focus → Play)
+because that user-action chain is a regression boundary in its own right. Browser-observed WebSocket
+frames remain strictly schema-validated.
 
 #### 8. Frontend unit and component tests
 
 Angular unit and component tests run through Vitest and cover frontend behavior that does not require a real backend WebSocket connection. Current coverage includes Signal Store Stage 0 behavior, Stage 1 recovery hydration for both picker and selected-album snapshots, login handshakes, team-icon allocation, Admin lobby components, buzzer animation triggers, and TV lobby pagination/layout helpers.
+Stage 1 now also has direct Store, page, focus-component, marquee-component, dialog, and image-readiness
+coverage. Those tests protect canonical album ordering, reconnect-safe async guards, request
+supersession, page/component teardown, cancellable RAF/image preparation, reduced-motion final state,
+recovered focus animation, deferred-resize geometry recomputation, real responsive TV focus-origin
+capture across looping/static layouts, and bounded image-loading behavior without depending on browser
+E2E timing.
 
 These tests should stay faster and narrower than Playwright tests and should not duplicate browser-level WebSocket coverage.
 

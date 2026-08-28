@@ -1,0 +1,40 @@
+@use '../../../shared/ui/stage1-album-selection/stage1-page-shell' as stage1-shell;
+
+@include stage1-shell.effects;
+
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+}
+
+.stage1-content {
+  --album-size: clamp(7rem, 9.2vw, 8.5rem);
+  --album-gap: clamp(0.7rem, 1.2vw, 1rem);
+  --album-radius: clamp(0.7rem, 0.95vw, 0.95rem);
+}
+
+.stage1-admin-album-viewport {
+  scrollbar-width: none;
+}
+
+.stage1-admin-album-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.stage1-admin-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--album-size));
+  grid-auto-rows: calc(var(--album-size) + 1.5rem);
+  gap: var(--album-gap);
+  width: 100%;
+  align-content: start;
+  justify-content: center;
+  padding: 0.65rem max(1rem, 2vw) 5rem;
+}
+
+@media (max-width: 900px) {
+  .stage1-content {
+    --album-size: clamp(6.25rem, 16vw, 7.5rem);
+  }
+}

@@ -1,4 +1,3 @@
-
 # Seeded WebSocket Playwright E2E
 
 This document explains the seeded browser-level WebSocket E2E system used by the frontend tests.
@@ -34,6 +33,7 @@ The most important risks are:
 - TV receives Admin-only or wrong-room frames.
 - A duplicate TV/Admin becomes active and processes operational frames.
 - Reconnect recovery sends an incomplete or stale `welcome` snapshot.
+- A recovered Stage 1 selection stops replaying the choosing/focus transition.
 - Stage-2 events arrive out of order or more than once.
 - System/team interrupts produce impossible state.
 - Browser-observed frames stop matching the shared schema contract.
@@ -82,14 +82,14 @@ e2e/
 
 The exact spec grouping may evolve, but the intent should stay stable:
 
-| Folder | Purpose |
-|---|---|
-| `contracts` | Runtime frame validation and schema governance. |
-| `lobby` | Stage-0 lobby side effects such as `new_team` and `kick_team`. |
-| `recovery` | Seeded `welcome` snapshots for stages and substates. |
-| `smoke` | Minimal connection/login/routing sanity checks. |
-| `sockets` | Duplicate-role, replacement, disconnect, and socket-slot behavior. |
-| `stage2` | Song-state WebSocket behavior: repeat, reveal, pause, answer, error recovery, next. |
+| Folder      | Purpose                                                                             |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `contracts` | Runtime frame validation and schema governance.                                     |
+| `lobby`     | Stage-0 lobby side effects such as `new_team` and `kick_team`.                      |
+| `recovery`  | Seeded `welcome` snapshots for stages and substates.                                |
+| `smoke`     | Minimal connection/login/routing sanity checks.                                     |
+| `sockets`   | Duplicate-role, replacement, disconnect, and socket-slot behavior.                  |
+| `stage2`    | Song-state WebSocket behavior: repeat, reveal, pause, answer, error recovery, next. |
 
 ## Backend support: the `e2e` Spring profile
 
@@ -174,9 +174,9 @@ The test-only fixture API is exposed under:
 
 Endpoints:
 
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/api/e2e/v1/game-fixtures` | Create a complete deterministic game fixture. |
+| Method   | Path                                   | Purpose                                            |
+| -------- | -------------------------------------- | -------------------------------------------------- |
+| `POST`   | `/api/e2e/v1/game-fixtures`            | Create a complete deterministic game fixture.      |
 | `DELETE` | `/api/e2e/v1/game-fixtures/{roomCode}` | Delete a fixture room and dependent runtime state. |
 
 The backend branch exposes these through an `e2e` package containing the fixture controller, request DTO, service, service implementation, and validator.
@@ -200,26 +200,26 @@ Game
 
 Important fields:
 
-| Object | Important fields |
-|---|---|
-| Game | `id`, `roomCode`, `maxSongs`, `maxAlbums`, `stage` |
-| Team | `id`, `buttonCode`, `name`, `image` |
-| Category | `id`, `pickedByTeamId`, `ordinalNumber`, `done`, `album` |
-| Album | `id`, `name`, `customQuestion`, `tracks` |
-| Track | `customAnswer`, `schedule` |
-| Schedule | `id`, `trackId`, `startedAt`, `revealedAt`, `ordinalNumber`, `interrupts` |
+| Object    | Important fields                                                          |
+| --------- | ------------------------------------------------------------------------- |
+| Game      | `id`, `roomCode`, `maxSongs`, `maxAlbums`, `stage`                        |
+| Team      | `id`, `buttonCode`, `name`, `image`                                       |
+| Category  | `id`, `pickedByTeamId`, `ordinalNumber`, `done`, `album`                  |
+| Album     | `id`, `name`, `customQuestion`, `tracks`                                  |
+| Track     | `customAnswer`, `schedule`                                                |
+| Schedule  | `id`, `trackId`, `startedAt`, `revealedAt`, `ordinalNumber`, `interrupts` |
 | Interrupt | `id`, `teamId`, `arrivedAt`, `resolvedAt`, `correct`, `score`, `scenario` |
 
 The current `Track` fixture payload should stay minimal. Do not send removed track metadata fields just because older examples did.
 
 ## Stage meanings in fixtures
 
-| Stage number | Runtime stage | Meaning |
-|---:|---|---|
-| `0` | `lobby` | Teams can be created/kicked. |
-| `1` | `albums` | Album/category selection or selected album preview. |
-| `2` | `songs` | Song listening/reveal/interrupt state. |
-| `3` | `winner` | Game is finished and winner state is shown. |
+| Stage number | Runtime stage | Meaning                                             |
+| -----------: | ------------- | --------------------------------------------------- |
+|          `0` | `lobby`       | Teams can be created/kicked.                        |
+|          `1` | `albums`      | Album/category selection or selected album preview. |
+|          `2` | `songs`       | Song listening/reveal/interrupt state.              |
+|          `3` | `winner`      | Game is finished and winner state is shown.         |
 
 ## Category rules
 
@@ -326,12 +326,12 @@ Recommended scripts in `apps/frontend/package.json`:
 
 ```json
 {
-  "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
-  "e2e": "playwright test",
-  "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\"",
-  "e2e:headed": "playwright test --headed",
-  "e2e:debug": "playwright test --debug",
-  "e2e:report": "playwright show-report"
+    "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
+    "e2e": "playwright test",
+    "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\"",
+    "e2e:headed": "playwright test --headed",
+    "e2e:debug": "playwright test --debug",
+    "e2e:report": "playwright show-report"
 }
 ```
 
@@ -341,11 +341,11 @@ If specs are not nested, `e2e:ws` can use `e2e/specs/ws-*.spec.ts`. If specs are
 
 Common variables:
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `E2E_FRONTEND_URL` | `http://localhost:4200` | Angular frontend URL. |
-| `E2E_BACKEND_URL` | `http://localhost:8080` | Spring Boot backend URL. |
-| `E2E_WORKERS` | `4` locally / `2` on CI | Positive integer overriding the Playwright worker cap. |
+| Variable           | Default                 | Purpose                                                |
+| ------------------ | ----------------------- | ------------------------------------------------------ |
+| `E2E_FRONTEND_URL` | `http://localhost:4200` | Angular frontend URL.                                  |
+| `E2E_BACKEND_URL`  | `http://localhost:8080` | Spring Boot backend URL.                               |
+| `E2E_WORKERS`      | `4` locally / `2` on CI | Positive integer overriding the Playwright worker cap. |
 
 Keep these in one helper such as `e2e/utils/env.ts`. Do not scatter hardcoded ports across specs.
 
@@ -373,8 +373,13 @@ Keep these in one helper such as `e2e/utils/env.ts`. Do not scatter hardcoded po
 
 ### Albums
 
-- Album-stage recovery sends a usable `welcome` snapshot.
-- `album_picked` is routed correctly.
+- Album-stage recovery sends a usable strict `welcome` snapshot.
+- Frontend canonical album order is stable even when the actual backend `welcome.albums` transport order is deliberately non-canonical.
+- A selected album retains the same logical rendered index after a fresh TV reconnect.
+- Recovered selected state visibly enters focus animation and reaches a stable settled hook.
+- A real Admin UI journey selects through the card/dialog, settles focus, and starts through Play.
+- A real `album_picked` frame is observed and validated by the bundled runtime schema.
+- Backend/frontend schema equality governance protects the copied E2E schemas.
 - Starting a selected category transitions into song state.
 
 ### Stage 2 songs
@@ -407,11 +412,12 @@ Keep these in one helper such as `e2e/utils/env.ts`. Do not scatter hardcoded po
 
 ### Contract validation
 
-- Every observed frame has a registered type.
-- Every runtime frame type has a schema file.
+- Every observed frame exists in the exported frontend `GAME_MESSAGE_TYPES` runtime registry.
+- The frontend runtime registry exactly matches the published backend frame registry.
+- Every published runtime frame type has exactly one schema file.
 - Every schema declares the matching `type.const`.
-- Frontend-bundled schema files match the backend schema source.
-- Browser-observed frames validate against the bundled shared schema files.
+- Frontend-bundled schema files match the complete backend schema directory, including the published-frame registry and filename set.
+- Browser-observed frames validate once through the frontend registry and bundled shared schema contract.
 
 ## What does not belong here
 
@@ -428,7 +434,6 @@ Avoid:
 
 Those belong in frontend component tests, full E2E regression, visual regression, or backend unit/integration tests.
 
-
 ## Schema workflow
 
 When a WebSocket frame changes, update the contract and tests together.
@@ -438,7 +443,7 @@ Checklist:
 1. Update runtime backend frame payload.
 2. Update the schema under `e2e/contracts/backend/websocket-contracts/v1/schema`.
 3. Update `_published-frame-registry.schema.json` if adding/removing a type.
-4. Update frontend frame handling if needed.
+4. Update the frontend `GAME_MESSAGE_TYPES` constant / frame handling.
 5. Add or adjust a Playwright path that observes the changed frame.
 6. Run `npm run e2e:ws`.
 
@@ -482,4 +487,3 @@ Ask two questions:
 2. If yes, is the schema outdated or is the runtime payload wrong?
 
 Do not automatically widen the schema. If the test created an impossible state, fix the test.
-

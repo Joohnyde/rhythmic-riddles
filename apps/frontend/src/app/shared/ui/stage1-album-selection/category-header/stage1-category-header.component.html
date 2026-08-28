@@ -1,0 +1,26 @@
+<header
+  class="stage1-category-header mx-auto flex w-full max-w-4xl flex-col items-center text-center"
+>
+  <p class="text-sm font-semibold uppercase tracking-[0.18em] text-primary-500">
+    ROOM: <span class="text-primary-200">{{ roomCode() }}</span>
+  </p>
+  <rr-brand-lettering class="mt-0.5" text="CATEGORY" [height]="72" [letterSpacing]="-12" />
+
+  @if (loaded() && !selected()) {
+    <div class="mt-1.5 flex items-center justify-center gap-2.5 text-[clamp(0.9rem,1.4vw,1.18rem)]">
+      <span class="font-semibold text-primary-500">Now picking:</span>
+      @if (pickedByTeam(); as team) {
+        <span class="flex items-center gap-2 font-semibold" [style.color]="teamColor(team.image)">
+          <img
+            class="h-8 w-8 object-contain drop-shadow-[0_0_9px_currentColor]"
+            [src]="team.image"
+            [alt]="team.name"
+          />
+          <span>{{ team.name }}</span>
+        </span>
+      } @else {
+        <span class="font-semibold text-primary-200">Admin</span>
+      }
+    </div>
+  }
+</header>

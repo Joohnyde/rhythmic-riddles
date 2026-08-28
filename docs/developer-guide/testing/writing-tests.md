@@ -1,4 +1,3 @@
-
 # Writing Tests
 
 ## Purpose
@@ -91,6 +90,13 @@ Add or update tests when:
 
 If production behavior changes, tests should usually change too.
 
+For Stage 1 specifically, treat deterministic album ordering and recovery animation as product
+behavior, not implementation detail. A reconnect that receives the same albums in a different backend
+order should still render the same frontend positions and the same recovered focus transition. For
+high-risk animation code, prefer controlled RAF/input/lifecycle tests over calling private settle helpers
+or manually assigning page phase signals. Cancellation tests should prove that superseded/destroyed
+work cannot emit late lifecycle events or leave awaited RAF/image promises suspended.
+
 ## Regression-first mindset
 
 For bugs:
@@ -147,7 +153,6 @@ Typical expectations:
 - `test-catalog.md` describes what is already covered
 - `test-catalog.csv` provides a more detailed inventory of individual tests
 
-
 ## Writing controller tests
 
 Controller tests protect the HTTP contract of REST endpoints.
@@ -187,7 +192,6 @@ Use a random-port `@SpringBootTest` only for a composition risk that narrower te
 
 Do not use a test-managed `@Transactional` around HTTP scenarios. Arrange prerequisite state directly when appropriate, then verify the externally visible contract and meaningful persisted state after the request. Prefer one representative test per distinct composition mechanism over endpoint-by-endpoint duplication, and extract shared support only after multiple test files actually need it.
 
-
 ## How to add a new WebSocket integration test
 
 1. Decide whether the behavior is truly WebSocket integration.
@@ -197,29 +201,29 @@ Do not use a test-managed `@Transactional` around HTTP scenarios. Arrange prereq
 5. Connect only the required browser clients.
 6. Trigger one action through REST or browser UI.
 7. Assert browser-observed frames:
-   - type
-   - routing
-   - ordering
-   - exact count when important
-   - semantic payload fields
-   - contract validity when the state is reachable
+    - type
+    - routing
+    - ordering
+    - exact count when important
+    - semantic payload fields
+    - contract validity when the state is reachable
 8. Clean up through the fixture helper.
 
 Example shape:
 
 ```ts
-await withGameFixture(request, 'SONGS_LISTENING', async (seed) => {
-  const clients = await connectAdminAndTv(browser, seed.roomCode);
+await withGameFixture(request, "SONGS_LISTENING", async (seed) => {
+    const clients = await connectAdminAndTv(browser, seed.roomCode);
 
-  try {
-    const before = countBackendWsFramesOfType(clients.tv.frames, 'song_reveal');
+    try {
+        const before = countBackendWsFramesOfType(clients.tv.frames, "song_reveal");
 
-    expect(await revealSchedule(request, seed.roomCode, seed.currentScheduleId!)).toBeLessThan(400);
+        expect(await revealSchedule(request, seed.roomCode, seed.currentScheduleId!)).toBeLessThan(400);
 
-    await expectBackendWsFrameTypeAfter(clients.tv.frames, 'song_reveal', before);
-  } finally {
-    await clients.close();
-  }
+        await expectBackendWsFrameTypeAfter(clients.tv.frames, "song_reveal", before);
+    } finally {
+        await clients.close();
+    }
 });
 ```
 

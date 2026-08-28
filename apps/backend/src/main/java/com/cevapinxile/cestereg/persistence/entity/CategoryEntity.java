@@ -42,6 +42,7 @@ import java.util.UUID;
               SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CategorySimple(c)
               FROM   CategoryEntity c
               WHERE  c.gameId.id = :gameId
+              ORDER BY c.id
               """),
   @NamedQuery(
       name = "CategoryEntity.findNextId",

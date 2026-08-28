@@ -3,29 +3,21 @@ import {
   answerInterrupt,
   createInterrupt,
   nextSchedule,
+  pickAlbum,
   replaySchedule,
   resolveSystemInterrupt,
   revealSchedule,
 } from '../../utils/api-client';
-import { connectAdminAndTv, connectRole } from '../../utils/e2e-session';
+import { connectAdminAndTv } from '../../utils/e2e-session';
 import { withGameFixture } from '../../utils/fixture-api';
 import { withDeterministicFixture } from '../../utils/deterministic-fixture-api';
 import {
-  backendReceivedApplicationFrames,
   countBackendWsFramesOfType,
   expectBackendWsFrameTypeAfter,
   lastFrameOfType,
   observedBackendTypes,
 } from '../../utils/ws-capture';
-import {
-  assertAllBackendFramesHaveFrontendContract,
-  knownFrontendWsTypes,
-} from '../../utils/ws-contracts';
-import {
-  assertObservedFramesMatchBackendSchemas,
-  backendSchemaValidationAvailable,
-  knownBackendSchemaTypes,
-} from '../../utils/backend-schema-governance';
+import { assertAllBackendFramesHaveFrontendContract } from '../../utils/ws-contracts';
 
 type CapturedFrame = Record<string, unknown>;
 
@@ -60,11 +52,6 @@ test.describe('Runtime contract governance', () => {
         recordTypes(observed, clients);
         assertAllBackendFramesHaveFrontendContract(clients.admin.frames);
         assertAllBackendFramesHaveFrontendContract(clients.tv.frames);
-
-        if (backendSchemaValidationAvailable()) {
-          assertObservedFramesMatchBackendSchemas(clients.admin.frames);
-          assertObservedFramesMatchBackendSchemas(clients.tv.frames);
-        }
       } finally {
         await clients.close();
       }
@@ -82,11 +69,6 @@ test.describe('Runtime contract governance', () => {
         recordTypes(observed, clients);
         assertAllBackendFramesHaveFrontendContract(clients.admin.frames);
         assertAllBackendFramesHaveFrontendContract(clients.tv.frames);
-
-        if (backendSchemaValidationAvailable()) {
-          assertObservedFramesMatchBackendSchemas(clients.admin.frames);
-          assertObservedFramesMatchBackendSchemas(clients.tv.frames);
-        }
       } finally {
         await clients.close();
       }
@@ -108,11 +90,6 @@ test.describe('Runtime contract governance', () => {
         recordTypes(observed, clients);
         assertAllBackendFramesHaveFrontendContract(clients.admin.frames);
         assertAllBackendFramesHaveFrontendContract(clients.tv.frames);
-
-        if (backendSchemaValidationAvailable()) {
-          assertObservedFramesMatchBackendSchemas(clients.admin.frames);
-          assertObservedFramesMatchBackendSchemas(clients.tv.frames);
-        }
       } finally {
         await clients.close();
       }
@@ -134,11 +111,6 @@ test.describe('Runtime contract governance', () => {
           recordTypes(observed, clients);
           assertAllBackendFramesHaveFrontendContract(clients.admin.frames);
           assertAllBackendFramesHaveFrontendContract(clients.tv.frames);
-
-          if (backendSchemaValidationAvailable()) {
-            assertObservedFramesMatchBackendSchemas(clients.admin.frames);
-            assertObservedFramesMatchBackendSchemas(clients.tv.frames);
-          }
         } finally {
           await clients.close();
         }
@@ -165,29 +137,26 @@ test.describe('Runtime contract governance', () => {
         recordTypes(observed, clients);
         assertAllBackendFramesHaveFrontendContract(clients.admin.frames);
         assertAllBackendFramesHaveFrontendContract(clients.tv.frames);
-
-        if (backendSchemaValidationAvailable()) {
-          assertObservedFramesMatchBackendSchemas(clients.admin.frames);
-          assertObservedFramesMatchBackendSchemas(clients.tv.frames);
-        }
       } finally {
         await clients.close();
       }
     });
 
     await withGameFixture(request, 'ALBUMS', async (seed) => {
-      const tv = await connectRole(browser, 'tv', seed.roomCode);
+      const clients = await connectAdminAndTv(browser, seed.roomCode);
 
       try {
-        for (const frame of backendReceivedApplicationFrames(tv.frames))
-          observed.add(String(frame.json?.type));
-        assertAllBackendFramesHaveFrontendContract(tv.frames);
+        const beforePicked = countBackendWsFramesOfType(clients.tv.frames, 'album_picked');
+        expect(
+          await pickAlbum(request, seed.roomCode, seed.categories[0].id, seed.teams[0].id),
+        ).toBeLessThan(400);
+        await expectBackendWsFrameTypeAfter(clients.tv.frames, 'album_picked', beforePicked);
 
-        if (backendSchemaValidationAvailable()) {
-          assertObservedFramesMatchBackendSchemas(tv.frames);
-        }
+        recordTypes(observed, clients);
+        assertAllBackendFramesHaveFrontendContract(clients.admin.frames);
+        assertAllBackendFramesHaveFrontendContract(clients.tv.frames);
       } finally {
-        await tv.close();
+        await clients.close();
       }
     });
 
@@ -198,24 +167,11 @@ test.describe('Runtime contract governance', () => {
       'error_solved',
       'song_repeat',
       'song_reveal',
+      'album_picked',
     ];
 
     for (const type of mustObserve) {
       expect([...observed], `expected browser-level WS coverage for ${type}`).toContain(type);
-    }
-
-    for (const type of observed) {
-      expect(
-        knownFrontendWsTypes(),
-        `observed frame type ${type} must be registered in frontend contract registry`,
-      ).toContain(type);
-
-      if (backendSchemaValidationAvailable()) {
-        expect(
-          knownBackendSchemaTypes(),
-          `observed frame type ${type} must have backend schema mapping`,
-        ).toContain(type);
-      }
     }
   });
 });

@@ -4,25 +4,17 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/new_team.schema.json",
   "title": "WebSocket new_team frame",
   "description": "Team created, TV should update team list.",
-  "x-recipients": [
-    "tv"
-  ],
+  "x-recipients": ["tv"],
   "x-replaySafe": false,
   "type": "object",
-  "required": [
-    "type",
-    "team"
-  ],
+  "required": ["type", "team"],
   "properties": {
     "type": {
       "const": "new_team"
     },
     "team": {
       "type": "object",
-      "required": [
-        "id",
-        "name"
-      ],
+      "required": ["id", "name"],
       "properties": {
         "id": {
           "type": "string",
@@ -33,10 +25,7 @@
           "minLength": 1
         },
         "image": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       },
       "additionalProperties": true

@@ -14,8 +14,72 @@
     },
     "selected": {
       "type": "object",
-      "additionalProperties": true
+      "required": [
+        "categoryId",
+        "chosenCategoryPreview",
+        "pickedByTeam",
+        "started",
+        "ordinalNumber"
+      ],
+      "properties": {
+        "categoryId": {
+          "$ref": "#/$defs/uuid"
+        },
+        "chosenCategoryPreview": {
+          "type": "object",
+          "required": ["title", "image"],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "image": {
+              "$ref": "#/$defs/uuid"
+            }
+          },
+          "additionalProperties": false
+        },
+        "pickedByTeam": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/team"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "started": {
+          "type": "boolean"
+        },
+        "ordinalNumber": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "team": {
+      "type": "object",
+      "required": ["id", "name", "image"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "image": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }

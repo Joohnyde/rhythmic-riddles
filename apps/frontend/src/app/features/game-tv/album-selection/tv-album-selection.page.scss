@@ -1,0 +1,9 @@
+@use '../../../shared/ui/stage1-album-selection/stage1-page-shell' as stage1-shell;
+
+@include stage1-shell.effects;
+
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+}

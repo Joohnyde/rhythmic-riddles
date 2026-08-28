@@ -1,7 +1,16 @@
 {
   "type": "album_picked",
   "selected": {
-    "categoryId": "cat-1",
+    "categoryId": "9743791e-7f66-4d46-b256-39b48f14bb21",
+    "chosenCategoryPreview": {
+      "title": "YU Rock",
+      "image": "b3e6e810-1dbc-41b0-bbdd-cb30b55efc07"
+    },
+    "pickedByTeam": {
+      "id": "3a67733a-3602-4e60-8e62-6af1c54acc3c",
+      "name": "Team Picker",
+      "image": "team-picker.png"
+    },
     "started": false,
     "ordinalNumber": 1
   }

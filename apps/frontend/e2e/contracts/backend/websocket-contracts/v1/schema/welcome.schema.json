@@ -58,7 +58,7 @@
                 "type": ["integer", "null"]
               }
             },
-            "additionalProperties": true
+            "additionalProperties": false
           }
         },
         "team": {
@@ -111,7 +111,7 @@
               "type": "boolean"
             },
             "ordinalNumber": {
-              "type": ["integer", "null"]
+              "type": "integer"
             }
           },
           "additionalProperties": false

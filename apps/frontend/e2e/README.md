@@ -24,7 +24,10 @@ Use this suite when the behavior depends on real browser WebSocket clients:
 - Room isolation.
 - Browser-observed frame schema validation.
 
-Do not use this folder for visual regression, CSS/layout checks, or full user-facing gameplay walkthroughs. Those belong in separate UI/full-E2E suites.
+Do not use this folder for pixel-level visual regression. Most tests remain WebSocket integration tests,
+but a small number of high-value Stage 1 journeys intentionally use the real Admin/TV UI when bypassing
+the UI would miss the regression boundary (selection confirmation, focus lifecycle, Play, and fresh-TV
+recovery). Do not turn every protocol assertion into a duplicate full gameplay walkthrough.
 
 ## Required services
 
@@ -88,6 +91,17 @@ Use the frontend helpers instead of calling these endpoints manually from specs:
 
 Every destructive test should create its own fixture room and clean it up in `finally`.
 
+For Stage 1, fixture `categoryNames` can deliberately produce a source order that differs from the
+canonical frontend order. Tests must treat backend membership/metadata as authoritative while asserting
+visual order through rendered `data-album-id` hooks. The recovery journey uses a brand-new TV browser
+context so the result cannot depend on old local component state.
+
+Contract ownership is intentionally non-duplicated: `websocket-schema-governance.spec.ts` owns static
+frontend/backend registry and schema-directory equality, while
+`websocket-runtime-contract-coverage.seeded.spec.ts` owns reachable browser-observed frame validation.
+The frontend registry comes from the exported `GAME_MESSAGE_TYPES` constant used to derive
+`GameMessageType`; it is not reconstructed from the backend schema bundle.
+
 ## Folder layout
 
 ```text
@@ -126,7 +140,7 @@ e2e/
 | `utils/fixture-api.ts`               | Creates common deterministic game fixtures.                    |
 | `utils/deterministic-fixture-api.ts` | Creates precise interrupt/seek fixtures.                       |
 | `utils/ws-contracts.ts`              | Validates browser-observed frames against the shared contract. |
-| `utils/backend-schema-governance.ts` | Loads bundled schemas and verifies they match backend sources. |
+| `utils/backend-schema-governance.ts` | Loads and checks bundled WebSocket schema files.               |
 
 ## Common commands
 

@@ -1,6 +1,7 @@
 # Security model
 
 ## Phase 1 (current)
+
 The current implementation is designed for a **trusted local network** (single laptop / venue).
 
 - WebSockets are accepted for a valid room code and socket position (0/1).
@@ -11,32 +12,37 @@ The current implementation is designed for a **trusted local network** (single l
 For public venues, treat the laptop as the trusted boundary.
 
 ## Non-leak principle (critical)
+
 The TV must never prematurely receive answers.
 
 Enforce this in:
+
 - backend: do not include answer fields in TV-targeted messages until the end
 - frontend: TV UI must not request answer endpoints
 - logs: avoid logging answers in contexts that could be shown publicly
 
 ## Planned hardening (recommended)
+
 1. Add “join password” at game creation (Admin sets it).
 2. Replace password-in-storage with short-lived session token:
-   - Admin token
-   - TV token (restricted claims)
+    - Admin token
+    - TV token (restricted claims)
 3. Rate limit critical endpoints (buzz/answer)
 4. Add audit logs:
-   - admin actions
-   - stage transitions
-   - scoring changes
+    - admin actions
+    - stage transitions
+    - scoring changes
 
 ## Secrets handling
+
 - never commit real credentials in `application.yml`
 - use `.example` templates
 
 ## SaaS future notes
+
 If hosted:
+
 - terminate TLS at ingress (HTTPS/WSS)
 - use per-tenant isolation (db schema or separate db)
 - object storage for assets (S3/MinIO)
 - least-privilege service accounts
-

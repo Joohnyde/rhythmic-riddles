@@ -1,4 +1,3 @@
-
 # Test Catalog
 
 ## Purpose
@@ -15,14 +14,14 @@ A more detailed inventory of individual test cases is maintained in `test-catalo
 
 Current columns:
 
-| Field | Meaning |
-|---|---|
-| `framework` | Test runner/framework. Use `junit` for Java/Spring tests, `vitest` for Angular unit/component tests, and `playwright` for browser E2E tests. |
-| `file` | Source file that contains the test, relative to the owning project test root. |
-| `suite` | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group. |
-| `test_name` | Short stable name of the test or parameterized test family. |
-| `description` | One-sentence explanation of the behavior protected by the test. |
-| `importance` | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior. |
+| Field         | Meaning                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `framework`   | Test runner/framework. Use `junit` for Java/Spring tests, `vitest` for Angular unit/component tests, and `playwright` for browser E2E tests.                             |
+| `file`        | Source file that contains the test, relative to the owning project test root.                                                                                            |
+| `suite`       | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group. |
+| `test_name`   | Short stable name of the test or parameterized test family.                                                                                                              |
+| `description` | One-sentence explanation of the behavior protected by the test.                                                                                                          |
+| `importance`  | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior.                                                             |
 
 The catalog is not supposed to replace the source code. It is a map for reviewers and contributors.
 
@@ -69,8 +68,6 @@ These tests should own:
 - repository/query behavior when backed by integration tests;
 - Spring wiring and transaction behavior where needed.
 
-
-
 ### Angular / Vitest tests
 
 Frontend unit and component tests are owned by Vitest through Angular's `ng test` integration.
@@ -96,6 +93,19 @@ Vitest tests should own fast frontend behavior such as:
 - pagination and deterministic layout helpers;
 - icon allocation, buzzer-linking, and animation trigger semantics.
 
+Stage 1 album-selection coverage should keep the live-pick and welcome-recovery paths aligned.
+Fast unit tests own canonical `stableAlbumOrder` normalization, reconnect-safe Store transitions,
+image-gated focus measurement, rendered-grid neighbor geometry, focus/marquee component integration,
+deferred resize transform re-centering, real TV responsive focus-origin capture, card/dialog state, focus request
+supersession, teardown, and picker-header presentation. Playwright
+keeps the browser integration path honest with a real Admin selection/start journey, fresh-TV recovery
+that proves transition start and settlement, canonical rendered order/selected index preservation against
+a deliberately non-canonical backend welcome order, and strict observed `album_picked` runtime contract
+validation. Schema governance compares the complete backend/frontend schema directory and published-frame
+registry, not only the hard-coded runtime lookup map. Catalog descriptions must state only what
+the corresponding test actually proves; importance 10 is reserved for merge-critical invariants rather
+than decorative geometry variants.
+
 ### Angular / Playwright tests
 
 Browser tests are owned by Playwright and run inside the frontend project.
@@ -117,7 +127,7 @@ Expected script:
 
 ```json
 {
-  "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
+    "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
 }
 ```
 
@@ -129,7 +139,6 @@ Playwright tests should own behavior that requires real browser clients:
 - replacement/reconnect behavior;
 - browser-observed WebSocket frame routing, ordering, and schemas;
 - high-value end-to-end user flows once full E2E regression is added.
-
 
 ## Current backend test groups
 
@@ -258,16 +267,19 @@ Its purpose is browser-level WebSocket integration using backend E2E fixtures. T
 
 Primary files:
 
-- `e2e/specs/contracts/websocket-runtime-contracts.seeded.spec.ts`
+- `e2e/specs/contracts/websocket-runtime-contract-coverage.seeded.spec.ts`
 - `e2e/specs/contracts/websocket-schema-governance.spec.ts`
 
 These tests protect:
 
-- frontend registry completeness;
-- loadability of shared WebSocket schema files;
-- bundled frontend schema copies staying synchronized with the backend source;
+- the actual exported frontend `GAME_MESSAGE_TYPES` registry matching the published backend frame registry;
+- one-to-one loadability of published WebSocket schema files;
+- bundled frontend schema copies staying synchronized with the complete backend schema directory;
 - type discriminator consistency;
-- browser-observed runtime frames matching published schemas.
+- browser-observed runtime frames matching the frontend registry and published bundled schemas.
+
+Runtime frame validation intentionally lives in the single coverage journey rather than a second spec that
+replays the same backend flows. Static registry/directory equality belongs to schema governance.
 
 This layer should validate only frames produced from reachable game states. If a test creates an impossible state and then contract validation fails, fix the test or fixture rather than weakening the schema.
 

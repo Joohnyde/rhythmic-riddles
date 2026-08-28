@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect } from '@playwright/test';
 import Ajv2020 from 'ajv/dist/2020';
-import { CapturedWsFrame, backendReceivedApplicationFrames } from './ws-capture';
 
 const bundledSchemaDir = path.resolve(
   process.cwd(),
@@ -13,23 +12,9 @@ const backendWorkspaceSchemaDir = path.resolve(
   '../backend/src/test/resources/websocket-contracts/v1/schema',
 );
 
-const schemaFileByType: Record<string, string> = {
-  welcome: 'welcome.schema.json',
-  new_team: 'new_team.schema.json',
-  kick_team: 'kick_team.schema.json',
-  button_clicked: 'button_clicked.schema.json',
-  album_picked: 'album_picked.schema.json',
-  pause: 'pause.schema.json',
-  answer: 'answer.schema.json',
-  error_solved: 'error_solved.schema.json',
-  song_repeat: 'song_repeat.schema.json',
-  song_reveal: 'song_reveal.schema.json',
-  song_next: 'song_next.schema.json',
-};
-
 const candidateSchemaDirs = [
-  // Runtime E2E validation uses the bundled copy so frontend tests remain self-contained.
-  // Schema-governance coverage below requires this copy to stay identical to the backend source.
+  // Prefer the schema files packaged with this test iteration. This avoids accidentally
+  // validating against stale local backend test resources.
   bundledSchemaDir,
   backendWorkspaceSchemaDir,
 ];
@@ -41,51 +26,58 @@ export function backendSchemaDir(): string | undefined {
   return candidateSchemaDirs.find((dir) => fs.existsSync(dir));
 }
 
-export function backendSchemaValidationAvailable(): boolean {
-  return Boolean(backendSchemaDir());
-}
-
-export function assertBundledSchemasMatchBackendWorkspace(): void {
-  expect(
-    fs.existsSync(backendWorkspaceSchemaDir),
-    `backend websocket schema directory should exist at ${backendWorkspaceSchemaDir}`,
-  ).toBeTruthy();
-
-  const bundledFiles = fs
-    .readdirSync(bundledSchemaDir)
-    .filter((file) => file.endsWith('.json'))
-    .sort();
-  const backendFiles = fs
-    .readdirSync(backendWorkspaceSchemaDir)
-    .filter((file) => file.endsWith('.json'))
-    .sort();
-
-  expect(bundledFiles).toEqual(backendFiles);
-
-  for (const file of backendFiles) {
-    const bundled = JSON.parse(fs.readFileSync(path.join(bundledSchemaDir, file), 'utf-8'));
-    const backend = JSON.parse(
-      fs.readFileSync(path.join(backendWorkspaceSchemaDir, file), 'utf-8'),
-    );
-    expect(bundled, `bundled websocket schema ${file} must match backend source`).toEqual(backend);
-  }
-}
-
 export function knownBackendSchemaTypes(): string[] {
-  return Object.keys(schemaFileByType).sort();
+  return loadPublishedFrameRegistry().publishedFrameTypes;
 }
 
 export function loadBackendSchemaForType(type: string): object {
   const dir = backendSchemaDir();
   expect(dir, 'backend websocket schema directory should exist').toBeTruthy();
 
-  const file = schemaFileByType[type];
-  expect(file, `no backend schema mapping registered for ${type}`).toBeTruthy();
-
+  expect(knownBackendSchemaTypes(), `no published backend schema registered for ${type}`).toContain(
+    type,
+  );
+  const file = `${type}.schema.json`;
   const fullPath = path.join(dir!, file);
   expect(fs.existsSync(fullPath), `missing backend schema file ${fullPath}`).toBeTruthy();
 
   return JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+}
+
+export function assertBundledSchemasMatchBackendSource(): void {
+  expect(
+    fs.existsSync(bundledSchemaDir),
+    `missing bundled schema directory ${bundledSchemaDir}`,
+  ).toBeTruthy();
+  expect(
+    fs.existsSync(backendWorkspaceSchemaDir),
+    `missing backend schema directory ${backendWorkspaceSchemaDir}`,
+  ).toBeTruthy();
+
+  // Compare the complete directory contract, not only the runtime type lookup map. Otherwise a new
+  // backend schema (or the published-frame registry itself) could drift while this check continued
+  // to report equality simply because the frontend had never registered the new filename.
+  const bundledFiles = schemaFileNames(bundledSchemaDir);
+  const backendFiles = schemaFileNames(backendWorkspaceSchemaDir);
+  expect(bundledFiles, 'frontend/backend websocket schema filename sets must match').toEqual(
+    backendFiles,
+  );
+
+  for (const file of backendFiles) {
+    const bundledPath = path.join(bundledSchemaDir, file);
+    const backendPath = path.join(backendWorkspaceSchemaDir, file);
+    expect(JSON.parse(fs.readFileSync(bundledPath, 'utf-8')), `schema drift in ${file}`).toEqual(
+      JSON.parse(fs.readFileSync(backendPath, 'utf-8')),
+    );
+  }
+}
+
+function schemaFileNames(dir: string): string[] {
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.schema.json'))
+    .map((entry) => entry.name)
+    .sort();
 }
 
 export function loadPublishedFrameRegistry(): { publishedFrameTypes: string[] } {
@@ -106,6 +98,20 @@ export function assertKnownBackendSchemasAreLoadable(): void {
   for (const type of knownBackendSchemaTypes()) {
     loadBackendSchemaForType(type);
   }
+
+  const dir = backendSchemaDir();
+  expect(dir, 'backend websocket schema directory should exist').toBeTruthy();
+  const publishedSchemaFiles = schemaFileNames(dir!).filter(
+    (file) => file !== '_published-frame-registry.schema.json',
+  );
+  expect(
+    publishedSchemaFiles,
+    'every published websocket registry type must have exactly one matching schema file',
+  ).toEqual(
+    knownBackendSchemaTypes()
+      .map((type) => `${type}.schema.json`)
+      .sort(),
+  );
 }
 
 export function assertFrameMatchesBackendSchema(frame: Record<string, unknown>): void {
@@ -122,10 +128,4 @@ export function assertFrameMatchesBackendSchema(frame: Record<string, unknown>):
     valid,
     `invalid backend websocket schema frame ${type}: ${ajv.errorsText(validate.errors)}`,
   ).toBeTruthy();
-}
-
-export function assertObservedFramesMatchBackendSchemas(frames: CapturedWsFrame[]): void {
-  for (const frame of backendReceivedApplicationFrames(frames)) {
-    assertFrameMatchesBackendSchema(frame.json!);
-  }
 }

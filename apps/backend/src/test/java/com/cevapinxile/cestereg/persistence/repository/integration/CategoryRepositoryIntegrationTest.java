@@ -10,6 +10,7 @@ import com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory;
 import com.cevapinxile.cestereg.persistence.integration.support.PostgresJpaIntegrationTest;
 import com.cevapinxile.cestereg.persistence.integration.support.QuizPersistenceFixture;
 import com.cevapinxile.cestereg.persistence.repository.CategoryRepository;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,6 +103,11 @@ class CategoryRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
     final List<CategorySimple> categories = categoryRepository.findByGameId(gameId);
 
     assertEquals(2, categories.size());
+    assertEquals(
+        List.of(pickedCategory, openCategory).stream()
+            .sorted(Comparator.comparing(UUID::toString))
+            .toList(),
+        categories.stream().map(CategorySimple::getId).toList());
     final CategorySimple picked =
         categories.stream()
             .filter(category -> category.getId().equals(pickedCategory))

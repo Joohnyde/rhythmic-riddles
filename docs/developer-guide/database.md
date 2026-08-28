@@ -1,8 +1,6 @@
-
 # Database Guide
 
 This document describes **everything database-related** for the project: local development setup, embedded vs external DB, schema overview (ERD), tables/columns, SQL scripts, idempotency rules, seeding/dumps, and how scripts are executed automatically in the devcontainer.
-
 
 ## Quick start
 
@@ -26,7 +24,6 @@ psql "postgresql://rhytmicriddles:change_me@127.0.0.1:2345/rhytmicriddles"
 
 Install Postgres locally and run scripts in order with `psql` (details below).
 
-
 ## Database modes: External vs Embedded
 
 The application supports two runtime database modes.
@@ -47,7 +44,6 @@ The application supports two runtime database modes.
 
 - docker entrypoint init (`/docker-entrypoint-initdb.d`)
 - bundled/embedded `psql` execution (because scripts use `\connect`, etc.)
-
 
 ## Installing Postgres (External DB)
 
@@ -82,7 +78,6 @@ brew services start postgresql@18
 
 - Install using the [official Postgres installer](https://sbp.enterprisedb.com/getfile.jsp?fileid=1260041).
 - Ensure `psql` is available in PATH.
-
 
 ## Schema overview (ERD)
 
@@ -293,7 +288,6 @@ Indexes:
 - `idx_interrupt_team_schedule (team_id, schedule_id)`
 - `interrupt_index_arrived_desc (arrived_at desc, deduplicate_items=true)`
 
-
 ## SQL scripts in `db/`
 
 All scripts are **idempotent** (safe to run multiple times) and designed to work in:
@@ -326,15 +320,15 @@ All scripts are **idempotent** (safe to run multiple times) and designed to work
 **Security warning (sensitive):**
 
 - This script contains credentials via:
-    
+
     ```sql
     \set db_pass ...
     ```
-    
+
 - **Never commit real production passwords.**
-    
+
 - Keep the repo version as a template with `change_me`, and inject real credentials via:
-    
+
     - environment variables (Docker) ←**preferred**
     - CI secrets
     - `.env` file ignored by git
@@ -359,15 +353,14 @@ Recommended pattern:
 **How idempotency works:**
 
 - `CREATE TABLE IF NOT EXISTS`
-    
+
 - PK/FK blocks are guarded via:
-    
+
     ```sql
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '...')
     ```
-    
+
 - indexes use `CREATE INDEX IF NOT EXISTS`
-    
 
 #### `db_02_set_table_ownership.sql` (ownership normalization)
 
@@ -378,15 +371,14 @@ Recommended pattern:
 **Key technique:**
 
 - Determine `db_owner`:
-    
+
     ```sql
     SELECT r.rolname ... WHERE d.datname = current_database();
     ```
-    
+
 - Alter ownership for tables/sequences/views/functions
-    
+
 - Excludes extension members using `pg_depend dep.deptype = 'e'`
-    
 
 **Why it exists:**
 
@@ -428,7 +420,6 @@ To avoid inserting a child before its parent (FK violations), this script insert
 
 Run this script after the base schema and seed scripts so existing data is validated against the runtime invariants.
 
-
 ## Running scripts manually (external Postgres)
 
 ### Using a single psql session (recommended)
@@ -455,19 +446,17 @@ psql -h 127.0.0.1 -p 5432 -U postgres -d postgres \
   -f db_00_create_db.sql
 ```
 
-
 ## Devcontainer automation (Docker Compose)
 
 The provided `docker-compose.yml.example` runs:
 
 - `db` service: `postgres:18.2`
-    
+
 - volume mount:
-    
+
     ```yaml
     - ./db/:/docker-entrypoint-initdb.d:ro
     ```
-    
 
 ### How Postgres init scripts work
 
@@ -491,7 +480,6 @@ So:
 
 > Devcontainer details (how we attach IDE, run services, etc.) will be documented in a separate devcontainer document later. This DB guide assumes docker-compose is the entry point.
 
-
 ## Idempotency requirements (non-negotiable)
 
 All scripts should be safe to re-run without destroying data.
@@ -501,23 +489,22 @@ Recommended patterns (already used in this repo):
 ### Create objects
 
 - Tables:
-    
+
     ```sql
     CREATE TABLE IF NOT EXISTS ...
     ```
-    
+
 - Extensions:
-    
+
     ```sql
     CREATE EXTENSION IF NOT EXISTS ...
     ```
-    
+
 - Indexes:
-    
+
     ```sql
     CREATE INDEX IF NOT EXISTS ...
     ```
-    
 
 ### Constraints (PK/FK)
 
@@ -550,7 +537,6 @@ Do **not**:
 - `DELETE FROM ...` without very strict guards
 
 If you need changes over time, add dedicated **patch scripts** (e.g. `db_patch_2026_02_01_11_52_add_column.sql`) and track their execution.
-
 
 ## References
 
