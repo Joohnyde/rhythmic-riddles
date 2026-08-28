@@ -1,8 +1,6 @@
 {
   "name": "RhytmicRiddles Dev",
-  "dockerComposeFile": [
-    "../docker-compose.yml"
-  ],
+  "dockerComposeFile": ["../docker-compose.yml"],
   "service": "dev",
   "runServices": ["db", "dev"],
   "workspaceFolder": "/workspace",
@@ -27,4 +25,3 @@
   "updateRemoteUserUID": true,
   "forwardPorts": [4200, 8080]
 }
-

@@ -8,19 +8,21 @@ import {
   computed,
   effect,
   inject,
-  signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { GameSession } from '../../../core/session/game-session.service';
 import { AlbumSelectionStore } from '../../../domain/game/state/album-selection.store';
 import { Stage1AlbumFocusComponent } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.component';
-import type { AlbumFocusLayout } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.types';
+import { Stage1FocusPresentationCoordinator } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-coordinator';
+import type { Stage1FocusRequest } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-coordinator';
 import { captureStage1AlbumLayout } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-origin';
+import {
+  isStage1AbortError,
+  waitForStage1AnimationFrame,
+} from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-async';
 import { Stage1CategoryHeaderComponent } from '../../../shared/ui/stage1-album-selection/category-header/stage1-category-header.component';
+import { getStage1AlbumImageUrl } from '../../../shared/ui/stage1-album-selection/stage1-album-image-url';
 import { Stage1TvAlbumMarqueeComponent } from '../../../shared/ui/stage1-album-selection/tv-album-marquee/stage1-tv-album-marquee.component';
-
-type AlbumFocusPhase = 'idle' | 'measuring' | 'animating' | 'settled';
 
 @Component({
   selector: 'rr-tv-album-selection-page',
@@ -38,9 +40,10 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
 
   readonly session = inject(GameSession);
   readonly store = inject(AlbumSelectionStore);
-  readonly focusLayout = signal<AlbumFocusLayout | null>(null);
-  readonly focusPhase = signal<AlbumFocusPhase>('idle');
-  readonly focusSceneReady = signal(false);
+  readonly focus = new Stage1FocusPresentationCoordinator();
+  readonly focusLayout = this.focus.layout;
+  readonly focusPhase = this.focus.phase;
+  readonly focusSceneReady = this.focus.sceneReady;
   readonly showNormalAlbums = computed(() => {
     const vm = this.store.vm();
     const phase = this.focusPhase();
@@ -60,8 +63,6 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly changeDetector = inject(ChangeDetectorRef);
-  private requestedFocusAlbumId: string | null = null;
-  private focusRequestToken = 0;
 
   constructor() {
     effect(() => {
@@ -72,11 +73,12 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
       }
 
       if (!selectedId) {
-        this.resetFocusRequest();
+        this.marquee?.resetFocusPositioning();
+        this.focus.reset();
         return;
       }
 
-      if (selectedId !== this.requestedFocusAlbumId) {
+      if (selectedId !== this.focus.requestedAlbumId) {
         this.requestAlbumFocus(selectedId);
       }
     });
@@ -84,71 +86,61 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.session.code || !this.session.messages$) {
-      void this.router.navigate(['tv']);
+      void this.router
+        .navigate(['tv'])
+        .catch((error: unknown) => console.error('Stage 1 TV fallback navigation failed.', error));
       return;
     }
     this.store.connect(this.session.messages$, 'tv');
   }
 
   ngOnDestroy(): void {
+    this.focus.destroy();
     this.store.disconnect();
   }
 
-  getAlbumImageUrl(image: string): string {
-    const fileName = image.split('/').pop() ?? image;
-    const albumId = fileName.replace(/\.[^.]+$/, '');
-    return `${environment.apiUrl}/assets/v1/image/albums/${albumId}`;
-  }
+  readonly getAlbumImageUrl = (image: string): string => getStage1AlbumImageUrl(image);
 
   onFocusReady(): void {
-    this.focusSceneReady.set(true);
+    this.focus.markReady();
   }
 
   onFocusSettled(): void {
-    this.focusPhase.set('settled');
+    this.focus.markSettled();
+  }
+
+  onFocusFailed(): void {
+    // The marquee is still mounted until the focus child emits `ready`. If the child fails before
+    // that hand-off, release the temporary focus offset so the normal carousel resumes in-place.
+    this.marquee?.resetFocusPositioning();
+    this.focus.markFailed();
   }
 
   private requestAlbumFocus(albumId: string): void {
-    const token = ++this.focusRequestToken;
-    this.requestedFocusAlbumId = albumId;
-    this.focusSceneReady.set(false);
-    this.focusLayout.set(null);
-    this.focusPhase.set('measuring');
-    void this.prepareAlbumFocus(albumId, token);
+    const request = this.focus.begin(albumId);
+    void this.prepareAlbumFocus(request).catch((error: unknown) => {
+      if (isStage1AbortError(error)) {
+        return;
+      }
+      this.marquee?.resetFocusPositioning();
+      this.focus.fail(request);
+      console.error('Stage 1 TV focus preparation failed.', error);
+    });
   }
 
-  private async prepareAlbumFocus(albumId: string, token: number): Promise<void> {
-    await this.nextFrame();
-    await this.nextFrame();
-    if (!this.isCurrentFocusRequest(albumId, token)) return;
+  private async prepareAlbumFocus(request: Stage1FocusRequest): Promise<void> {
+    await waitForStage1AnimationFrame(request.signal);
+    await waitForStage1AnimationFrame(request.signal);
+    if (!this.focus.isCurrent(request)) return;
 
     const layout =
-      (await this.marquee?.prepareFocusLayout(albumId)) ??
-      captureStage1AlbumLayout(this.host.nativeElement, albumId);
+      (await this.marquee?.prepareFocusLayout(request.albumId, request.signal)) ??
+      captureStage1AlbumLayout(this.host.nativeElement, request.albumId);
 
-    if (!layout || !this.isCurrentFocusRequest(albumId, token)) {
+    if (!layout || !this.focus.commitLayout(request, layout)) {
       return;
     }
 
-    this.focusLayout.set(layout);
-    this.focusSceneReady.set(false);
-    this.focusPhase.set('animating');
     this.changeDetector.detectChanges();
-  }
-
-  private nextFrame(): Promise<void> {
-    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-  }
-
-  private isCurrentFocusRequest(albumId: string, token: number): boolean {
-    return this.focusRequestToken === token && this.requestedFocusAlbumId === albumId;
-  }
-
-  private resetFocusRequest(): void {
-    this.requestedFocusAlbumId = null;
-    this.focusRequestToken += 1;
-    this.focusLayout.set(null);
-    this.focusSceneReady.set(false);
-    this.focusPhase.set('idle');
   }
 }

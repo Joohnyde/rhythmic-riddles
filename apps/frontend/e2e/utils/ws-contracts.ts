@@ -1,20 +1,22 @@
 import { expect } from '@playwright/test';
+import { GAME_MESSAGE_TYPES } from '../../src/app/domain/game/messages/default.messages';
 import { CapturedWsFrame, backendReceivedApplicationFrames } from './ws-capture';
 import {
   assertFrameMatchesBackendSchema,
   knownBackendSchemaTypes,
-  loadPublishedFrameRegistry,
 } from './backend-schema-governance';
 
 export function knownFrontendWsTypes(): string[] {
-  // The frontend contract runner now uses the same schema registry bundled with
-  // the tests. This keeps Playwright from drifting away from backend contracts.
-  return loadPublishedFrameRegistry().publishedFrameTypes.sort();
+  return [...GAME_MESSAGE_TYPES].sort();
 }
 
 export function assertFrontendWsContract(frame: Record<string, unknown>): void {
   const type = frame.type;
   expect(typeof type, 'websocket frame type must be string').toBe('string');
+  expect(
+    knownFrontendWsTypes(),
+    `frontend does not register websocket frame ${String(type)}`,
+  ).toContain(type as string);
   expect(knownBackendSchemaTypes(), `no websocket schema registered for ${String(type)}`).toContain(
     type as string,
   );

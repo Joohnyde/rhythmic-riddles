@@ -4,16 +4,10 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/error_solved.schema.json",
   "title": "WebSocket error_solved frame",
   "description": "Technical/system pause resolved.",
-  "x-recipients": [
-    "admin",
-    "tv"
-  ],
+  "x-recipients": ["admin", "tv"],
   "x-replaySafe": false,
   "type": "object",
-  "required": [
-    "type",
-    "previousScenario"
-  ],
+  "required": ["type", "previousScenario"],
   "properties": {
     "type": {
       "const": "error_solved"

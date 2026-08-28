@@ -4,9 +4,7 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/_published-frame-registry.schema.json",
   "title": "Published WebSocket frame schema registry",
   "type": "object",
-  "required": [
-    "publishedFrameTypes"
-  ],
+  "required": ["publishedFrameTypes"],
   "properties": {
     "publishedFrameTypes": {
       "type": "array",

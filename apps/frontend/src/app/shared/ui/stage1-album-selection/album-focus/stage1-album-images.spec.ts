@@ -35,6 +35,7 @@ describe('Stage 1 album image readiness', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     window.requestAnimationFrame = animationFrame;
     document.body.replaceChildren();
     vi.restoreAllMocks();
@@ -89,5 +90,102 @@ describe('Stage 1 album image readiness', () => {
     image.dispatchEvent(new Event('error'));
 
     await expect(promise).resolves.toBeUndefined();
+  });
+
+  it('keeps going when decode rejects after a successful image load', async () => {
+    const host = createHost();
+    const image = appendAlbumImage(host);
+    setImageState(image, true, 120);
+    image.decode = vi.fn().mockRejectedValue(new Error('decode failed'));
+
+    await expect(waitForStage1AlbumImages(host)).resolves.toBeUndefined();
+  });
+
+  it('resolves immediately for an already complete image after decode and cancels the losing timeout', async () => {
+    vi.useFakeTimers();
+    const host = createHost();
+    const image = appendAlbumImage(host);
+    const decode = vi.fn().mockResolvedValue(undefined);
+    setImageState(image, true, 120);
+    image.decode = decode;
+
+    await expect(waitForStage1AlbumImages(host, { timeoutMs: 2500 })).resolves.toBeUndefined();
+
+    expect(decode).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('uses a bounded timeout when an album image never settles', async () => {
+    vi.useFakeTimers();
+    const host = createHost();
+    const image = appendAlbumImage(host);
+    setImageState(image, false, 0);
+
+    const promise = waitForStage1AlbumImages(host, { timeoutMs: 25 });
+    await vi.advanceTimersByTimeAsync(25);
+
+    await expect(promise).resolves.toBeUndefined();
+  });
+
+  it('removes pending listeners when timeout wins before a late load arrives', async () => {
+    vi.useFakeTimers();
+    const host = createHost();
+    const image = appendAlbumImage(host);
+    setImageState(image, false, 0);
+    const addEventListener = vi.spyOn(image, 'addEventListener');
+    const removeEventListener = vi.spyOn(image, 'removeEventListener');
+
+    const promise = waitForStage1AlbumImages(host, { timeoutMs: 25 });
+    await vi.advanceTimersByTimeAsync(25);
+    await promise;
+
+    setImageState(image, true, 120);
+    image.dispatchEvent(new Event('load'));
+
+    expect(addEventListener).toHaveBeenCalled();
+    expect(removeEventListener).toHaveBeenCalledWith('load', expect.any(Function));
+    expect(removeEventListener).toHaveBeenCalledWith('error', expect.any(Function));
+  });
+
+  it('ignores a late load after timeout already settled and cleaned its listeners', async () => {
+    vi.useFakeTimers();
+    const host = createHost();
+    const image = appendAlbumImage(host);
+    setImageState(image, false, 0);
+    const decode = vi.fn().mockResolvedValue(undefined);
+    image.decode = decode;
+
+    const promise = waitForStage1AlbumImages(host, { timeoutMs: 25 });
+    await vi.advanceTimersByTimeAsync(25);
+    await promise;
+
+    setImageState(image, true, 120);
+    image.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+
+    expect(decode).not.toHaveBeenCalled();
+  });
+
+  it('rejects immediately when image preparation starts with an already-aborted signal', async () => {
+    const host = createHost();
+    const abort = new AbortController();
+    abort.abort();
+
+    await expect(waitForStage1AlbumImages(host, { signal: abort.signal })).rejects.toThrow(
+      'Stage 1 focus preparation was aborted.',
+    );
+  });
+
+  it('can cancel a pending image wait during focus teardown', async () => {
+    const host = createHost();
+    const image = appendAlbumImage(host);
+    const abort = new AbortController();
+    setImageState(image, false, 0);
+
+    const promise = waitForStage1AlbumImages(host, { signal: abort.signal });
+    await Promise.resolve();
+    abort.abort();
+
+    await expect(promise).rejects.toThrow('Stage 1 focus preparation was aborted.');
   });
 });

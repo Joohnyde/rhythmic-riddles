@@ -1,4 +1,3 @@
-
 # Contributing to RhytmicRiddles
 
 This project is intentionally lightweight on ceremony but strict on **quality** and **traceability**.
@@ -6,6 +5,7 @@ This project is intentionally lightweight on ceremony but strict on **quality** 
 ## Issue-first workflow
 
 Every change must have a GitHub Issue:
+
 - **Feature**
 - **Bug**
 - **DevOps issue**
@@ -15,6 +15,7 @@ Every change must have a GitHub Issue:
 - **Performance**
 
 Each issue should include:
+
 - **Context / motivation**
 - **Acceptance criteria**
 - **API contract changes** (request/response + errors)
@@ -23,35 +24,41 @@ Each issue should include:
 - **Open questions** + decisions made
 
 ### Definition of Done (DoD)
+
 A ticket is “Done” only when:
+
 - code is merged to `main`
 - CI is green
 - tests added/updated
 - docs updated (user/dev docs when relevant)
 - error catalog updated when new errors added
 
-##  Branch naming
+## Branch naming
 
 Create a branch from `main` per ticket:
 
 `<name>/<ticketNr>_<short_description>`
 
 Example:
+
 - `filip/6728_palette_dark_mode`
 
-##  Commit message convention
+## Commit message convention
 
 Each commit message begins with:
 
 `[<ticketNr> <Name>] <message>`
 
 Example:
+
 - `[6728 Filip] Add dark-mode toggle`
 
-##  PR title and description
+## PR title and description
 
 ### PR Title
+
 Use:
+
 - `[feature_6728] Change palette to dark mode`
 - `[bugfix_1022] Fix interrupt seek calculation`
 - `[chore_9001] Update dependencies`
@@ -60,7 +67,9 @@ Use:
 - `[security_5002] Sanitize error messages`
 
 ### PR Description (required)
+
 Include:
+
 - What changed (short)
 - Why it changed (short)
 - DB migrations (if any)
@@ -78,20 +87,23 @@ Include:
 ## Formatting & linting
 
 CI enforces formatting:
+
 - Java: Spotless (or configured formatter)
 - Angular: Prettier + ESLint
 
 Run locally:
+
 - `./scripts/dev/format-all.sh`
 - Backend tests (Linux): `cd apps/backend && mvn -Dplatform=linux test`
-  - Windows/macOS: use `-Dplatform=windows` / `-Dplatform=macos`
-  - See `docs/developer-guide/testing/db-integration-tests.md` for embedded PostgreSQL details.
+    - Windows/macOS: use `-Dplatform=windows` / `-Dplatform=macos`
+    - See `docs/developer-guide/testing/db-integration-tests.md` for embedded PostgreSQL details.
 
 See `docs/developer-guide/ide-setup.md`.
 
-##  Secrets
+## Secrets
 
 Never commit secrets. Use:
+
 - `.example` files
 - local `.env` ignored by git
 - GitHub Actions secrets for CI/CD
@@ -168,11 +180,11 @@ consistent.
 This repository also uses automated security and dependency management
 tools:
 
--   **Dependabot** -- keeps dependencies up to date and opens pull
-    requests for updates
--   **CodeQL** -- performs automated static security analysis
--   **Secret scanning & push protection** -- prevents credentials from
-    entering the repository
+- **Dependabot** -- keeps dependencies up to date and opens pull
+  requests for updates
+- **CodeQL** -- performs automated static security analysis
+- **Secret scanning & push protection** -- prevents credentials from
+  entering the repository
 
 These tools run automatically and require no manual interaction beyond
 reviewing Dependabot pull requests.

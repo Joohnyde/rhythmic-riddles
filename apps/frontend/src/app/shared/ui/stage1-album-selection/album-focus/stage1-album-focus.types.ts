@@ -1,3 +1,5 @@
+export type AlbumFocusPhase = 'idle' | 'measuring' | 'animating' | 'settled';
+
 export type Stage1NeighborDirection =
   'top-left' | 'top' | 'top-right' | 'left' | 'right' | 'bottom-left' | 'bottom' | 'bottom-right';
 
@@ -13,6 +15,6 @@ export interface AlbumFocusCardOrigin extends AlbumFocusOrigin {
 }
 
 export interface AlbumFocusLayout {
-  readonly selected: AlbumFocusOrigin;
+  readonly selected: AlbumFocusCardOrigin;
   readonly cards: readonly AlbumFocusCardOrigin[];
 }

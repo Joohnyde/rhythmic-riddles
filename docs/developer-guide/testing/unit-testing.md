@@ -33,7 +33,6 @@ Run one test class:
 mvn -Dtest=GameServiceImplTest test
 ```
 
-
 ## What a unit test is in Spring Boot
 
 A unit test should test one class, usually one method or one behavior branch, without starting the whole application.
@@ -76,15 +75,16 @@ class GameServiceImplTest {
 }
 ```
 
-
 ## Core annotations you will use
 
 ### `@ExtendWith(MockitoExtension.class)`
+
 Enables Mockito in JUnit 5 tests.
 
 Without it, `@Mock` and `@InjectMocks` will not be initialized automatically.
 
 ### `@Mock`
+
 Creates a fake dependency.
 
 Example:
@@ -97,6 +97,7 @@ private GameRepository gameRepository;
 This lets you control what the repository returns without touching a real database.
 
 ### `@InjectMocks`
+
 Creates the class under test and injects the mocks into it.
 
 Example:
@@ -107,14 +108,15 @@ private GameServiceImpl gameService;
 ```
 
 ### `@Test`
-Marks a method as a test.
 
+Marks a method as a test.
 
 ## The normal flow of writing a test
 
 A very good pattern is:
 
 ### 1. Arrange
+
 Prepare test data and mock behavior.
 
 ```java
@@ -125,6 +127,7 @@ when(gameRepository.findByCode("AKKU", 0)).thenReturn(game);
 ```
 
 ### 2. Act
+
 Call the method you want to test.
 
 ```java
@@ -132,6 +135,7 @@ GameEntity result = gameService.findByCode("AKKU", 0);
 ```
 
 ### 3. Assert
+
 Check the result and side effects.
 
 ```java
@@ -139,14 +143,15 @@ assertEquals("AKKU", result.getCode());
 ```
 
 This is often called **AAA**:
+
 - Arrange
 - Act
 - Assert
 
-
 ## The most common Mockito functions
 
 ## `when(...)`
+
 Defines what a mock should return when called.
 
 Example:
@@ -158,8 +163,8 @@ when(gameRepository.findByCode("AKKU", 0)).thenReturn(game);
 Meaning:
 when this method is called with these arguments, return this object.
 
-
 ## `thenReturn(...)`
+
 Used after `when(...)` to specify the returned value.
 
 Example:
@@ -168,8 +173,8 @@ Example:
 when(teamRepository.findByRoomCode("AKKU")).thenReturn(List.of());
 ```
 
-
 ## `thenThrow(...)`
+
 Used after `when(...)` to make the mock throw an exception.
 
 Example:
@@ -180,8 +185,8 @@ when(gameRepository.findByCode("AKKU", 2)).thenThrow(new GameNotFoundException("
 
 Useful for testing failure paths.
 
-
 ## `verify(...)`
+
 Checks whether a mocked dependency was called.
 
 Example:
@@ -192,8 +197,8 @@ verify(gameRepository).save(game);
 
 This verifies that `save(game)` happened.
 
-
 ## `never()`
+
 Used with `verify(...)` to ensure something did not happen.
 
 Example:
@@ -204,8 +209,8 @@ verify(broadcastGateway, never()).broadcast(any());
 
 Very useful in rejected-operation tests.
 
-
 ## `times(n)`
+
 Checks how many times something happened.
 
 Example:
@@ -214,8 +219,8 @@ Example:
 verify(scheduleRepository, times(2)).findLastPlayed(anyLong());
 ```
 
-
 ## `any()`
+
 A matcher meaning “any value of this type is acceptable”.
 
 Example:
@@ -235,8 +240,8 @@ any(LocalDateTime.class)
 
 Use this when the exact argument is not important for the test.
 
-
 ## `eq(...)`
+
 A matcher meaning “this exact value”.
 
 Example:
@@ -248,6 +253,7 @@ verify(interruptRepository).resolveErrors(eq(lastPlayed.getId()), any(LocalDateT
 This is often needed when mixing an exact value with matchers.
 
 ### Important rule
+
 If you use a matcher for one argument, you must use matchers for all arguments.
 
 Wrong:
@@ -262,8 +268,8 @@ Correct:
 verify(interruptRepository).resolveErrors(eq(lastPlayed.getId()), any(LocalDateTime.class));
 ```
 
-
 ## `isNull()` and `notNull()`
+
 Matchers for null checks.
 
 Example:
@@ -272,8 +278,8 @@ Example:
 verify(gameRepository).save(notNull());
 ```
 
-
 ## `argThat(...)`
+
 Lets you verify a more complex condition on an argument.
 
 Example:
@@ -286,8 +292,8 @@ verify(broadcastGateway).broadcast(argThat(message ->
 
 Very useful when checking DTO payload content.
 
-
 ## `ArgumentCaptor`
+
 Captures the actual object passed to a mock so you can inspect it in detail.
 
 Example:
@@ -305,8 +311,8 @@ assertEquals(2, sent.getStage());
 
 Use this when `argThat(...)` becomes too hard to read.
 
-
 ## `InOrder`
+
 Verifies call order.
 
 Example:
@@ -320,19 +326,22 @@ inOrder.verify(broadcastGateway).broadcast(any());
 
 Use this only when order truly matters.
 
-
 ## Common assertion functions
 
 ### `assertEquals(expected, actual)`
+
 Checks exact equality.
 
 ### `assertTrue(...)` / `assertFalse(...)`
+
 Checks boolean conditions.
 
 ### `assertNotNull(...)` / `assertNull(...)`
+
 Checks whether something exists.
 
 ### `assertThrows(...)`
+
 Checks that an exception is thrown.
 
 Example:
@@ -347,7 +356,6 @@ assertEquals("Game not found", ex.getMessage());
 ```
 
 This is very important. Do not only assert that an exception happens. Also assert its type and, when helpful, its message.
-
 
 ## What to test
 
@@ -366,7 +374,6 @@ For rule-heavy methods, also test:
 - no-op situations
 - exact broadcast content
 - order of side effects
-
 
 ## Good unit test example
 
@@ -392,7 +399,6 @@ Why this is good:
 - checks result and side effect
 - small setup
 
-
 ## Bad unit test example
 
 ```java
@@ -413,7 +419,6 @@ Problems:
 - unclear intention
 - too matcher-heavy
 - does not explain the expected business behavior
-
 
 ## How to name tests
 
@@ -437,14 +442,15 @@ worksFine
 ```
 
 A good test name should explain:
+
 - what method/behavior
 - under what condition
 - what should happen
 
-
 ## Common pitfalls
 
 ## 1. Mixing matchers and raw values
+
 Wrong:
 
 ```java
@@ -457,8 +463,8 @@ Correct:
 verify(repo).resolveErrors(eq(lastPlayed.getId()), any(LocalDateTime.class));
 ```
 
-
 ## 2. Unnecessary stubbing
+
 If you stub something that is never called, Mockito may throw `UnnecessaryStubbingException`.
 
 Example of unnecessary stub:
@@ -470,27 +476,30 @@ when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
 If the method throws before reaching that line, the stub is unused.
 
 Fix:
+
 - remove the stub, or
 - fix the setup so the code actually reaches that branch
 
 Do not use `lenient()` unless there is a very good reason.
 
-
 ## 3. Over-mocking
+
 Do not mock everything blindly.
 
 Mock dependencies of the class under test, not the class under test itself.
 
 Good:
+
 - mock repositories
 - mock gateways
 - test real service logic
 
 Bad:
+
 - mock the service and then “test” that mocked behavior
 
-
 ## 4. Asserting too little
+
 This is weak:
 
 ```java
@@ -504,27 +513,27 @@ assertEquals(2, result.getStage());
 assertEquals("AKKU", result.getRoomCode());
 ```
 
-
 ## 5. Testing implementation instead of behavior
+
 Do not write tests that only prove that internal private details exist.
 
 Test:
+
 - outcomes
 - side effects
 - business rules
 
 Avoid brittle tests that break because of harmless refactoring.
 
-
 ## 6. One test doing too much
+
 A test should ideally check one behavior branch.
 
 If a test validates five different branches, debugging failures becomes painful.
 
-
 ## 7. Copy-paste setup everywhere
-If many tests create the same data in the same way, move that into helper methods or a shared factory.
 
+If many tests create the same data in the same way, move that into helper methods or a shared factory.
 
 ## How to handle generated test data
 
@@ -540,6 +549,7 @@ This is the right idea.
 Instead of repeating this in many files, centralize it.
 
 ### Recommended approach
+
 Create a shared helper class, for example:
 
 ```java
@@ -571,11 +581,11 @@ GameEntity game = ServiceImplTestDataFactory.game("AKKU", 2);
 ```
 
 ### Why this helps
+
 - less duplication
 - easier maintenance
 - consistent test data
 - simpler migration when entities change
-
 
 ## How to organize tests by file
 
@@ -596,7 +606,6 @@ Examples of functional suites:
 
 The grouping can be done by comments, regions, or helper naming conventions. The important thing is that a developer can quickly find the relevant test area.
 
-
 ## How to decide whether a test is worth keeping
 
 A strong test usually scores high if it protects:
@@ -610,12 +619,12 @@ A strong test usually scores high if it protects:
 - side-effect ordering
 
 A weaker or more redundant test might:
+
 - duplicate another scenario almost exactly
 - verify a trivial wrapper method
 - assert something already proven elsewhere in a more useful way
 
 Do not remove tests just because there are many. Remove only when they are truly duplicated or too low-value.
-
 
 ## What to avoid in this project specifically
 
@@ -628,12 +637,12 @@ Because this project is state-heavy, avoid:
 - only testing happy paths for interrupt logic
 
 The dangerous bugs in this codebase usually appear in:
+
 - unusual state combinations
 - invalid transitions
 - resume/recovery behavior
 - duplicate actions
 - mismatched persisted state
-
 
 ## Practical checklist for each new service test
 
@@ -648,22 +657,24 @@ Before finishing a new test, ask:
 
 If the answer is yes to all of these, the test is probably solid.
 
-
 ## Summary
 
 In this project, unit tests are mainly used to protect the backend service layer.
 
 Use:
+
 - JUnit 5 for test structure and assertions
 - Mockito for mocks, stubbing, and verification
 
 Write tests that are:
+
 - behavior-focused
 - readable
 - small
 - strict about business rules
 
 For core flows, always think beyond the happy path:
+
 - failures
 - edge cases
 - repeated calls

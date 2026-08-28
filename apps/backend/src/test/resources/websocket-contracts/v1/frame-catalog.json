@@ -6,10 +6,7 @@
   "frameTypes": [
     {
       "type": "welcome",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": true,
       "schema": "schema/welcome.schema.json",
       "example": "examples/welcome.json",
@@ -17,9 +14,7 @@
     },
     {
       "type": "new_team",
-      "recipients": [
-        "tv"
-      ],
+      "recipients": ["tv"],
       "replaySafe": false,
       "schema": "schema/new_team.schema.json",
       "example": "examples/new_team.json",
@@ -27,9 +22,7 @@
     },
     {
       "type": "kick_team",
-      "recipients": [
-        "tv"
-      ],
+      "recipients": ["tv"],
       "replaySafe": false,
       "schema": "schema/kick_team.schema.json",
       "example": "examples/kick_team.json",
@@ -37,9 +30,7 @@
     },
     {
       "type": "button_clicked",
-      "recipients": [
-        "admin"
-      ],
+      "recipients": ["admin"],
       "replaySafe": false,
       "schema": "schema/button_clicked.schema.json",
       "example": "examples/button_clicked.json",
@@ -47,9 +38,7 @@
     },
     {
       "type": "album_picked",
-      "recipients": [
-        "tv"
-      ],
+      "recipients": ["tv"],
       "replaySafe": false,
       "schema": "schema/album_picked.schema.json",
       "example": "examples/album_picked.json",
@@ -57,10 +46,7 @@
     },
     {
       "type": "song_next",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": false,
       "schema": "schema/song_next.schema.json",
       "example": "examples/song_next.json",
@@ -68,10 +54,7 @@
     },
     {
       "type": "song_repeat",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": false,
       "schema": "schema/song_repeat.schema.json",
       "example": "examples/song_repeat.json",
@@ -79,10 +62,7 @@
     },
     {
       "type": "song_reveal",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": false,
       "schema": "schema/song_reveal.schema.json",
       "example": "examples/song_reveal.json",
@@ -90,10 +70,7 @@
     },
     {
       "type": "pause",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": false,
       "schema": "schema/pause.schema.json",
       "example": "examples/pause.json",
@@ -101,10 +78,7 @@
     },
     {
       "type": "answer",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": false,
       "schema": "schema/answer.schema.json",
       "example": "examples/answer.json",
@@ -112,10 +86,7 @@
     },
     {
       "type": "error_solved",
-      "recipients": [
-        "admin",
-        "tv"
-      ],
+      "recipients": ["admin", "tv"],
       "replaySafe": false,
       "schema": "schema/error_solved.schema.json",
       "example": "examples/error_solved.json",

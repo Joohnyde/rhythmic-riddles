@@ -4,17 +4,10 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/pause.schema.json",
   "title": "WebSocket pause frame",
   "description": "Team or system pause. System pause uses literal string null.",
-  "x-recipients": [
-    "admin",
-    "tv"
-  ],
+  "x-recipients": ["admin", "tv"],
   "x-replaySafe": false,
   "type": "object",
-  "required": [
-    "type",
-    "answeringTeamId",
-    "interruptId"
-  ],
+  "required": ["type", "answeringTeamId", "interruptId"],
   "properties": {
     "type": {
       "const": "pause"

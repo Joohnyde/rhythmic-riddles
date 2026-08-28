@@ -5,6 +5,9 @@
   [class.stage1-focus-viewport--ready]="focusReady()"
   [class.stage1-focus-viewport--absolute]="absoluteLayout()"
   [class.stage1-focus-viewport--settled]="settled()"
+  [attr.data-focus-state]="
+    settled() ? 'settled' : focused() ? 'animating' : focusReady() ? 'ready' : 'preparing'
+  "
   [attr.data-testid]="testId()"
 >
   <div #scene class="stage1-focus-scene">
@@ -18,6 +21,7 @@
         [glow]="album.id === selectedId() && glowActive()"
         [class.stage1-focus-album-card--neighbor]="focused() && neighborDirection(album.id)"
         [class.stage1-focus-album-card--selected]="album.id === selectedId()"
+        [attr.data-selected]="album.id === selectedId() ? 'true' : null"
         [attr.data-testid]="testId() + '-card-' + album.id"
         [attr.data-album-id]="album.id"
       />

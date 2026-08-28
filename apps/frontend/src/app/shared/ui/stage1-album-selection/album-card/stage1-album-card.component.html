@@ -23,7 +23,7 @@
 
 <ng-template #cardContent>
   <div class="stage1-album-art-wrap">
-    <img class="stage1-album-art" [src]="imageUrl()" [alt]="album().name" />
+    <img class="stage1-album-art" [src]="imageUrl()" alt="" aria-hidden="true" />
 
     @if (album().ordinalNumber !== null && album().pickedByTeam) {
       <img class="stage1-album-team-icon" [src]="album().pickedByTeam" alt="" aria-hidden="true" />

@@ -29,11 +29,12 @@ export async function connectRole(
 export async function connectAdminAndTv(
   browser: Browser,
   roomCode: string,
+  contextOptions: BrowserContextOptions = {},
 ): Promise<{ admin: ConnectedClient; tv: ConnectedClient; close: () => Promise<void> }> {
   // Parallel connection keeps time-sensitive song-state fixtures inside the legal 9.6s buzz window.
   const [admin, tv] = await Promise.all([
-    connectRole(browser, 'admin', roomCode),
-    connectRole(browser, 'tv', roomCode),
+    connectRole(browser, 'admin', roomCode, contextOptions),
+    connectRole(browser, 'tv', roomCode, contextOptions),
   ]);
   return {
     admin,

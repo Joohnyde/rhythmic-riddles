@@ -1,8 +1,6 @@
-
 # Receiver Firmware (Arduino)
 
 This firmware reads 433MHz RF button codes using the `RCSwitch` library and emits exactly **one** `button_id` per physical press over the Serial interface.
-
 
 ## Runtime Behavior
 
@@ -11,8 +9,6 @@ This firmware reads 433MHz RF button codes using the `RCSwitch` library and emit
 - A press is considered released after `RELEASE_GAP_MS` (default: 250ms) without repeated signals
 
 This guarantees deterministic “one press → one event” semantics for backend processing.
-
-
 
 ## Wiring Requirements
 
@@ -33,14 +29,12 @@ Receiver connections:
 
 Compatible receiver modules (MVP):
 
-- XY-MK-5V  
+- XY-MK-5V
 - RXB6 (recommended for improved stability)
 
 For detailed wiring diagrams, soldering guidance, and assembly instructions, see:
 
 `docs/developer-guide/hardware/hardware-setup-guide.md`
-
-
 
 ## Serial Interface
 

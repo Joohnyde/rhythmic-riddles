@@ -4,18 +4,10 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/answer.schema.json",
   "title": "WebSocket answer frame",
   "description": "Admin resolved a team answer.",
-  "x-recipients": [
-    "admin",
-    "tv"
-  ],
+  "x-recipients": ["admin", "tv"],
   "x-replaySafe": false,
   "type": "object",
-  "required": [
-    "type",
-    "teamId",
-    "scheduleId",
-    "correct"
-  ],
+  "required": ["type", "teamId", "scheduleId", "correct"],
   "properties": {
     "type": {
       "const": "answer"

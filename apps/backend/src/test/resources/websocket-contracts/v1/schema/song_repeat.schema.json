@@ -4,16 +4,10 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/song_repeat.schema.json",
   "title": "WebSocket song_repeat frame",
   "description": "Replay current snippet.",
-  "x-recipients": [
-    "admin",
-    "tv"
-  ],
+  "x-recipients": ["admin", "tv"],
   "x-replaySafe": false,
   "type": "object",
-  "required": [
-    "type",
-    "remaining"
-  ],
+  "required": ["type", "remaining"],
   "properties": {
     "type": {
       "const": "song_repeat"

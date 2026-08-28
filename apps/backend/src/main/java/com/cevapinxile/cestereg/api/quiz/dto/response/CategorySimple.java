@@ -15,7 +15,9 @@ public class CategorySimple {
   private UUID id;
   private String name;
   private String image;
+  // Picker/team image reference rendered on the album card; this is not a team id.
   private String pickedByTeam = null;
+  // Null is the wire-level marker that this category has not yet been picked.
   private Integer ordinalNumber;
 
   public CategorySimple() {}

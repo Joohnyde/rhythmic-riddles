@@ -4,10 +4,7 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/song_next.schema.json",
   "title": "WebSocket song_next frame",
   "description": "Next scheduled song/question started.",
-  "x-recipients": [
-    "admin",
-    "tv"
-  ],
+  "x-recipients": ["admin", "tv"],
   "x-replaySafe": false,
   "type": "object",
   "required": [

@@ -10,23 +10,23 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { tap } from 'rxjs';
-import { environment } from '../../../../environments/environment';
 import { GameSession } from '../../../core/session/game-session.service';
-import type { GameServerMessage } from '../../../domain/game/messages/game-server-message.types';
 import { AlbumSelectionStore } from '../../../domain/game/state/album-selection.store';
 import { Stage1AlbumCardComponent } from '../../../shared/ui/stage1-album-selection/album-card/stage1-album-card.component';
 import { Stage1AlbumFocusComponent } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.component';
 import type { AlbumFocusLayout } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.types';
-import {
-  areStage1AlbumImagesReady,
-  waitForStage1AlbumImages,
-} from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-images';
+import { Stage1FocusPresentationCoordinator } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-coordinator';
+import type { Stage1FocusRequest } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-coordinator';
+import { waitForStage1AlbumImages } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-images';
 import { captureStage1AlbumLayout } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-origin';
-import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
+import {
+  Stage1AbortError,
+  isStage1AbortError,
+  waitForStage1AnimationFrame,
+} from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-async';
 import { Stage1CategoryHeaderComponent } from '../../../shared/ui/stage1-album-selection/category-header/stage1-category-header.component';
-
-type AlbumFocusPhase = 'idle' | 'measuring' | 'animating' | 'settled';
+import { getStage1AlbumImageUrl } from '../../../shared/ui/stage1-album-selection/stage1-album-image-url';
+import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'rr-admin-album-selection-page',
@@ -42,9 +42,11 @@ type AlbumFocusPhase = 'idle' | 'measuring' | 'animating' | 'settled';
 export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
   readonly session = inject(GameSession);
   readonly store = inject(AlbumSelectionStore);
-  readonly focusLayout = signal<AlbumFocusLayout | null>(null);
-  readonly focusPhase = signal<AlbumFocusPhase>('idle');
-  readonly focusSceneReady = signal(false);
+  readonly focus = new Stage1FocusPresentationCoordinator();
+  readonly focusLayout = this.focus.layout;
+  readonly focusPhase = this.focus.phase;
+  readonly focusSceneReady = this.focus.sceneReady;
+  readonly pickPreparing = signal(false);
   readonly showNormalAlbums = computed(() => {
     const vm = this.store.vm();
     const phase = this.focusPhase();
@@ -64,9 +66,11 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly changeDetector = inject(ChangeDetectorRef);
-  private requestedFocusAlbumId: string | null = null;
-  private focusRequestToken = 0;
-  private pendingFocusLayout: AlbumFocusLayout | null = null;
+  private readonly pageAbort = new AbortController();
+  private pendingFocusLayout: {
+    readonly albumId: string;
+    readonly layout: AlbumFocusLayout;
+  } | null = null;
   private scrollFrame?: number;
 
   constructor() {
@@ -78,11 +82,16 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
       }
 
       if (!selectedId) {
-        this.resetFocusRequest(!vm.inTransit);
+        this.focus.reset();
+        // Keep the pre-pick geometry only while the REST pick is in flight. A normal selecting
+        // state/recovery snapshot must not inherit geometry from a previous user action.
+        if (!vm.inTransit && !this.pickPreparing()) {
+          this.pendingFocusLayout = null;
+        }
         return;
       }
 
-      if (selectedId !== this.requestedFocusAlbumId) {
+      if (selectedId !== this.focus.requestedAlbumId) {
         this.requestAlbumFocus(selectedId);
       }
     });
@@ -90,99 +99,134 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.session.code || !this.session.messages$) {
-      void this.router.navigate(['admin']);
+      void this.router
+        .navigate(['admin'])
+        .catch((error: unknown) => this.handleAsyncError('fallback navigation', error));
       return;
     }
-    this.store.connect(
-      this.session.messages$.pipe(tap((message) => this.captureFocusOriginFromMessage(message))),
-      'admin',
-    );
+    this.store.connect(this.session.messages$, 'admin');
   }
 
   ngOnDestroy(): void {
+    this.pageAbort.abort();
+    this.focus.destroy();
     this.store.disconnect();
     this.cancelScrollFrame();
   }
 
-  async pickAlbum(categoryId: string): Promise<void> {
-    await waitForStage1AlbumImages(this.host.nativeElement);
-    this.pendingFocusLayout = this.captureAlbumLayout(categoryId);
-    void this.store.pickAlbum(categoryId);
+  pickAlbum(categoryId: string): void {
+    const vm = this.store.vm();
+    const album = vm.albums.find((candidate) => candidate.id === categoryId);
+    if (
+      this.pageAbort.signal.aborted ||
+      this.pickPreparing() ||
+      !vm.loaded ||
+      vm.inTransit ||
+      !!vm.selectedAlbum ||
+      !album ||
+      album.ordinalNumber !== null
+    ) {
+      return;
+    }
+
+    this.pickPreparing.set(true);
+    void this.prepareAndPickAlbum(categoryId)
+      .catch((error: unknown) => this.handleAsyncError('album pick', error))
+      .finally(() => {
+        if (!this.pageAbort.signal.aborted) {
+          this.pickPreparing.set(false);
+        }
+      });
   }
 
-  getAlbumImageUrl(image: string): string {
-    const fileName = image.split('/').pop() ?? image;
-    const albumId = fileName.replace(/\.[^.]+$/, '');
-    return `${environment.apiUrl}/assets/v1/image/albums/${albumId}`;
+  start(): void {
+    void this.store.start().catch((error: unknown) => this.handleAsyncError('start', error));
   }
+
+  readonly getAlbumImageUrl = (image: string): string => getStage1AlbumImageUrl(image);
 
   onFocusReady(): void {
-    this.focusSceneReady.set(true);
+    this.focus.markReady();
   }
 
   onFocusSettled(): void {
-    this.focusPhase.set('settled');
+    this.focus.markSettled();
+  }
+
+  onFocusFailed(): void {
+    this.focus.markFailed();
+  }
+
+  private async prepareAndPickAlbum(categoryId: string): Promise<void> {
+    await waitForStage1AlbumImages(this.host.nativeElement, { signal: this.pageAbort.signal });
+
+    // Image readiness is asynchronous. Re-check the application state before capturing pre-pick
+    // geometry so a selection/reconnect that happened while images were settling cannot leave
+    // stale coordinates for a different focus request.
+    const vm = this.store.vm();
+    const album = vm.albums.find((candidate) => candidate.id === categoryId);
+    if (vm.inTransit || vm.selectedAlbum || !vm.loaded || !album || album.ordinalNumber !== null) {
+      return;
+    }
+
+    const layout = this.captureAlbumLayout(categoryId);
+    this.pendingFocusLayout = layout ? { albumId: categoryId, layout } : null;
+    try {
+      await this.store.pickAlbum(categoryId);
+    } catch (error) {
+      if (this.pendingFocusLayout?.albumId === categoryId) {
+        this.pendingFocusLayout = null;
+      }
+      throw error;
+    }
   }
 
   private captureAlbumLayout(categoryId: string): AlbumFocusLayout | null {
     return captureStage1AlbumLayout(this.host.nativeElement, categoryId);
   }
 
-  private captureFocusOriginFromMessage(message: GameServerMessage): void {
-    if (message.type !== 'album_picked') {
-      return;
-    }
-
-    const selectedId = message.selected?.categoryId;
-    if (selectedId) {
-      if (!areStage1AlbumImagesReady(this.host.nativeElement)) {
-        this.pendingFocusLayout = null;
+  private requestAlbumFocus(albumId: string): void {
+    const request = this.focus.begin(albumId);
+    void this.prepareAlbumFocus(request).catch((error: unknown) => {
+      if (isStage1AbortError(error)) {
         return;
       }
-      this.pendingFocusLayout = this.captureAlbumLayout(selectedId);
-    }
+      this.focus.fail(request);
+      this.handleAsyncError('focus preparation', error);
+    });
   }
 
-  private requestAlbumFocus(albumId: string): void {
-    const token = ++this.focusRequestToken;
-    this.requestedFocusAlbumId = albumId;
-    this.focusSceneReady.set(false);
-    this.focusLayout.set(null);
-    this.focusPhase.set('measuring');
-    void this.prepareAlbumFocus(albumId, token);
-  }
-
-  private async prepareAlbumFocus(albumId: string, token: number): Promise<void> {
+  private async prepareAlbumFocus(request: Stage1FocusRequest): Promise<void> {
     const pendingLayout = this.pendingFocusLayout;
     this.pendingFocusLayout = null;
 
-    let layout = pendingLayout;
+    // Pre-pick geometry is valid only for the exact album that produced it. A live/recovered
+    // selection for another album must measure its own rendered position instead of inheriting a
+    // stale user-action snapshot.
+    let layout = pendingLayout?.albumId === request.albumId ? pendingLayout.layout : null;
     if (!layout) {
-      await this.nextFrame();
-      await this.nextFrame();
-      if (!this.isCurrentFocusRequest(albumId, token)) return;
+      await waitForStage1AnimationFrame(request.signal);
+      await waitForStage1AnimationFrame(request.signal);
+      if (!this.focus.isCurrent(request)) return;
 
-      await waitForStage1AlbumImages(this.host.nativeElement);
-      if (!this.isCurrentFocusRequest(albumId, token)) return;
+      await waitForStage1AlbumImages(this.host.nativeElement, { signal: request.signal });
+      if (!this.focus.isCurrent(request)) return;
 
-      await this.ensureAlbumVisible(albumId);
-      await this.nextFrame();
-      if (!this.isCurrentFocusRequest(albumId, token)) return;
+      await this.ensureAlbumVisible(request.albumId, request.signal);
+      await waitForStage1AnimationFrame(request.signal);
+      if (!this.focus.isCurrent(request)) return;
 
-      layout = this.captureAlbumLayout(albumId);
+      layout = this.captureAlbumLayout(request.albumId);
     }
 
-    if (!layout || !this.isCurrentFocusRequest(albumId, token)) {
+    if (!layout || !this.focus.commitLayout(request, layout)) {
       return;
     }
 
-    this.focusLayout.set(layout);
-    this.focusSceneReady.set(false);
-    this.focusPhase.set('animating');
     this.changeDetector.detectChanges();
   }
 
-  private async ensureAlbumVisible(albumId: string): Promise<void> {
+  private async ensureAlbumVisible(albumId: string, signal: AbortSignal): Promise<void> {
     const host = this.host.nativeElement as HTMLElement;
     const container = host.querySelector<HTMLElement>('.stage1-admin-album-viewport');
     const card = host.querySelector<HTMLElement>(
@@ -205,7 +249,7 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
       container.scrollHeight - container.clientHeight,
     );
 
-    await this.animateScrollTop(container, targetTop);
+    await this.animateScrollTop(container, targetTop, signal);
   }
 
   private isCardVisibleWithin(card: HTMLElement, container: HTMLElement): boolean {
@@ -222,18 +266,32 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
     return (visibleWidth * visibleHeight) / Math.max(rect.width * rect.height, 1) >= 0.72;
   }
 
-  private animateScrollTop(container: HTMLElement, targetTop: number): Promise<void> {
+  private animateScrollTop(
+    container: HTMLElement,
+    targetTop: number,
+    signal: AbortSignal,
+  ): Promise<void> {
     const startTop = container.scrollTop;
     if (this.prefersReducedMotion() || Math.abs(targetTop - startTop) < 1) {
       container.scrollTop = targetTop;
-      return this.nextFrame();
+      return waitForStage1AnimationFrame(signal);
     }
 
     this.cancelScrollFrame();
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const duration = 240;
       const startedAt = performance.now();
+      const abort = (): void => {
+        this.cancelScrollFrame();
+        signal.removeEventListener('abort', abort);
+        reject(new Stage1AbortError());
+      };
       const step = (now: number): void => {
+        if (signal.aborted) {
+          abort();
+          return;
+        }
+
         const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
         const eased = 1 - Math.pow(1 - progress, 3);
         container.scrollTop = startTop + (targetTop - startTop) * eased;
@@ -244,30 +302,13 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
         }
 
         this.scrollFrame = undefined;
+        signal.removeEventListener('abort', abort);
         resolve();
       };
 
+      signal.addEventListener('abort', abort, { once: true });
       this.scrollFrame = requestAnimationFrame(step);
     });
-  }
-
-  private nextFrame(): Promise<void> {
-    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
-  }
-
-  private isCurrentFocusRequest(albumId: string, token: number): boolean {
-    return this.focusRequestToken === token && this.requestedFocusAlbumId === albumId;
-  }
-
-  private resetFocusRequest(clearPendingLayout = true): void {
-    this.requestedFocusAlbumId = null;
-    this.focusRequestToken += 1;
-    if (clearPendingLayout) {
-      this.pendingFocusLayout = null;
-    }
-    this.focusLayout.set(null);
-    this.focusSceneReady.set(false);
-    this.focusPhase.set('idle');
   }
 
   private prefersReducedMotion(): boolean {
@@ -281,5 +322,12 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
       cancelAnimationFrame(this.scrollFrame);
       this.scrollFrame = undefined;
     }
+  }
+
+  private handleAsyncError(context: string, error: unknown): void {
+    if (isStage1AbortError(error)) {
+      return;
+    }
+    console.error(`Stage 1 Admin ${context} failed.`, error);
   }
 }

@@ -14,6 +14,15 @@ import {
   signal,
 } from '@angular/core';
 import { AlbumCardVm } from '../../../../domain/game/models/album.model';
+import {
+  clampStage1Progress,
+  formatStage1FocusTransform,
+  interpolateStage1FocusTransform,
+  lerpStage1,
+  smoothstepStage1,
+  transformStage1FocusRect,
+} from './stage1-album-focus-animation';
+import type { Stage1FocusTransform } from './stage1-album-focus-animation';
 import { Stage1AlbumCardComponent } from '../album-card/stage1-album-card.component';
 import {
   findStage1FocusNeighbors,
@@ -26,12 +35,8 @@ import type {
   Stage1NeighborDirection,
 } from './stage1-album-focus.types';
 import { waitForStage1AlbumImages } from './stage1-album-images';
-
-interface FocusTransform {
-  readonly x: number;
-  readonly y: number;
-  readonly scale: number;
-}
+import { isStage1AbortError } from './stage1-focus-async';
+import { createStage1DirectionalMask } from './stage1-album-focus-mask';
 
 interface FocusCardMetrics {
   readonly cardWidth: number;
@@ -58,19 +63,15 @@ interface FocusCardState {
 
 interface FocusAnimationState {
   readonly scene: HTMLElement;
-  readonly startTransform: FocusTransform;
-  readonly targetTransform: FocusTransform;
+  readonly startTransform: Stage1FocusTransform;
+  readonly targetTransform: Stage1FocusTransform;
   readonly cards: readonly FocusCardState[];
 }
 
 const FOCUS_DURATION_MS = 2400;
-const FOCUS_EASING_X1 = 0.45;
-const FOCUS_EASING_Y1 = 0;
-const FOCUS_EASING_X2 = 0.2;
-const FOCUS_EASING_Y2 = 1;
 // Keep the target prominent while leaving enough viewport space for nearby album remnants.
 const FOCUS_COVERAGE = 0.37;
-const IDENTITY_TRANSFORM: FocusTransform = { x: 0, y: 0, scale: 1 };
+const IDENTITY_TRANSFORM: Stage1FocusTransform = { x: 0, y: 0, scale: 1 };
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const NORMAL_FADE_START = 0;
 const NORMAL_FADE_END = 1;
@@ -82,55 +83,6 @@ const NEIGHBOR_COLLAPSE_START = 0.79;
 const NEIGHBOR_FINAL_OPACITY = 0.3;
 const NEIGHBOR_FINAL_VISIBLE_FRACTION = 0.15;
 const NEIGHBOR_SOFT_TAIL_FRACTION = 0.3;
-
-function clamp(value: number, min = 0, max = 1): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function lerp(start: number, end: number, progress: number): number {
-  return start + (end - start) * progress;
-}
-
-function smoothstep(start: number, end: number, value: number): number {
-  if (value <= start) return 0;
-  if (value >= end) return 1;
-
-  const progress = (value - start) / (end - start);
-  return progress * progress * (3 - 2 * progress);
-}
-
-function sampleBezier(a1: number, a2: number, t: number): number {
-  return 3 * a1 * (1 - t) * (1 - t) * t + 3 * a2 * (1 - t) * t * t + t * t * t;
-}
-
-function sampleBezierDerivative(a1: number, a2: number, t: number): number {
-  return 3 * a1 * (1 - t) * (1 - t) + 6 * (a2 - a1) * (1 - t) * t + 3 * (1 - a2) * t * t;
-}
-
-function cubicBezierProgress(progress: number): number {
-  const targetX = clamp(progress);
-  let t = targetX;
-
-  for (let i = 0; i < 5; i += 1) {
-    const currentX = sampleBezier(FOCUS_EASING_X1, FOCUS_EASING_X2, t) - targetX;
-    const derivative = sampleBezierDerivative(FOCUS_EASING_X1, FOCUS_EASING_X2, t);
-    if (Math.abs(currentX) < 0.00001 || derivative === 0) {
-      break;
-    }
-
-    t = clamp(t - currentX / derivative);
-  }
-
-  return sampleBezier(FOCUS_EASING_Y1, FOCUS_EASING_Y2, t);
-}
-
-function formatTransform(transform: FocusTransform): string {
-  return `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scale})`;
-}
-
-function formatPercent(value: number): string {
-  return `${value.toFixed(2)}%`;
-}
 
 @Component({
   selector: 'rr-stage1-album-focus',
@@ -166,6 +118,7 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
 
   readonly ready = output<void>();
   readonly animationSettled = output<void>();
+  readonly failed = output<void>();
 
   readonly focused = signal(false);
   readonly focusReady = signal(false);
@@ -181,10 +134,12 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   private resizeListener?: () => void;
   private focusPrepareToken = 0;
+  private focusPrepareAbort?: AbortController;
   private destroyed = false;
   private lastViewportWidth = 0;
   private lastViewportHeight = 0;
   private lastFocusedSelectionId: string | null = null;
+  private resizeQueuedDuringAnimation = false;
 
   constructor() {
     effect(() => {
@@ -236,6 +191,7 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyed = true;
     this.focusPrepareToken += 1;
+    this.abortFocusPrepare();
     this.resizeObserver?.disconnect();
     if (this.resizeListener) {
       window.removeEventListener('resize', this.resizeListener);
@@ -254,79 +210,125 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
   }
 
   private scheduleFocus(animate: boolean): void {
-    const token = ++this.focusPrepareToken;
+    // Supersession is immediate: preparation, startup RAF, active animation RAF, deferred resize,
+    // and stale visual state from the previous selection all belong to the old request.
+    this.abortFocusPrepare();
     this.cancelFocusFrame();
-    this.focusFrame = window.requestAnimationFrame(() => {
-      this.focusFrame = undefined;
-      void this.prepareFocus(animate, token);
+    this.cancelFocusLoop();
+    this.cancelResizeFrame();
+    this.resizeQueuedDuringAnimation = false;
+    this.resetFocusVisualState();
+
+    const token = ++this.focusPrepareToken;
+    const abortController = new AbortController();
+    this.focusPrepareAbort = abortController;
+    const frame = window.requestAnimationFrame(() => {
+      if (this.focusFrame === frame) {
+        this.focusFrame = undefined;
+      }
+      if (!this.isCurrentFocusPrepare(token)) return;
+      void this.prepareFocus(animate, token, abortController.signal);
     });
+    this.focusFrame = frame;
   }
 
-  private async prepareFocus(animate: boolean, token: number): Promise<void> {
-    const viewport = this.viewport?.nativeElement;
-    const scene = this.scene?.nativeElement;
-    if (!viewport || !scene) return;
+  private async prepareFocus(animate: boolean, token: number, signal: AbortSignal): Promise<void> {
+    try {
+      const viewport = this.viewport?.nativeElement;
+      const scene = this.scene?.nativeElement;
+      if (!viewport || !scene) {
+        this.failFocus(token);
+        return;
+      }
 
-    await waitForStage1AlbumImages(scene);
-    if (!this.isCurrentFocusPrepare(token)) return;
+      await waitForStage1AlbumImages(scene, { signal });
+      if (!this.isCurrentFocusPrepare(token)) return;
 
-    const selected = this.findSelectedCard();
-    if (!selected) return;
+      const selected = this.findSelectedCard();
+      if (!selected) {
+        this.failFocus(token);
+        return;
+      }
 
-    const wasReady = this.focusReady();
-    const originState = this.createOriginState(viewport, scene, selected);
-    const targetTransform = this.getTargetTransform(viewport, originState.selected.sourceRect);
-    const startTransform =
-      wasReady && !originState.absoluteLayout
-        ? this.captureRenderedTransform(scene)
-        : originState.startTransform;
-    const neighborDirections = this.findImmediateNeighbors(originState.selected, originState.cards);
-    const cards = this.withNeighborDirections(originState.cards, neighborDirections);
-    const animationState: FocusAnimationState = {
-      scene,
-      startTransform,
-      targetTransform,
-      cards,
-    };
+      const wasReady = this.focusReady();
+      const originState = this.createOriginState(viewport, scene, selected);
+      const targetTransform = this.getTargetTransform(viewport, originState.selected.sourceRect);
+      const startTransform =
+        wasReady && !originState.absoluteLayout
+          ? this.captureRenderedTransform(scene)
+          : originState.startTransform;
+      const neighborDirections = this.findImmediateNeighbors(
+        originState.selected,
+        originState.cards,
+      );
+      const cards = this.withNeighborDirections(originState.cards, neighborDirections);
+      const animationState: FocusAnimationState = {
+        scene,
+        startTransform,
+        targetTransform,
+        cards,
+      };
 
-    this.cancelFocusLoop();
-    this.resetCardEffects(scene);
-    this.applySourceLayout(originState.cards);
-    this.neighborDirections.set(neighborDirections);
-    this.lastFocusedSelectionId = this.selectedId();
-    this.settled.set(false);
-    this.glowActive.set(false);
+      this.cancelFocusLoop();
+      this.resetCardEffects(scene);
+      this.applySourceLayout(originState.cards);
+      this.neighborDirections.set(neighborDirections);
+      this.lastFocusedSelectionId = this.selectedId();
+      this.settled.set(false);
+      this.glowActive.set(false);
 
-    if (!animate || this.prefersReducedMotion()) {
-      // Establish the final transform before revealing the recovered focus scene so there is no
-      // one-frame flash of the untransformed grid.
-      this.applyFocusProgress(animationState, 1);
-      this.settleFocus(animationState);
-      this.focused.set(true);
+      if (!animate || this.prefersReducedMotion()) {
+        // Establish the final transform before revealing the recovered focus scene so there is no
+        // one-frame flash of the untransformed grid. Ready always precedes settled, even when motion
+        // is reduced, so parent orchestration observes one consistent lifecycle contract.
+        this.applyFocusProgress(animationState, 1);
+        this.focused.set(true);
+        this.focusReady.set(true);
+        this.changeDetector.detectChanges();
+        if (!this.isCurrentFocusPrepare(token)) return;
+        this.ready.emit();
+        if (!this.isCurrentFocusPrepare(token)) return;
+        this.settleFocus(animationState, token);
+        return;
+      }
+
+      // Put the scene at a concrete starting transform and reveal it first. Starting the focus loop
+      // in the next animation frame gives the browser a paint opportunity at the start state instead
+      // of batching setup and target into a single visual jump.
+      this.applyFocusProgress(animationState, 0);
+      this.focused.set(false);
       this.focusReady.set(true);
       this.changeDetector.detectChanges();
+      if (!this.isCurrentFocusPrepare(token)) return;
       this.ready.emit();
-      return;
+      if (!this.isCurrentFocusPrepare(token)) return;
+      const frame = window.requestAnimationFrame(() => {
+        if (this.focusFrame === frame) {
+          this.focusFrame = undefined;
+        }
+        if (!this.isCurrentFocusPrepare(token)) return;
+        // Start camera movement, distance fade, and neighbor soft masks from one shared progress.
+        this.focused.set(true);
+        this.changeDetector.detectChanges();
+        this.startFocusLoop(animationState, token);
+      });
+      this.focusFrame = frame;
+    } catch (error) {
+      if (!isStage1AbortError(error) && this.isCurrentFocusPrepare(token)) {
+        this.failFocus(token);
+        console.error('Stage 1 album focus preparation failed.', error);
+      }
     }
-
-    // Put the scene at a concrete starting transform and reveal it first. Starting the focus loop
-    // in the next animation frame gives the browser a paint opportunity at the start state instead
-    // of batching setup and target into a single visual jump.
-    this.applyFocusProgress(animationState, 0);
-    this.focused.set(false);
-    this.focusReady.set(true);
-    this.changeDetector.detectChanges();
-    this.ready.emit();
-    this.focusFrame = window.requestAnimationFrame(() => {
-      this.focusFrame = undefined;
-      // Start camera movement, distance fade, and neighbor soft masks from one shared progress.
-      this.focused.set(true);
-      this.changeDetector.detectChanges();
-      this.startFocusLoop(animationState);
-    });
   }
 
-  private captureRenderedTransform(scene: HTMLElement): FocusTransform {
+  private failFocus(token: number): void {
+    if (!this.isCurrentFocusPrepare(token)) return;
+    this.resetFocusVisualState();
+    this.lastFocusedSelectionId = this.selectedId();
+    this.failed.emit();
+  }
+
+  private captureRenderedTransform(scene: HTMLElement): Stage1FocusTransform {
     const renderedTransform = window.getComputedStyle(scene).transform;
     const transform =
       renderedTransform && renderedTransform !== 'none' ? renderedTransform : scene.style.transform;
@@ -343,7 +345,10 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     };
   }
 
-  private getOriginTransform(viewport: HTMLElement, selected: HTMLElement): FocusTransform | null {
+  private getOriginTransform(
+    viewport: HTMLElement,
+    selected: HTMLElement,
+  ): Stage1FocusTransform | null {
     const origin = this.originRect();
     if (!origin || origin.width <= 0 || origin.height <= 0 || selected.offsetWidth <= 0) {
       return null;
@@ -363,7 +368,10 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     return { x: translateX, y: translateY, scale };
   }
 
-  private getTargetTransform(viewport: HTMLElement, selected: AlbumFocusOrigin): FocusTransform {
+  private getTargetTransform(
+    viewport: HTMLElement,
+    selected: AlbumFocusOrigin,
+  ): Stage1FocusTransform {
     const selectedLocalCenterX = selected.left + selected.width / 2;
     const selectedLocalCenterY = selected.top + selected.height / 2;
     const targetAlbumSize = Math.min(viewport.clientWidth, viewport.clientHeight) * FOCUS_COVERAGE;
@@ -374,42 +382,46 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     return { x: cameraX, y: cameraY, scale };
   }
 
-  private startFocusLoop(animationState: FocusAnimationState): void {
+  private startFocusLoop(animationState: FocusAnimationState, token: number): void {
     this.cancelFocusLoop();
 
     const startedAt = performance.now();
-    const step = (now: number): void => {
-      const progress = clamp((now - startedAt) / FOCUS_DURATION_MS);
-      this.applyFocusProgress(animationState, progress);
+    const scheduleStep = (): void => {
+      const frame = window.requestAnimationFrame((now: number) => {
+        // A cancelled RAF callback can still be delivered by test/browser queues. Only clear the
+        // shared frame slot when this callback still owns it, and never let stale requests touch DOM.
+        if (this.focusLoopFrame === frame) {
+          this.focusLoopFrame = undefined;
+        }
+        if (!this.isCurrentFocusPrepare(token)) return;
 
-      if (progress < 1) {
-        this.focusLoopFrame = window.requestAnimationFrame(step);
-        return;
-      }
+        const progress = clampStage1Progress((now - startedAt) / FOCUS_DURATION_MS);
+        this.applyFocusProgress(animationState, progress);
 
-      this.focusLoopFrame = undefined;
-      this.applyFocusProgress(animationState, 1);
-      this.settleFocus(animationState);
+        if (progress < 1) {
+          scheduleStep();
+          return;
+        }
+
+        this.applyFocusProgress(animationState, 1);
+        this.settleFocus(animationState, token);
+      });
+      this.focusLoopFrame = frame;
     };
 
-    this.focusLoopFrame = window.requestAnimationFrame(step);
+    scheduleStep();
   }
 
   private applyFocusProgress(animationState: FocusAnimationState, rawProgress: number): void {
     // Camera, card fade, neighbor masks, and crisp text overlays all sample this same progress.
     // Keeping one source of truth prevents the staged "fade, then crop" feel from returning.
-    const cameraProgress = cubicBezierProgress(rawProgress);
-    const transform = {
-      x: lerp(animationState.startTransform.x, animationState.targetTransform.x, cameraProgress),
-      y: lerp(animationState.startTransform.y, animationState.targetTransform.y, cameraProgress),
-      scale: lerp(
-        animationState.startTransform.scale,
-        animationState.targetTransform.scale,
-        cameraProgress,
-      ),
-    };
+    const transform = interpolateStage1FocusTransform(
+      animationState.startTransform,
+      animationState.targetTransform,
+      rawProgress,
+    );
 
-    animationState.scene.style.transform = formatTransform(transform);
+    animationState.scene.style.transform = formatStage1FocusTransform(transform);
     for (const card of animationState.cards) {
       this.applyCardProgress(card, rawProgress, transform.scale);
       this.applyNameOverlayProgress(card, transform);
@@ -437,11 +449,11 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    const wipeProgress = smoothstep(card.fadeStart, card.fadeEnd, progress);
+    const wipeProgress = smoothstepStage1(card.fadeStart, card.fadeEnd, progress);
     const opacity = wipeProgress >= 0.999 ? 0 : 1 - wipeProgress;
-    const grayscale = lerp(0, 0.72, wipeProgress);
-    const saturation = lerp(1, 0.36, wipeProgress);
-    const brightness = lerp(1, 0.74, wipeProgress);
+    const grayscale = lerpStage1(0, 0.72, wipeProgress);
+    const saturation = lerpStage1(1, 0.36, wipeProgress);
+    const brightness = lerpStage1(1, 0.74, wipeProgress);
 
     card.element.style.opacity = `${opacity}`;
     card.element.style.setProperty('--stage1-focus-name-opacity', '1');
@@ -453,12 +465,12 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
   }
 
   private applyNeighborProgress(card: FocusCardState, progress: number): void {
-    const opacityProgress = smoothstep(card.fadeStart, card.fadeEnd, progress);
-    const collapseProgress = smoothstep(NEIGHBOR_COLLAPSE_START, 1, progress);
-    const opacity = lerp(1, NEIGHBOR_FINAL_OPACITY, opacityProgress);
-    const grayscale = lerp(0, 0.68, opacityProgress);
-    const saturation = lerp(1, 0.42, opacityProgress);
-    const brightness = lerp(1, 0.8, opacityProgress);
+    const opacityProgress = smoothstepStage1(card.fadeStart, card.fadeEnd, progress);
+    const collapseProgress = smoothstepStage1(NEIGHBOR_COLLAPSE_START, 1, progress);
+    const opacity = lerpStage1(1, NEIGHBOR_FINAL_OPACITY, opacityProgress);
+    const grayscale = lerpStage1(0, 0.68, opacityProgress);
+    const saturation = lerpStage1(1, 0.42, opacityProgress);
+    const brightness = lerpStage1(1, 0.8, opacityProgress);
 
     // Only the first left, top, and top-left neighbors keep a previously-picked team's icon
     // completely visible. Those are the close remnants that can sit partially behind the selected
@@ -488,7 +500,7 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     const diagonalAxes = getStage1DiagonalMaskAxes(card.maskAngle);
     card.element.style.setProperty(
       '--stage1-focus-content-mask',
-      this.createDirectionalMask(
+      createStage1DirectionalMask(
         card.maskAngle,
         collapseProgress,
         NEIGHBOR_FINAL_VISIBLE_FRACTION,
@@ -504,7 +516,7 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private applyNameOverlayProgress(card: FocusCardState, transform: FocusTransform): void {
+  private applyNameOverlayProgress(card: FocusCardState, transform: Stage1FocusTransform): void {
     const label = this.findNameOverlay(card.albumId);
     if (!label) return;
 
@@ -549,7 +561,7 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     selected: HTMLElement,
   ): {
     readonly absoluteLayout: boolean;
-    readonly startTransform: FocusTransform;
+    readonly startTransform: Stage1FocusTransform;
     readonly selected: FocusCardState;
     readonly cards: readonly FocusCardState[];
   } {
@@ -685,10 +697,14 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private settleFocus(animationState: FocusAnimationState): void {
+  private settleFocus(animationState: FocusAnimationState, token: number): boolean {
+    if (!this.isCurrentFocusPrepare(token)) {
+      return false;
+    }
+
     for (const card of animationState.cards) {
       this.applyCardProgress(card, 1, animationState.targetTransform.scale);
-      const finalRect = this.transformRect(card.sourceRect, animationState.targetTransform);
+      const finalRect = transformStage1FocusRect(card.sourceRect, animationState.targetTransform);
       this.applyCommittedCardScale(card, animationState.targetTransform.scale);
       this.applyCardRect(card.element, finalRect);
       this.applyCardMaskGeometry(card, animationState.targetTransform.scale);
@@ -705,7 +721,16 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     this.changeDetector.detectChanges();
     this.glowActive.set(true);
     this.changeDetector.detectChanges();
+    if (!this.isCurrentFocusPrepare(token)) {
+      return false;
+    }
     this.animationSettled.emit();
+
+    if (this.resizeQueuedDuringAnimation && this.isCurrentFocusPrepare(token)) {
+      this.resizeQueuedDuringAnimation = false;
+      this.scheduleResize();
+    }
+    return true;
   }
 
   private applyCardRect(card: HTMLElement, rect: AlbumFocusOrigin): void {
@@ -776,6 +801,16 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     card.element.style.setProperty('--stage1-focus-content-mask-size', `${width}px ${height}px`);
     card.element.style.setProperty('--stage1-focus-content-mask-position', '0px 0px');
     card.element.style.setProperty('--stage1-focus-name-mask-position', `0px -${nameTop}px`);
+
+    if (card.metrics.iconSize !== null && card.metrics.iconOffset !== null) {
+      const iconStart = width - card.metrics.iconSize * scale - card.metrics.iconOffset * scale;
+      card.element.style.setProperty(
+        '--stage1-focus-icon-mask-position',
+        `${-iconStart}px ${-iconStart}px`,
+      );
+    } else {
+      card.element.style.removeProperty('--stage1-focus-icon-mask-position');
+    }
   }
 
   private readCardMetrics(card: HTMLElement): FocusCardMetrics {
@@ -811,39 +846,17 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     return Number.isFinite(parsed) ? parsed : fallback;
   }
 
-  private createDirectionalMask(
-    angle: string,
-    progress: number,
-    finalVisibleFraction: number,
-    softTailFraction = 0,
-  ): string {
-    const collapseReach = 100 * (1 - finalVisibleFraction);
-    const boundary = lerp(0, collapseReach, clamp(progress));
-    const tail = 100 * softTailFraction * clamp(progress);
-    const diagonalAxes = getStage1DiagonalMaskAxes(angle);
-
-    let ramp: string;
-    if (softTailFraction > 0) {
-      // Keep the fully visible inward-facing core and extend it with a long feathered reveal.
-      // The mask gains opacity progressively across the whole soft tail, so the neighbor remains
-      // recognizable over a wider area without introducing a hard rectangular edge.
-      const tailStart = boundary - tail;
-      const tailStop = (amount: number): string => formatPercent(lerp(tailStart, boundary, amount));
-      ramp = `transparent 0%, transparent ${formatPercent(tailStart)}, rgb(0 0 0 / 0.06) ${tailStop(0.16)}, rgb(0 0 0 / 0.16) ${tailStop(0.32)}, rgb(0 0 0 / 0.32) ${tailStop(0.5)}, rgb(0 0 0 / 0.55) ${tailStop(0.68)}, rgb(0 0 0 / 0.78) ${tailStop(0.84)}, #000 ${formatPercent(boundary)}, #000 100%`;
-    } else {
-      const feather = 14;
-      const transparentStop = boundary - feather * 0.58;
-      const opaqueStop = boundary + feather * 0.42;
-      const span = Math.max(1, opaqueStop - transparentStop);
-      const stop = (amount: number): string => formatPercent(transparentStop + span * amount);
-      ramp = `transparent 0%, transparent ${formatPercent(transparentStop)}, rgb(0 0 0 / 0.08) ${stop(0.15)}, rgb(0 0 0 / 0.24) ${stop(0.34)}, rgb(0 0 0 / 0.48) ${stop(0.56)}, rgb(0 0 0 / 0.74) ${stop(0.78)}, #000 ${formatPercent(opaqueStop)}, #000 100%`;
+  private resetFocusVisualState(): void {
+    const scene = this.scene?.nativeElement;
+    if (scene) {
+      this.resetCardEffects(scene);
     }
-
-    if (diagonalAxes) {
-      return diagonalAxes.map((axisAngle) => `linear-gradient(${axisAngle}, ${ramp})`).join(', ');
-    }
-
-    return `linear-gradient(${angle}, ${ramp})`;
+    this.focused.set(false);
+    this.focusReady.set(false);
+    this.absoluteLayout.set(false);
+    this.settled.set(false);
+    this.glowActive.set(false);
+    this.neighborDirections.set(new Map());
   }
 
   private resetCardEffects(scene: HTMLElement): void {
@@ -856,6 +869,7 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
       card.style.removeProperty('--stage1-focus-visual-filter');
       card.style.removeProperty('--stage1-focus-content-opacity');
       card.style.removeProperty('--stage1-focus-icon-mask');
+      card.style.removeProperty('--stage1-focus-icon-mask-position');
       card.style.removeProperty('--stage1-focus-icon-opacity');
       card.style.removeProperty('--stage1-focus-name-opacity');
       card.style.position = '';
@@ -886,15 +900,6 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private transformRect(rect: AlbumFocusOrigin, transform: FocusTransform): AlbumFocusOrigin {
-    return {
-      left: rect.left * transform.scale + transform.x,
-      top: rect.top * transform.scale + transform.y,
-      width: rect.width * transform.scale,
-      height: rect.height * transform.scale,
-    };
-  }
-
   private clearMask(card: HTMLElement): void {
     card.style.removeProperty('--stage1-focus-content-mask');
     card.style.removeProperty('--stage1-focus-mask-composite');
@@ -902,16 +907,21 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     card.style.removeProperty('--stage1-focus-content-mask-size');
     card.style.removeProperty('--stage1-focus-content-mask-position');
     card.style.removeProperty('--stage1-focus-name-mask-position');
+    card.style.removeProperty('--stage1-focus-icon-mask-position');
     card.style.removeProperty('mask-image');
     card.style.removeProperty('-webkit-mask-image');
   }
 
   private scheduleResize(): void {
     this.cancelResizeFrame();
-    this.resizeFrame = window.requestAnimationFrame(() => {
-      this.resizeFrame = undefined;
+    const frame = window.requestAnimationFrame(() => {
+      if (this.resizeFrame === frame) {
+        this.resizeFrame = undefined;
+      }
+      if (this.destroyed) return;
       this.handleResize();
     });
+    this.resizeFrame = frame;
   }
 
   private handleResize(): void {
@@ -925,8 +935,11 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
     // A viewport resize can change the CSS grid arrangement, so derive the surrounding neighbors again
     // from the current untransformed layout positions.
     if (this.focusLoopFrame !== undefined) {
+      this.resizeQueuedDuringAnimation = true;
       return;
     }
+
+    this.resizeQueuedDuringAnimation = false;
 
     const cards = this.getGridFocusCardStates(selected, scene);
     const selectedState = cards.find((card) => card.selected);
@@ -999,5 +1012,10 @@ export class Stage1AlbumFocusComponent implements AfterViewInit, OnDestroy {
 
   private isCurrentFocusPrepare(token: number): boolean {
     return !this.destroyed && this.focusPrepareToken === token;
+  }
+
+  private abortFocusPrepare(): void {
+    this.focusPrepareAbort?.abort();
+    this.focusPrepareAbort = undefined;
   }
 }

@@ -14,6 +14,7 @@ import { Stage1AlbumCardComponent } from '../album-card/stage1-album-card.compon
 import type { AlbumFocusLayout } from '../album-focus/stage1-album-focus.types';
 import { waitForStage1AlbumImages } from '../album-focus/stage1-album-images';
 import { captureStage1AlbumLayout } from '../album-focus/stage1-album-origin';
+import { Stage1AbortError, waitForStage1AnimationFrame } from '../album-focus/stage1-focus-async';
 import { planStage1TvAlbumMarqueeLayout } from './stage1-tv-album-marquee-layout';
 
 @Component({
@@ -41,12 +42,21 @@ export class Stage1TvAlbumMarqueeComponent implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   private measureFrame?: number;
   private positionFrame?: number;
+  private positionAbort?: AbortController;
+  private focusPreparationAbort?: AbortController;
+  private readonly destroyAbort = new AbortController();
+  private recalculateGeneration = 0;
+  private destroyed = false;
 
   constructor() {
     effect(() => {
       this.albums();
       if (this.viewport) {
-        queueMicrotask(() => this.recalculate());
+        const generation = ++this.recalculateGeneration;
+        queueMicrotask(() => {
+          if (this.destroyed || generation !== this.recalculateGeneration) return;
+          this.recalculate();
+        });
       }
     });
   }
@@ -63,59 +73,107 @@ export class Stage1TvAlbumMarqueeComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    this.recalculateGeneration += 1;
+    this.destroyAbort.abort();
+    this.focusPreparationAbort?.abort();
+    this.focusPreparationAbort = undefined;
+    this.resetFocusPositioning();
     this.resizeObserver?.disconnect();
     this.cancelMeasureFrame();
-    this.cancelPositionFrame();
   }
 
   albumImage(album: AlbumCardVm): string {
     return this.imageUrl()(album.image);
   }
 
-  async prepareFocusLayout(albumId: string): Promise<AlbumFocusLayout | null> {
+  /**
+   * Releases temporary track positioning after focus preparation is abandoned by the parent.
+   * A successful focus hand-off normally destroys the marquee after the child emits `ready`; a
+   * child preparation failure happens before that swap, so the still-mounted marquee must be
+   * restored explicitly instead of remaining paused at the captured focus offset.
+   */
+  resetFocusPositioning(): void {
+    this.focusPreparationAbort?.abort();
+    this.focusPreparationAbort = undefined;
+    this.abortPositionAnimation();
+    this.positioningForFocus.set(false);
+    this.focusOffset.set(0);
+  }
+
+  async prepareFocusLayout(
+    albumId: string,
+    externalSignal?: AbortSignal,
+  ): Promise<AlbumFocusLayout | null> {
+    // A newer preparation owns the marquee position immediately. Aborting the older request also
+    // rejects any awaited position animation, so no standalone caller can be left suspended.
+    this.focusPreparationAbort?.abort();
+    const preparationAbort = new AbortController();
+    this.focusPreparationAbort = preparationAbort;
+    const signal = externalSignal
+      ? AbortSignal.any([externalSignal, this.destroyAbort.signal, preparationAbort.signal])
+      : AbortSignal.any([this.destroyAbort.signal, preparationAbort.signal]);
     const viewport = this.viewport?.nativeElement;
     const track = this.group?.nativeElement.parentElement;
     if (!viewport || !track) {
+      if (this.focusPreparationAbort === preparationAbort) {
+        this.focusPreparationAbort = undefined;
+      }
       return null;
     }
 
-    await waitForStage1AlbumImages(viewport);
-    await this.nextFrame();
-    const currentOffset = this.currentTrackOffset(track);
-    this.cancelPositionFrame();
-    this.positioningForFocus.set(true);
-    this.focusOffset.set(currentOffset);
-    await this.nextFrame();
+    try {
+      await waitForStage1AlbumImages(viewport, { signal });
+      await waitForStage1AnimationFrame(signal);
+      const currentOffset = this.currentTrackOffset(track);
+      this.abortPositionAnimation();
+      this.positioningForFocus.set(true);
+      this.focusOffset.set(currentOffset);
+      await waitForStage1AnimationFrame(signal);
 
-    let focusOffset = currentOffset;
-    if (!this.isAlbumSufficientlyVisible(viewport, albumId)) {
-      const candidate = this.bestAlbumCandidate(viewport, albumId);
-      if (candidate) {
-        const viewportRect = viewport.getBoundingClientRect();
-        const rect = candidate.getBoundingClientRect();
-        focusOffset =
-          currentOffset + viewportRect.left + viewportRect.width / 2 - (rect.left + rect.width / 2);
-        await this.animateFocusOffset(currentOffset, focusOffset);
+      let focusOffset = currentOffset;
+      if (!this.isAlbumSufficientlyVisible(viewport, albumId)) {
+        const candidate = this.bestAlbumCandidate(viewport, albumId);
+        if (candidate) {
+          const viewportRect = viewport.getBoundingClientRect();
+          const rect = candidate.getBoundingClientRect();
+          focusOffset =
+            currentOffset +
+            viewportRect.left +
+            viewportRect.width / 2 -
+            (rect.left + rect.width / 2);
+          await this.animateFocusOffset(currentOffset, focusOffset, signal);
+        }
+      }
+
+      // Circular behavior belongs only to a real looping carousel. When looping, reveal the actual
+      // neighboring column from the duplicated track before taking the focus snapshot. Moving the
+      // whole track means all rows in that column come along together; we never synthesize a lone
+      // first/last album next to the selection. A non-looping grid skips this entirely and therefore
+      // keeps every card in its original rendered slot.
+      if (this.shouldLoop()) {
+        await this.revealAdjacentCarouselColumns(viewport, albumId, focusOffset, signal);
+      }
+
+      await waitForStage1AnimationFrame(signal);
+      return captureStage1AlbumLayout(viewport, albumId);
+    } catch (error) {
+      if (this.focusPreparationAbort === preparationAbort && !this.destroyed) {
+        this.resetFocusPositioning();
+      }
+      throw error;
+    } finally {
+      if (this.focusPreparationAbort === preparationAbort) {
+        this.focusPreparationAbort = undefined;
       }
     }
-
-    // Circular behavior belongs only to a real looping carousel. When looping, reveal the actual
-    // neighboring column from the duplicated track before taking the focus snapshot. Moving the
-    // whole track means all rows in that column come along together; we never synthesize a lone
-    // first/last album next to the selection. A non-looping grid skips this entirely and therefore
-    // keeps every card in its original rendered slot.
-    if (this.shouldLoop()) {
-      await this.revealAdjacentCarouselColumns(viewport, albumId, focusOffset);
-    }
-
-    await this.nextFrame();
-    return captureStage1AlbumLayout(viewport, albumId);
   }
 
   private async revealAdjacentCarouselColumns(
     viewport: HTMLElement,
     albumId: string,
     currentOffset: number,
+    signal?: AbortSignal,
   ): Promise<void> {
     const selected = this.bestAlbumCandidate(viewport, albumId);
     if (!selected) {
@@ -160,7 +218,7 @@ export class Stage1TvAlbumMarqueeComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    await this.animateFocusOffset(currentOffset, currentOffset + delta);
+    await this.animateFocusOffset(currentOffset, currentOffset + delta, signal);
   }
 
   private renderedColumnBounds(
@@ -211,6 +269,7 @@ export class Stage1TvAlbumMarqueeComponent implements AfterViewInit, OnDestroy {
   }
 
   private recalculate(): void {
+    if (this.destroyed) return;
     const viewport = this.viewport?.nativeElement;
     const group = this.group?.nativeElement;
     if (!viewport || !group) {
@@ -232,13 +291,17 @@ export class Stage1TvAlbumMarqueeComponent implements AfterViewInit, OnDestroy {
     this.shouldLoop.set(layout.shouldLoop);
 
     this.cancelMeasureFrame();
-    this.measureFrame = requestAnimationFrame(() => {
-      this.measureFrame = undefined;
+    const frame = requestAnimationFrame(() => {
+      if (this.measureFrame === frame) {
+        this.measureFrame = undefined;
+      }
+      if (this.destroyed) return;
       const track = group.parentElement;
       const trackGap = track ? Number.parseFloat(getComputedStyle(track).gap) || 0 : 0;
       const distance = group.getBoundingClientRect().width + trackGap;
       this.loopDistance.set(distance);
     });
+    this.measureFrame = frame;
   }
 
   private cancelMeasureFrame(): void {
@@ -306,41 +369,85 @@ export class Stage1TvAlbumMarqueeComponent implements AfterViewInit, OnDestroy {
     return new DOMMatrixReadOnly(transform).m41;
   }
 
-  private animateFocusOffset(from: number, to: number): Promise<void> {
+  private animateFocusOffset(
+    from: number,
+    to: number,
+    externalSignal?: AbortSignal,
+  ): Promise<void> {
+    const lifecycleSignal = externalSignal
+      ? AbortSignal.any([externalSignal, this.destroyAbort.signal])
+      : this.destroyAbort.signal;
+
     if (this.prefersReducedMotion() || Math.abs(to - from) < 0.5) {
       this.focusOffset.set(to);
-      return this.nextFrame();
+      return waitForStage1AnimationFrame(lifecycleSignal);
     }
 
-    return new Promise((resolve) => {
+    this.abortPositionAnimation();
+    const animationAbort = new AbortController();
+    this.positionAbort = animationAbort;
+    const signal = AbortSignal.any([lifecycleSignal, animationAbort.signal]);
+
+    return new Promise((resolve, reject) => {
       const duration = 260;
       const startedAt = performance.now();
-      const step = (now: number): void => {
-        const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
-        const eased = 1 - Math.pow(1 - progress, 3);
-        this.focusOffset.set(from + (to - from) * eased);
-
-        if (progress < 1) {
-          this.positionFrame = requestAnimationFrame(step);
-          return;
+      const cleanup = (): void => {
+        signal.removeEventListener('abort', abort);
+        if (this.positionAbort === animationAbort) {
+          this.positionAbort = undefined;
         }
+      };
+      const abort = (): void => {
+        if (this.positionAbort === animationAbort) {
+          this.cancelPositionFrame();
+        }
+        cleanup();
+        reject(new Stage1AbortError());
+      };
+      const scheduleStep = (): void => {
+        const frame = requestAnimationFrame((now: number) => {
+          if (this.positionFrame === frame) {
+            this.positionFrame = undefined;
+          }
+          if (signal.aborted) {
+            abort();
+            return;
+          }
 
-        this.positionFrame = undefined;
-        resolve();
+          const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
+          const eased = 1 - Math.pow(1 - progress, 3);
+          this.focusOffset.set(from + (to - from) * eased);
+
+          if (progress < 1) {
+            scheduleStep();
+            return;
+          }
+
+          cleanup();
+          resolve();
+        });
+        this.positionFrame = frame;
       };
 
-      this.positionFrame = requestAnimationFrame(step);
+      signal.addEventListener('abort', abort, { once: true });
+      if (signal.aborted) {
+        abort();
+        return;
+      }
+      scheduleStep();
     });
-  }
-
-  private nextFrame(): Promise<void> {
-    return new Promise((resolve) => requestAnimationFrame(() => resolve()));
   }
 
   private prefersReducedMotion(): boolean {
     return (
       typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
     );
+  }
+
+  private abortPositionAnimation(): void {
+    this.positionAbort?.abort();
+    this.positionAbort = undefined;
+    this.cancelPositionFrame();
   }
 
   private cancelPositionFrame(): void {

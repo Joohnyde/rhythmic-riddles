@@ -4,15 +4,10 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/button_clicked.schema.json",
   "title": "WebSocket button_clicked frame",
   "description": "Unassigned hardware buzzer observed while the admin is linking lobby teams.",
-  "x-recipients": [
-    "admin"
-  ],
+  "x-recipients": ["admin"],
   "x-replaySafe": false,
   "type": "object",
-  "required": [
-    "type",
-    "buttonCode"
-  ],
+  "required": ["type", "buttonCode"],
   "properties": {
     "type": {
       "const": "button_clicked"

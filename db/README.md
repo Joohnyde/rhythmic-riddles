@@ -3,6 +3,7 @@
 This folder contains the PostgreSQL scripts used to initialize the RhythmicRiddles/Cestereg database.
 
 Execution order:
+
 1. `db_00_create_db.sql` (template: `db_00_create_db.sql.example`) — create role + database and set privileges
 2. `db_01_create_schema.sql` — base schema: tables, foreign keys, intrinsic constraints/indexes, extensions
 3. `db_02_set_table_ownership.sql` — normalize ownership (excluding extension-owned objects)

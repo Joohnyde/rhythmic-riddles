@@ -6,13 +6,14 @@ export interface CategoryPreview {
 }
 
 /**
- * Backend selected album/category DTO.
- * Keep these field names aligned with backend JSON. Do not rename them unless the backend changes.
+ * Backend selected-category snapshot (`LastCategory`). This is distinct from the albums collection:
+ * it describes the category currently chosen/waiting to start and never controls frontend list order.
  */
 export interface LastCategory {
   categoryId: string;
   chosenCategoryPreview: CategoryPreview;
   pickedByTeam: Team | null;
   started: boolean;
-  ordinalNumber: number | null;
+  /** Backend `LastCategory.ordinalNumber` is a primitive int and is always present/non-null on wire. */
+  ordinalNumber: number;
 }

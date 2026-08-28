@@ -77,7 +77,13 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
     assertSchemaValid("button_clicked", "{\"type\":\"button_clicked\",\"buttonCode\":1671}");
     assertSchemaValid(
         "album_picked",
-        "{\"type\":\"album_picked\",\"selected\":{\"id\":\"cat-1\",\"started\":false}}");
+        "{\"type\":\"album_picked\",\"selected\":{\"categoryId\":\""
+            + UUID.randomUUID()
+            + "\",\"chosenCategoryPreview\":{\"title\":\"Album A\",\"image\":\""
+            + UUID.randomUUID()
+            + "\"},\"pickedByTeam\":"
+            + team(teamId, "Team A", "team.png")
+            + ",\"started\":false,\"ordinalNumber\":1}}");
     assertSchemaValid(
         "song_next",
         "{\"type\":\"song_next\",\"scheduleId\":\""

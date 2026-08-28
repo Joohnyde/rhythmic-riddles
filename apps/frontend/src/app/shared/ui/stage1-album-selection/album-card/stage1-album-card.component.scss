@@ -136,12 +136,14 @@
   opacity: var(--stage1-focus-icon-opacity, var(--stage1-focus-content-opacity, 1));
   mask-image: var(--stage1-focus-icon-mask, var(--stage1-focus-content-mask, none));
   mask-composite: var(--stage1-focus-mask-composite, add);
+  mask-position: var(--stage1-focus-icon-mask-position, 0 0);
   mask-repeat: no-repeat;
-  mask-size: 100% 100%;
+  mask-size: var(--stage1-focus-content-mask-size, 100% 100%);
   -webkit-mask-image: var(--stage1-focus-icon-mask, var(--stage1-focus-content-mask, none));
   -webkit-mask-composite: var(--stage1-focus-webkit-mask-composite, add);
+  -webkit-mask-position: var(--stage1-focus-icon-mask-position, 0 0);
   -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
+  -webkit-mask-size: var(--stage1-focus-content-mask-size, 100% 100%);
 }
 
 .stage1-album-card[data-selected='true'] .stage1-album-art {

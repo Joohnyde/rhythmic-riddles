@@ -4,19 +4,12 @@
   "$id": "https://cestereg.local/websocket-contracts/v1/schema/welcome.schema.json",
   "title": "WebSocket welcome/context snapshot frame",
   "description": "Initial/recovery context snapshot. Covers current integration recovery shape plus documented lobby/albums/songs/winner snapshots.",
-  "x-recipients": [
-    "admin",
-    "tv"
-  ],
+  "x-recipients": ["admin", "tv"],
   "x-replaySafe": true,
   "oneOf": [
     {
       "type": "object",
-      "required": [
-        "type",
-        "stage",
-        "teams"
-      ],
+      "required": ["type", "stage", "teams"],
       "properties": {
         "type": {
           "const": "welcome"
@@ -35,11 +28,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "type",
-        "stage",
-        "albums"
-      ],
+      "required": ["type", "stage", "albums"],
       "properties": {
         "type": {
           "const": "welcome"
@@ -69,19 +58,13 @@
                 "$ref": "#/$defs/uuid"
               },
               "pickedByTeam": {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": ["string", "null"]
               },
               "ordinalNumber": {
-                "type": [
-                  "integer",
-                  "null"
-                ]
+                "type": ["integer", "null"]
               }
             },
-            "additionalProperties": true
+            "additionalProperties": false
           }
         },
         "team": {
@@ -109,10 +92,7 @@
             },
             "chosenCategoryPreview": {
               "type": "object",
-              "required": [
-                "title",
-                "image"
-              ],
+              "required": ["title", "image"],
               "properties": {
                 "title": {
                   "type": "string"
@@ -137,10 +117,7 @@
               "type": "boolean"
             },
             "ordinalNumber": {
-              "type": [
-                "integer",
-                "null"
-              ]
+              "type": "integer"
             }
           },
           "additionalProperties": false
@@ -148,37 +125,25 @@
       },
       "oneOf": [
         {
-          "required": [
-            "team"
-          ],
+          "required": ["team"],
           "not": {
-            "required": [
-              "selected"
-            ]
+            "required": ["selected"]
           }
         },
         {
-          "required": [
-            "selected"
-          ],
+          "required": ["selected"],
           "not": {
-            "required": [
-              "team"
-            ]
+            "required": ["team"]
           }
         },
         {
           "not": {
             "anyOf": [
               {
-                "required": [
-                  "team"
-                ]
+                "required": ["team"]
               },
               {
-                "required": [
-                  "selected"
-                ]
+                "required": ["selected"]
               }
             ]
           }
@@ -259,22 +224,14 @@
         }
       },
       "dependentRequired": {
-        "answeringTeam": [
-          "interruptId"
-        ],
-        "interruptId": [
-          "answeringTeam"
-        ]
+        "answeringTeam": ["interruptId"],
+        "interruptId": ["answeringTeam"]
       },
       "additionalProperties": false
     },
     {
       "type": "object",
-      "required": [
-        "type",
-        "stage",
-        "scores"
-      ],
+      "required": ["type", "stage", "scores"],
       "properties": {
         "type": {
           "const": "welcome"
@@ -296,11 +253,7 @@
     },
     "team": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "image"
-      ],
+      "required": ["id", "name", "image"],
       "properties": {
         "id": {
           "$ref": "#/$defs/uuid"
@@ -310,23 +263,14 @@
           "minLength": 1
         },
         "image": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": ["string", "null"]
         }
       },
       "additionalProperties": false
     },
     "teamScore": {
       "type": "object",
-      "required": [
-        "teamId",
-        "image",
-        "name",
-        "score",
-        "scheduleId"
-      ],
+      "required": ["teamId", "image", "name", "score", "scheduleId"],
       "properties": {
         "teamId": {
           "$ref": "#/$defs/uuid"

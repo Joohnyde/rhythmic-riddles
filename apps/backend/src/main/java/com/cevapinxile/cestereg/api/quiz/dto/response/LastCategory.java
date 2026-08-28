@@ -6,6 +6,7 @@ package com.cevapinxile.cestereg.api.quiz.dto.response;
 
 import com.cevapinxile.cestereg.persistence.entity.CategoryEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
+import java.util.Objects;
 import java.util.UUID;
 
 /*
@@ -16,6 +17,7 @@ public class LastCategory {
   private CategoryPreview chosenCategoryPreview;
   private CreateTeamResponse pickedByTeam = null;
   private boolean started = false;
+  // Selected-category snapshots always carry a concrete ordinal; primitive int is non-null on wire.
   private int ordinalNumber;
 
   public LastCategory() {}
@@ -31,7 +33,9 @@ public class LastCategory {
     if (c.isDone() != null) {
       this.started = c.isDone();
     }
-    this.ordinalNumber = c.getOrdinalNumber();
+    this.ordinalNumber =
+        Objects.requireNonNull(
+            c.getOrdinalNumber(), "Selected category must have an ordinal number");
   }
 
   public UUID getCategoryId() {

@@ -1,0 +1,15 @@
+@mixin effects {
+  .stage1-selection-backdrop {
+    background:
+      radial-gradient(
+        circle at 50% 30%,
+        color-mix(in srgb, var(--primary) 12%, transparent),
+        transparent 38%
+      ),
+      linear-gradient(180deg, rgb(5 2 12 / 0.04), rgb(5 2 12 / 0.34));
+  }
+
+  .stage1-loading-panel {
+    box-shadow: 0 0 28px color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+}

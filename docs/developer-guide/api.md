@@ -1,4 +1,3 @@
-
 # API (v1 contract)
 
 **Swagger UI (local):** `http://localhost:8080/swagger-ui/index.html`
@@ -8,7 +7,6 @@ This is the **developer-facing runtime contract** for REST and asset endpoints.
 WebSocket connection rules, recovery snapshots, pushed messages, and JSON schema contracts are documented in **[websockets.md](#websockets)**.
 
 For detailed error codes and exception types, see **[exceptions.md](#exceptions)**.
-
 
 # Protocols and base paths
 
@@ -50,7 +48,6 @@ For full WebSocket runtime behavior and message contracts, see:
 docs/developer-guide/websockets.md
 ```
 
-
 # Naming conventions
 
 ## REST endpoint naming
@@ -58,37 +55,37 @@ docs/developer-guide/websockets.md
 Rules used across the project:
 
 - Versioned base paths:
-  - `/api/v1/...`
-  - `/assets/v1/...`
-  - `/api/e2e/v1/...` for test-only fixture infrastructure
+    - `/api/v1/...`
+    - `/assets/v1/...`
+    - `/api/e2e/v1/...` for test-only fixture infrastructure
 
 - Test-only fixture resources:
-  - `/api/e2e/v1/game-fixtures`
-  - `/api/e2e/v1/game-fixtures/{roomCode}`
+    - `/api/e2e/v1/game-fixtures`
+    - `/api/e2e/v1/game-fixtures/{roomCode}`
 
 - Noun-based resources:
-  - `/games`
-  - `/teams`
-  - `/categories`
-  - `/schedules`
-  - `/interrupts`
+    - `/games`
+    - `/teams`
+    - `/categories`
+    - `/schedules`
+    - `/interrupts`
 
 - Nested ownership:
-  - `/games/{roomCode}/teams`
-  - `/games/{roomCode}/categories/{categoryId}`
+    - `/games/{roomCode}/teams`
+    - `/games/{roomCode}/categories/{categoryId}`
 
 - Action subresources:
-  - `/pick`
-  - `/start`
-  - `/replay`
-  - `/reveal`
-  - `/next`
-  - `/answer`
-  - `/resolve`
+    - `/pick`
+    - `/start`
+    - `/replay`
+    - `/reveal`
+    - `/next`
+    - `/answer`
+    - `/resolve`
 
 - Stable path identifiers:
-  - UUID
-  - roomCode
+    - UUID
+    - roomCode
 
 ## Request/response JSON naming
 
@@ -96,24 +93,22 @@ JSON uses camelCase naming:
 
 ```json
 {
-  "answeringTeamId": "...",
-  "previousScenario": 2
+    "answeringTeamId": "...",
+    "previousScenario": 2
 }
 ```
 
-
 # Identifier formats
 
-| Identifier | Type | Example |
-|---|---|---|
-| `roomCode` | string | 4 uppercase letters, e.g. `AKKU` |
-| `songId` | UUID | RFC 4122 |
-| `albumId` | UUID | RFC 4122 |
-| `categoryId` | UUID | RFC 4122 |
-| `scheduleId` | UUID | RFC 4122 |
-| `teamId` | UUID | RFC 4122 |
-| `answerId` | UUID | RFC 4122 (interrupt id used in answer endpoint) |
-
+| Identifier   | Type   | Example                                         |
+| ------------ | ------ | ----------------------------------------------- |
+| `roomCode`   | string | 4 uppercase letters, e.g. `AKKU`                |
+| `songId`     | UUID   | RFC 4122                                        |
+| `albumId`    | UUID   | RFC 4122                                        |
+| `categoryId` | UUID   | RFC 4122                                        |
+| `scheduleId` | UUID   | RFC 4122                                        |
+| `teamId`     | UUID   | RFC 4122                                        |
+| `answerId`   | UUID   | RFC 4122 (interrupt id used in answer endpoint) |
 
 # Authentication
 
@@ -122,6 +117,7 @@ JSON uses camelCase naming:
 REST endpoints currently work without JWT authentication.
 
 WebSocket handshake is accepted only if:
+
 - room exists
 - socket position is valid (`0` or `1`)
 
@@ -137,7 +133,6 @@ Planned authentication flow:
 
 WebSocket authentication should eventually validate the same token.
 
-
 # Error handling
 
 REST endpoints may throw domain exceptions intended for frontend consumption.
@@ -151,15 +146,15 @@ Example:
 
 ```json
 {
-  "error":"E004 - App not reachable",
-  "message":"TV app has to be connected to proceed"
+    "error": "E004 - App not reachable",
+    "message": "TV app has to be connected to proceed"
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `error` | Stable error code + short title |
-| `message` | Human-readable detail message |
+| Field     | Meaning                         |
+| --------- | ------------------------------- |
+| `error`   | Stable error code + short title |
+| `message` | Human-readable detail message   |
 
 For the full error catalog and HTTP mappings, see `exceptions.md`.
 
@@ -175,31 +170,28 @@ System pauses and UI recovery-scenario persistence are must-persist events and w
 
 Transactional WebSocket side effects are registered after the database work and are sent only after a successful transaction commit. A rolled-back transaction therefore does not publish its gameplay frame.
 
-
 # Endpoint matrix
 
-| Domain | Method | Path | Purpose |
-|---|---|---|---|
-| Games | POST | [`/api/v1/games`](#post-apiv1games) | Create a new game room |
-| Games | PUT | [`/api/v1/games/{roomCode}/stage`](#put-apiv1gamesroomcodestage) | Change game stage |
-| Teams | POST | [`/api/v1/games/{roomCode}/teams`](#post-apiv1gamesroomcodeteams) | Create a team |
-| Teams | DELETE | [`/api/v1/games/{roomCode}/teams/{teamId}`](#delete-apiv1gamesroomcodeteamsteamid) | Kick a team |
-| Categories | PUT | [`/api/v1/games/{roomCode}/categories/{categoryId}/pick`](#put-apiv1gamesroomcodecategoriescategoryidpick) | Pick an album/category |
-| Categories | POST | [`/api/v1/games/{roomCode}/categories/{categoryId}/start`](#post-apiv1gamesroomcodecategoriescategoryidstart) | Start category (create schedules, start first song) |
-| Schedules | POST | [`/api/v1/games/{roomCode}/schedules/{scheduleId}/replay`](#post-apiv1gamesroomcodeschedulesscheduleidreplay) | Replay snippet |
-| Schedules | POST | [`/api/v1/games/{roomCode}/schedules/{scheduleId}/reveal`](#post-apiv1gamesroomcodeschedulesscheduleidreveal) | Reveal answer |
-| Schedules | POST | [`/api/v1/games/{roomCode}/schedules/next`](#post-apiv1gamesroomcodeschedulesnext) | Next song / transition |
-| Interrupts | POST | [`/api/v1/games/{roomCode}/interrupts`](#post-apiv1gamesroomcodeinterrupts) | Create interrupt (team buzz or system pause) |
-| Interrupts | POST | [`/api/v1/games/{roomCode}/interrupts/{answerId}/answer`](#post-apiv1gamesroomcodeinterruptsansweridanswer) | Answer interrupt (correct/incorrect + scoring) |
-| Interrupts | POST | [`/api/v1/games/{roomCode}/interrupts/system/resolve`](#post-apiv1gamesroomcodeinterruptssystemresolve) | Resolve system pauses |
-| UI | PUT | [`/api/v1/games/{roomCode}/ui/scenario`](#put-apiv1gamesroomcodeuiscenario) | Persist UI scenario for recovery |
-| Assets | GET | [`/assets/v1/audio/snippets/{songId}`](#get-assetsv1audiosnippetssongid) | Snippet MP3 |
-| Assets | GET | [`/assets/v1/audio/answers/{songId}`](#get-assetsv1audioanswerssongid) | Answer MP3 |
-| Assets | GET | [`/assets/v1/image/albums/{albumId}`](#get-assetsv1imagealbumsalbumid) | Album image |
-| E2E fixtures | POST | [`/api/e2e/v1/game-fixtures`](#post-apie2ev1game-fixtures) | Create a deterministic game fixture for browser tests |
-| E2E fixtures | DELETE | [`/api/e2e/v1/game-fixtures/{roomCode}`](#delete-apie2ev1game-fixturesroomcode) | Delete a fixture room and dependent runtime state |
-
-
+| Domain       | Method | Path                                                                                                          | Purpose                                               |
+| ------------ | ------ | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Games        | POST   | [`/api/v1/games`](#post-apiv1games)                                                                           | Create a new game room                                |
+| Games        | PUT    | [`/api/v1/games/{roomCode}/stage`](#put-apiv1gamesroomcodestage)                                              | Change game stage                                     |
+| Teams        | POST   | [`/api/v1/games/{roomCode}/teams`](#post-apiv1gamesroomcodeteams)                                             | Create a team                                         |
+| Teams        | DELETE | [`/api/v1/games/{roomCode}/teams/{teamId}`](#delete-apiv1gamesroomcodeteamsteamid)                            | Kick a team                                           |
+| Categories   | PUT    | [`/api/v1/games/{roomCode}/categories/{categoryId}/pick`](#put-apiv1gamesroomcodecategoriescategoryidpick)    | Pick an album/category                                |
+| Categories   | POST   | [`/api/v1/games/{roomCode}/categories/{categoryId}/start`](#post-apiv1gamesroomcodecategoriescategoryidstart) | Start category (create schedules, start first song)   |
+| Schedules    | POST   | [`/api/v1/games/{roomCode}/schedules/{scheduleId}/replay`](#post-apiv1gamesroomcodeschedulesscheduleidreplay) | Replay snippet                                        |
+| Schedules    | POST   | [`/api/v1/games/{roomCode}/schedules/{scheduleId}/reveal`](#post-apiv1gamesroomcodeschedulesscheduleidreveal) | Reveal answer                                         |
+| Schedules    | POST   | [`/api/v1/games/{roomCode}/schedules/next`](#post-apiv1gamesroomcodeschedulesnext)                            | Next song / transition                                |
+| Interrupts   | POST   | [`/api/v1/games/{roomCode}/interrupts`](#post-apiv1gamesroomcodeinterrupts)                                   | Create interrupt (team buzz or system pause)          |
+| Interrupts   | POST   | [`/api/v1/games/{roomCode}/interrupts/{answerId}/answer`](#post-apiv1gamesroomcodeinterruptsansweridanswer)   | Answer interrupt (correct/incorrect + scoring)        |
+| Interrupts   | POST   | [`/api/v1/games/{roomCode}/interrupts/system/resolve`](#post-apiv1gamesroomcodeinterruptssystemresolve)       | Resolve system pauses                                 |
+| UI           | PUT    | [`/api/v1/games/{roomCode}/ui/scenario`](#put-apiv1gamesroomcodeuiscenario)                                   | Persist UI scenario for recovery                      |
+| Assets       | GET    | [`/assets/v1/audio/snippets/{songId}`](#get-assetsv1audiosnippetssongid)                                      | Snippet MP3                                           |
+| Assets       | GET    | [`/assets/v1/audio/answers/{songId}`](#get-assetsv1audioanswerssongid)                                        | Answer MP3                                            |
+| Assets       | GET    | [`/assets/v1/image/albums/{albumId}`](#get-assetsv1imagealbumsalbumid)                                        | Album image                                           |
+| E2E fixtures | POST   | [`/api/e2e/v1/game-fixtures`](#post-apie2ev1game-fixtures)                                                    | Create a deterministic game fixture for browser tests |
+| E2E fixtures | DELETE | [`/api/e2e/v1/game-fixtures/{roomCode}`](#delete-apie2ev1game-fixturesroomcode)                               | Delete a fixture room and dependent runtime state     |
 
 # REST endpoint details
 
@@ -211,8 +203,8 @@ Request:
 
 ```json
 {
-  "maxSongs": 10,
-  "maxAlbums": 10
+    "maxSongs": 10,
+    "maxAlbums": 10
 }
 ```
 
@@ -220,10 +212,9 @@ Response:
 
 ```json
 {
-  "roomCode": "AKKU"
+    "roomCode": "AKKU"
 }
 ```
-
 
 ## PUT /api/v1/games/{roomCode}/stage
 
@@ -233,17 +224,18 @@ Request:
 
 ```json
 {
-  "stageId": 1
+    "stageId": 1
 }
 ```
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
-- clients may receive fresh `welcome` snapshot
 
+- clients may receive fresh `welcome` snapshot
 
 ## POST /api/v1/games/{roomCode}/teams
 
@@ -253,39 +245,41 @@ Request:
 
 ```json
 {
-  "name":"Team Cyan",
-  "buttonCode":"BTN-001",
-  "image":"https://example.com/team.png"
+    "name": "Team Cyan",
+    "buttonCode": "BTN-001",
+    "image": "https://example.com/team.png"
 }
 ```
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 
 ```json
 {
-  "id":"uuid",
-  "name":"Team Cyan",
-  "image":"https://example.com/team.png"
+    "id": "uuid",
+    "name": "Team Cyan",
+    "image": "https://example.com/team.png"
 }
 ```
 
 WS side-effect:
-- TV receives `new_team`
 
+- TV receives `new_team`
 
 ## DELETE /api/v1/games/{roomCode}/teams/{teamId}
 
 Removes a team.
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 - `422 Unprocessable Entity` — the team exists but belongs to a different room (`E002 - Malformed argument`)
 
 WS side-effect:
-- TV receives `kick_team`
 
+- TV receives `kick_team`
 
 ## PUT /api/v1/games/{roomCode}/categories/{categoryId}/pick
 
@@ -295,73 +289,79 @@ Request:
 
 ```json
 {
-  "teamId":"uuid|null"
+    "teamId": "uuid|null"
 }
 ```
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `LastCategory` preview object
 
 `LastCategory.chosenCategoryPreview.image` contains the selected album UUID. Album cover files use that UUID as their basename, and clients pass it directly to `GET /assets/v1/image/albums/{albumId}` so the backend can resolve the stored format.
 
 WS side-effect:
-- TV receives `album_picked`
 
+- TV receives `album_picked`
 
 ## POST /api/v1/games/{roomCode}/categories/{categoryId}/start
 
 Starts category flow:
+
 - selects tracks
 - creates schedules
 - starts song stage
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
-- clients receive fresh `welcome` snapshot
 
+- clients receive fresh `welcome` snapshot
 
 ## POST /api/v1/games/{roomCode}/schedules/{scheduleId}/replay
 
 Replays snippet.
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 - `422 Unprocessable Entity` — `scheduleId` is unknown, stale, or does not identify the room's current/last-played schedule (`E002 - Malformed argument`)
 
 WS side-effect:
-- broadcast `song_repeat`
 
+- broadcast `song_repeat`
 
 ## POST /api/v1/games/{roomCode}/schedules/{scheduleId}/reveal
 
 Reveals answer.
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 - `422 Unprocessable Entity` — `scheduleId` is unknown, stale, or does not identify the room's current/last-played schedule (`E002 - Malformed argument`)
 
 WS side-effect:
-- broadcast `song_reveal`
 
+- broadcast `song_reveal`
 
 ## POST /api/v1/games/{roomCode}/schedules/next
 
 Starts next song or transitions stage.
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
+
 - broadcast `song_next`
 - or fresh `welcome` snapshot on stage transition
-
 
 ## POST /api/v1/games/{roomCode}/interrupts
 
@@ -371,22 +371,24 @@ Request:
 
 ```json
 {
-  "teamId":"uuid|null"
+    "teamId": "uuid|null"
 }
 ```
 
 Behavior:
+
 - teamId present → team buzz
 - teamId null → system pause
 
 Response:
+
 - `200 OK`
 - team buzz only: `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - system pause waits for the room lock and is not rejected only because another room mutation is in flight
 
 WS side-effect:
-- broadcast `pause` after the transaction commits
 
+- broadcast `pause` after the transaction commits
 
 ## POST /api/v1/games/{roomCode}/interrupts/{answerId}/answer
 
@@ -396,17 +398,18 @@ Request:
 
 ```json
 {
-  "correct": true
+    "correct": true
 }
 ```
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 
 WS side-effect:
-- broadcast `answer`
 
+- broadcast `answer`
 
 ## POST /api/v1/games/{roomCode}/interrupts/system/resolve
 
@@ -416,18 +419,19 @@ Request:
 
 ```json
 {
-  "scheduleId":"uuid"
+    "scheduleId": "uuid"
 }
 ```
 
 Response:
+
 - `423 Locked` — another request is already changing this room (`E010 - Room busy`)
 - `200 OK`
 - `422 Unprocessable Entity` — the schedule exists but belongs to a different room (`E002 - Malformed argument`)
 
 WS side-effect:
-- broadcast `error_solved`
 
+- broadcast `error_solved`
 
 ## PUT /api/v1/games/{roomCode}/ui/scenario
 
@@ -437,13 +441,13 @@ Request:
 
 ```json
 {
-  "scenario": 2
+    "scenario": 2
 }
 ```
 
 Response:
-- `200 OK`
 
+- `200 OK`
 
 # Asset endpoints
 
@@ -458,7 +462,6 @@ Content-Type: audio/mpeg
 Accept-Ranges: bytes
 ```
 
-
 ## GET /assets/v1/audio/answers/{songId}
 
 Returns full answer MP3.
@@ -469,7 +472,6 @@ Headers:
 Content-Type: audio/mpeg
 Accept-Ranges: bytes
 ```
-
 
 ## GET /assets/v1/image/albums/{albumId}
 
@@ -491,7 +493,6 @@ Error responses:
 `CategorySimple.image` and `LastCategory.chosenCategoryPreview.image` carry the album UUID. The corresponding cover is stored as `<albumId>.<supported extension>`, and clients pass the UUID directly to this endpoint so the backend can find the file and return its actual MIME type.
 
 The endpoint is cross-origin enabled in the same way as the existing asset endpoints. Team images use the same filesystem resolver internally, but there is currently no public team-image HTTP endpoint.
-
 
 # E2E fixture API endpoint details
 
@@ -529,65 +530,65 @@ High-level shape:
 
 ```json
 {
-  "id": "uuid",
-  "roomCode": "TST1",
-  "maxSongs": 2,
-  "maxAlbums": 3,
-  "stage": 2,
-  "teams": [],
-  "categories": []
+    "id": "uuid",
+    "roomCode": "TST1",
+    "maxSongs": 2,
+    "maxAlbums": 3,
+    "stage": 2,
+    "teams": [],
+    "categories": []
 }
 ```
 
 Field summary:
 
-| Field | Type | Required | Meaning |
-|---|---:|---:|---|
-| `id` | UUID | yes | Game id to persist. Tests usually generate this. |
-| `roomCode` | string | yes | Room code used by Admin/TV clients. Must be unique for the test. |
-| `maxSongs` | integer | yes | Number of songs selected per picked album. |
-| `maxAlbums` | integer | yes | Number of albums/categories used by the game. |
-| `stage` | integer | yes | Game stage to seed. Common values: lobby, albums, songs, winner. |
-| `teams` | array | yes | Teams belonging to the room. |
-| `categories` | array | yes | Categories/albums/tracks/schedules for the room. |
+| Field        |    Type | Required | Meaning                                                          |
+| ------------ | ------: | -------: | ---------------------------------------------------------------- |
+| `id`         |    UUID |      yes | Game id to persist. Tests usually generate this.                 |
+| `roomCode`   |  string |      yes | Room code used by Admin/TV clients. Must be unique for the test. |
+| `maxSongs`   | integer |      yes | Number of songs selected per picked album.                       |
+| `maxAlbums`  | integer |      yes | Number of albums/categories used by the game.                    |
+| `stage`      | integer |      yes | Game stage to seed. Common values: lobby, albums, songs, winner. |
+| `teams`      |   array |      yes | Teams belonging to the room.                                     |
+| `categories` |   array |      yes | Categories/albums/tracks/schedules for the room.                 |
 
 ### Team objects
 
 ```json
 {
-  "id": "uuid",
-  "buttonCode": "BTN-A",
-  "name": "Team A",
-  "image": "https://example.com/team-a.png"
+    "id": "uuid",
+    "buttonCode": "BTN-A",
+    "name": "Team A",
+    "image": "https://example.com/team-a.png"
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `id` | Team UUID. |
+| Field        | Meaning                                      |
+| ------------ | -------------------------------------------- |
+| `id`         | Team UUID.                                   |
 | `buttonCode` | Hardware/button identifier used by the game. |
-| `name` | Display name. |
-| `image` | Optional image URL used by the frontend. |
+| `name`       | Display name.                                |
+| `image`      | Optional image URL used by the frontend.     |
 
 ### Category objects
 
 ```json
 {
-  "id": "uuid",
-  "pickedByTeamId": "uuid",
-  "ordinalNumber": 1,
-  "done": false,
-  "album": {}
+    "id": "uuid",
+    "pickedByTeamId": "uuid",
+    "ordinalNumber": 1,
+    "done": false,
+    "album": {}
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `id` | Category UUID. |
-| `pickedByTeamId` | Team that picked this album, or `null` if it was an admin. |
-| `ordinalNumber` | Pick order. `null` means the category has not been chosen yet. |
-| `done` | Whether all scheduled tracks for the category have been completed. |
-| `album` | Album payload with tracks. |
+| Field            | Meaning                                                            |
+| ---------------- | ------------------------------------------------------------------ |
+| `id`             | Category UUID.                                                     |
+| `pickedByTeamId` | Team that picked this album, or `null` if it was an admin.         |
+| `ordinalNumber`  | Pick order. `null` means the category has not been chosen yet.     |
+| `done`           | Whether all scheduled tracks for the category have been completed. |
+| `album`          | Album payload with tracks.                                         |
 
 Important: `ordinalNumber` is what distinguishes chosen categories from unchosen categories. A game can have many albums while only some have been chosen. Unchosen albums should use `ordinalNumber = null`.
 
@@ -595,24 +596,24 @@ Important: `ordinalNumber` is what distinguishes chosen categories from unchosen
 
 ```json
 {
-  "id": "uuid",
-  "name": "Album A",
-  "customQuestion": "Album question",
-  "tracks": [
-    {
-      "customAnswer": "Answer 1",
-      "schedule": {}
-    }
-  ]
+    "id": "uuid",
+    "name": "Album A",
+    "customQuestion": "Album question",
+    "tracks": [
+        {
+            "customAnswer": "Answer 1",
+            "schedule": {}
+        }
+    ]
 }
 ```
 
 Track payloads are intentionally small in the current fixture API. Tests should not send obsolete song metadata fields.
 
-| Field | Meaning |
-|---|---|
-| `customAnswer` | Answer text for the track. |
-| `schedule` | Schedule object if this track has already been scheduled, otherwise `null`. |
+| Field          | Meaning                                                                     |
+| -------------- | --------------------------------------------------------------------------- |
+| `customAnswer` | Answer text for the track.                                                  |
+| `schedule`     | Schedule object if this track has already been scheduled, otherwise `null`. |
 
 Audio files are not uploaded through this endpoint. E2E tests can reuse stable test audio or application defaults. The fixture should point the game state at deterministic tracks/schedules; it should not test audio storage.
 
@@ -620,23 +621,23 @@ Audio files are not uploaded through this endpoint. E2E tests can reuse stable t
 
 ```json
 {
-  "id": "uuid",
-  "trackId": "uuid",
-  "startedAt": "2026-06-01T12:00:00",
-  "revealedAt": null,
-  "ordinalNumber": 1,
-  "interrupts": []
+    "id": "uuid",
+    "trackId": "uuid",
+    "startedAt": "2026-06-01T12:00:00",
+    "revealedAt": null,
+    "ordinalNumber": 1,
+    "interrupts": []
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `id` | Schedule UUID. |
-| `trackId` | Track UUID associated with the schedule. |
-| `startedAt` | Backend-local `LocalDateTime` when playback started, or `null` if not started. |
-| `revealedAt` | Backend-local `LocalDateTime` when answer was revealed, or `null`. |
-| `ordinalNumber` | Song order inside the picked category. |
-| `interrupts` | Historical or ongoing interrupts for the schedule. |
+| Field           | Meaning                                                                        |
+| --------------- | ------------------------------------------------------------------------------ |
+| `id`            | Schedule UUID.                                                                 |
+| `trackId`       | Track UUID associated with the schedule.                                       |
+| `startedAt`     | Backend-local `LocalDateTime` when playback started, or `null` if not started. |
+| `revealedAt`    | Backend-local `LocalDateTime` when answer was revealed, or `null`.             |
+| `ordinalNumber` | Song order inside the picked category.                                         |
+| `interrupts`    | Historical or ongoing interrupts for the schedule.                             |
 
 For Stage-2 listening fixtures, at least one schedule should have `startedAt != null`. At most one schedule should have `startedAt != null` and `revealedAt == null`.
 
@@ -646,25 +647,25 @@ Do not generate timestamps with `new Date(...).toISOString().slice(0, 19)` if th
 
 ```json
 {
-  "id": "uuid",
-  "teamId": null,
-  "arrivedAt": "2026-06-01T12:00:01",
-  "resolvedAt": null,
-  "correct": null,
-  "score": null,
-  "scenario": 4
+    "id": "uuid",
+    "teamId": null,
+    "arrivedAt": "2026-06-01T12:00:01",
+    "resolvedAt": null,
+    "correct": null,
+    "score": null,
+    "scenario": 4
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `id` | Interrupt UUID. |
-| `teamId` | Team UUID for a team buzz, or `null` for a system pause/crash. |
-| `arrivedAt` | When the interrupt started. Required for every interrupt. |
-| `resolvedAt` | When the interrupt was resolved, or `null` if still ongoing. |
-| `correct` | Team answer correctness after resolution. Only meaningful for resolved team interrupts. |
-| `score` | Team score after answering. Only meaningful for team interrupts. |
-| `scenario` | Previous/recoverable UI scenario for system interrupts. |
+| Field        | Meaning                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------- |
+| `id`         | Interrupt UUID.                                                                         |
+| `teamId`     | Team UUID for a team buzz, or `null` for a system pause/crash.                          |
+| `arrivedAt`  | When the interrupt started. Required for every interrupt.                               |
+| `resolvedAt` | When the interrupt was resolved, or `null` if still ongoing.                            |
+| `correct`    | Team answer correctness after resolution. Only meaningful for resolved team interrupts. |
+| `score`      | Team score after answering. Only meaningful for team interrupts.                        |
+| `scenario`   | Previous/recoverable UI scenario for system interrupts.                                 |
 
 Interrupt fixture rules are strict because invalid interrupt states create misleading browser tests:
 
@@ -683,51 +684,51 @@ Interrupt fixture rules are strict because invalid interrupt states create misle
 
 ```json
 {
-  "id": "7f8ef2e7-9adc-4f31-8f7e-6f8e5d2cf201",
-  "roomCode": "TST1",
-  "maxSongs": 2,
-  "maxAlbums": 3,
-  "stage": 2,
-  "teams": [
-    {
-      "id": "0cf4d245-e90b-40db-a9ff-6671f33d8f0f",
-      "buttonCode": "BTN-A",
-      "name": "Team A",
-      "image": "https://example.com/team-a.png"
-    },
-    {
-      "id": "7e9e1af4-f91b-46a2-b0dd-07cb7c8e7f91",
-      "buttonCode": "BTN-B",
-      "name": "Team B",
-      "image": "https://example.com/team-b.png"
-    }
-  ],
-  "categories": [
-    {
-      "id": "db57930d-5418-4554-b6f9-df10333db873",
-      "pickedByTeamId": "0cf4d245-e90b-40db-a9ff-6671f33d8f0f",
-      "ordinalNumber": 1,
-      "done": false,
-      "album": {
-        "id": "76b2e2de-8be8-43a4-94e2-37559d08bb5f",
-        "name": "E2E Album 1",
-        "customQuestion": "E2E Album Question",
-        "tracks": [
-          {
-            "customAnswer": "E2E Answer 1",
-            "schedule": {
-              "id": "f3b6f82f-83e9-46d0-ad75-8468a63ee8ff",
-              "trackId": "a2ed9d43-86d5-42a2-b961-6d72bb66ea54",
-              "startedAt": "2026-06-01T12:00:00",
-              "revealedAt": null,
-              "ordinalNumber": 1,
-              "interrupts": []
+    "id": "7f8ef2e7-9adc-4f31-8f7e-6f8e5d2cf201",
+    "roomCode": "TST1",
+    "maxSongs": 2,
+    "maxAlbums": 3,
+    "stage": 2,
+    "teams": [
+        {
+            "id": "0cf4d245-e90b-40db-a9ff-6671f33d8f0f",
+            "buttonCode": "BTN-A",
+            "name": "Team A",
+            "image": "https://example.com/team-a.png"
+        },
+        {
+            "id": "7e9e1af4-f91b-46a2-b0dd-07cb7c8e7f91",
+            "buttonCode": "BTN-B",
+            "name": "Team B",
+            "image": "https://example.com/team-b.png"
+        }
+    ],
+    "categories": [
+        {
+            "id": "db57930d-5418-4554-b6f9-df10333db873",
+            "pickedByTeamId": "0cf4d245-e90b-40db-a9ff-6671f33d8f0f",
+            "ordinalNumber": 1,
+            "done": false,
+            "album": {
+                "id": "76b2e2de-8be8-43a4-94e2-37559d08bb5f",
+                "name": "E2E Album 1",
+                "customQuestion": "E2E Album Question",
+                "tracks": [
+                    {
+                        "customAnswer": "E2E Answer 1",
+                        "schedule": {
+                            "id": "f3b6f82f-83e9-46d0-ad75-8468a63ee8ff",
+                            "trackId": "a2ed9d43-86d5-42a2-b961-6d72bb66ea54",
+                            "startedAt": "2026-06-01T12:00:00",
+                            "revealedAt": null,
+                            "ordinalNumber": 1,
+                            "interrupts": []
+                        }
+                    }
+                ]
             }
-          }
-        ]
-      }
-    }
-  ]
+        }
+    ]
 }
 ```
 
@@ -741,9 +742,9 @@ Successful response:
 
 ### Error behavior
 
-| Status | Meaning |
-|---|---|
-| `400 Bad Request` | Fixture payload is structurally invalid or violates validator rules. |
+| Status                      | Meaning                                                                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Fixture payload is structurally invalid or violates validator rules.                                                                                     |
 | `500 Internal Server Error` | Usually means fixture infrastructure failed: invalid persistence order, missing parent entity, foreign-key violation, schema mismatch, or cascade issue. |
 
 A `500` from this endpoint should normally be treated as a test-infrastructure bug, not as an expected application outcome.
@@ -756,8 +757,8 @@ This endpoint is the cleanup pair for `POST /api/e2e/v1/game-fixtures`. It allow
 
 ### Path parameters
 
-| Name | Type | Meaning |
-|---|---|---|
+| Name       | Type   | Meaning                         |
+| ---------- | ------ | ------------------------------- |
 | `roomCode` | string | The seeded room code to delete. |
 
 Example:
@@ -774,7 +775,6 @@ Successful response:
 200 OK
 ```
 
-
 # WebSocket reference
 
 REST endpoints in this document may trigger WebSocket side-effects.
@@ -788,6 +788,7 @@ docs/developer-guide/websockets.md
 ```
 
 That document contains:
+
 - connection endpoint and slot rules
 - welcome recovery snapshots
 - runtime message catalog

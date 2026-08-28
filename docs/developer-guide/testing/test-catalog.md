@@ -94,9 +94,17 @@ Vitest tests should own fast frontend behavior such as:
 - icon allocation, buzzer-linking, and animation trigger semantics.
 
 Stage 1 album-selection coverage should keep the live-pick and welcome-recovery paths aligned.
-Fast unit tests own source-order preservation, image-gated focus measurement, rendered-grid neighbor
-geometry, carousel layout planning, card state, and picker-header presentation. Playwright keeps the
-browser WebSocket recovery path honest, including selected-album recovery through the TV carousel.
+Fast unit tests own canonical `stableAlbumOrder` normalization, reconnect-safe Store transitions,
+image-gated focus measurement, rendered-grid neighbor geometry, focus/marquee component integration,
+deferred resize transform re-centering, real TV responsive focus-origin capture, card/dialog state, focus request
+supersession, teardown, and picker-header presentation. Playwright
+keeps the browser integration path honest with a real Admin selection/start journey, fresh-TV recovery
+that proves transition start and settlement, canonical rendered order/selected index preservation against
+a deliberately non-canonical backend welcome order, and strict observed `album_picked` runtime contract
+validation. Schema governance compares the complete backend/frontend schema directory and published-frame
+registry, not only the hard-coded runtime lookup map. Catalog descriptions must state only what
+the corresponding test actually proves; importance 10 is reserved for merge-critical invariants rather
+than decorative geometry variants.
 
 ### Angular / Playwright tests
 
@@ -259,16 +267,19 @@ Its purpose is browser-level WebSocket integration using backend E2E fixtures. T
 
 Primary files:
 
-- `e2e/specs/contracts/websocket-runtime-contracts.seeded.spec.ts`
+- `e2e/specs/contracts/websocket-runtime-contract-coverage.seeded.spec.ts`
 - `e2e/specs/contracts/websocket-schema-governance.spec.ts`
 
 These tests protect:
 
-- frontend registry completeness;
-- loadability of shared WebSocket schema files;
-- bundled frontend schema copies staying synchronized with the backend source;
+- the actual exported frontend `GAME_MESSAGE_TYPES` registry matching the published backend frame registry;
+- one-to-one loadability of published WebSocket schema files;
+- bundled frontend schema copies staying synchronized with the complete backend schema directory;
 - type discriminator consistency;
-- browser-observed runtime frames matching published schemas.
+- browser-observed runtime frames matching the frontend registry and published bundled schemas.
+
+Runtime frame validation intentionally lives in the single coverage journey rather than a second spec that
+replays the same backend flows. Static registry/directory equality belongs to schema governance.
 
 This layer should validate only frames produced from reachable game states. If a test creates an impossible state and then contract validation fails, fix the test or fixture rather than weakening the schema.
 

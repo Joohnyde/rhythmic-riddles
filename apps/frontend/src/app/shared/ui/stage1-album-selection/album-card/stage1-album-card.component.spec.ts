@@ -10,8 +10,6 @@ function album(overrides: Partial<AlbumCardVm> = {}): AlbumCardVm {
     image: 'yu-rock',
     pickedByTeam: null,
     ordinalNumber: null,
-    disabled: false,
-    pickedByAdmin: false,
     ...overrides,
   };
 }
@@ -45,6 +43,13 @@ describe('Stage1AlbumCardComponent', () => {
     expect(card.dataset['albumId']).toBe('album-a');
     expect(card.getAttribute('data-testid')).toBe('album-card-album-a');
     expect(card.getAttribute('data-frame-variant')).toBe(firstVariant);
+  });
+
+  it('keeps album art decorative because the visible heading names the card', () => {
+    const image: HTMLImageElement = fixture.nativeElement.querySelector('.stage1-album-art');
+
+    expect(image.getAttribute('alt')).toBe('');
+    expect(image.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('emits clicks for interactive available albums', () => {

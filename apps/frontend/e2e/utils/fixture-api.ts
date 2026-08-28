@@ -7,6 +7,14 @@ export type FixtureBuildOptions = {
   roomPrefix?: string;
   categoryCount?: number;
   maxAlbums?: number;
+  /** Optional deterministic album names, indexed by category, for order/recovery UI tests. */
+  categoryNames?: readonly string[];
+  /**
+   * Makes backend UUID wire order deliberately differ from frontend canonical name order. The
+   * backend remains authoritative for membership; this exists only to prove the browser does not
+   * accidentally treat transport order as visual order.
+   */
+  forceNonCanonicalBackendAlbumOrder?: boolean;
   /** Offset from local now for the active/current song startedAt. Keep near 0 for legal team buzzes. */
   activeStartedOffsetMillis?: number;
   /** Offset from local now for revealedAt in revealed fixtures. */
@@ -18,7 +26,7 @@ export type E2eFixtureSeed = {
   roomCode: string;
   gameId: string;
   teams: Array<{ id: string; name: string; buttonCode: string; image: string }>;
-  categories: Array<{ id: string; albumId: string; scheduleIds: string[] }>;
+  categories: Array<{ id: string; albumId: string; name: string; scheduleIds: string[] }>;
   currentScheduleId?: string;
   nextScheduleId?: string;
 };
@@ -257,6 +265,31 @@ export function assertReachableFixtureState(request: E2eFixtureRequest): void {
   }
 }
 
+function buildReverseCanonicalNameById(
+  categoryIds: readonly string[],
+  sourceNames: readonly string[],
+): Map<string, string> {
+  const idsInBackendOrder = [...categoryIds].sort(compareFixtureText);
+  const namesInCanonicalOrder = [...sourceNames].sort((left, right) =>
+    compareFixtureText(left.normalize('NFKD').toLowerCase(), right.normalize('NFKD').toLowerCase()),
+  );
+  return new Map(
+    idsInBackendOrder.map((id, index) => [
+      id,
+      namesInCanonicalOrder[namesInCanonicalOrder.length - 1 - index]!,
+    ]),
+  );
+}
+
+function compareFixtureText(left: string, right: string): number {
+  const maxIndex = Math.min(left.length, right.length);
+  for (let index = 0; index < maxIndex; index += 1) {
+    const difference = left.charCodeAt(index) - right.charCodeAt(index);
+    if (difference !== 0) return difference;
+  }
+  return left.length - right.length;
+}
+
 export function buildGameFixture(
   type: FixtureStage,
   options: FixtureBuildOptions = {},
@@ -279,13 +312,22 @@ export function buildGameFixture(
   const categoryCount = options.categoryCount ?? 3;
   const maxAlbums = options.maxAlbums ?? Math.min(3, categoryCount);
 
-  const categories: Array<{ id: string; albumId: string; scheduleIds: string[] }> = [];
+  const categoryIds = Array.from({ length: categoryCount }, () => uuid());
+  const sourceNames = Array.from(
+    { length: categoryCount },
+    (_, index) => options.categoryNames?.[index] ?? `E2E Album ${index + 1}`,
+  );
+  const forcedNameById = options.forceNonCanonicalBackendAlbumOrder
+    ? buildReverseCanonicalNameById(categoryIds, sourceNames)
+    : null;
+  const categories: Array<{ id: string; albumId: string; name: string; scheduleIds: string[] }> =
+    [];
 
   const categoryPayloads: CategoryPayload[] = Array.from(
     { length: categoryCount },
     (_, categoryIndex) => categoryIndex,
   ).map((categoryIndex) => {
-    const categoryId = uuid();
+    const categoryId = categoryIds[categoryIndex]!;
     const albumId = uuid();
     const trackIds = [uuid(), uuid()];
     const scheduleIds = [uuid(), uuid()];
@@ -324,7 +366,13 @@ export function buildGameFixture(
       schedules[1] = buildSchedule(scheduleIds[1], trackIds[1], 2, null, null);
     }
 
-    categories.push({ id: categoryId, albumId, scheduleIds: isChosen ? scheduleIds : [] });
+    const albumName = forcedNameById?.get(categoryId) ?? sourceNames[categoryIndex]!;
+    categories.push({
+      id: categoryId,
+      albumId,
+      name: albumName,
+      scheduleIds: isChosen ? scheduleIds : [],
+    });
 
     return {
       id: categoryId,
@@ -333,7 +381,7 @@ export function buildGameFixture(
       done: isDone,
       album: {
         id: albumId,
-        name: `E2E Album ${categoryIndex + 1}`,
+        name: albumName,
         customQuestion: `E2E Album Question ${categoryIndex + 1}`,
         tracks: [
           buildTrack(categoryIndex, 0, schedules[0]),

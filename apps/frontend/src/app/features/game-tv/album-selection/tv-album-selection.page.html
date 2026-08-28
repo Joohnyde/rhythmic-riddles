@@ -1,6 +1,7 @@
 <main
-  class="stage1-page relative min-h-dvh overflow-hidden bg-cosmic-975 text-foreground"
+  class="stage1-page relative min-h-dvh isolate overflow-hidden bg-cosmic-975 text-foreground"
   data-testid="tv-albums-page"
+  [attr.data-focus-phase]="focusPhase()"
 >
   <div
     class="pointer-events-none absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
@@ -8,7 +9,7 @@
     aria-hidden="true"
   ></div>
   <div
-    class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(181,61,214,0.12),transparent_38%),linear-gradient(180deg,rgba(5,2,12,0.04),rgba(5,2,12,0.34))]"
+    class="stage1-selection-backdrop pointer-events-none absolute inset-0"
     aria-hidden="true"
   ></div>
 
@@ -16,6 +17,7 @@
 
   <section class="stage1-content relative z-10 flex min-h-dvh flex-col px-6 py-4 sm:px-10 lg:px-14">
     <rr-stage1-category-header
+      class="relative z-20"
       [roomCode]="session.code"
       [pickedByTeam]="vm.pickedByTeam"
       [loaded]="vm.loaded"
@@ -24,33 +26,31 @@
 
     @if (!vm.loaded) {
       <section
-        class="mx-auto mt-10 rounded-2xl border border-primary-500/50 bg-cosmic-950/70 px-8 py-6 text-center text-primary-200 shadow-[0_0_28px_rgba(181,61,214,0.14)]"
+        class="mx-auto mt-10 rounded-2xl border border-primary-500/50 bg-cosmic-950/70 px-8 py-6 text-center text-primary-200 stage1-loading-panel"
         data-testid="tv-albums-loading"
       >
         Loading albums...
       </section>
     } @else {
       @if (showNormalAlbums()) {
-        <section class="stage1-selection-stage relative min-h-0 w-full">
-          <rr-stage1-tv-album-marquee
-            [albums]="vm.albums"
-            [imageUrl]="getAlbumImageUrl.bind(this)"
-          />
+        <section class="stage1-selection-stage absolute inset-0 z-[5] m-0 h-full min-h-0 w-full">
+          <rr-stage1-tv-album-marquee [albums]="vm.albums" [imageUrl]="getAlbumImageUrl" />
         </section>
       }
 
       @if (vm.selectedAlbum && showFocusScene()) {
-        <section class="stage1-selection-stage relative min-h-0 w-full">
+        <section class="stage1-selection-stage absolute inset-0 z-[5] m-0 h-full min-h-0 w-full">
           <rr-stage1-album-focus
             [albums]="vm.albums"
             [selectedId]="vm.selectedAlbum.categoryId"
             [animateInitialFocus]="true"
             [originRect]="focusLayout()?.selected ?? null"
             [originLayout]="focusLayout()"
-            [imageUrl]="getAlbumImageUrl.bind(this)"
+            [imageUrl]="getAlbumImageUrl"
             testId="tv-album-focus"
             (ready)="onFocusReady()"
             (animationSettled)="onFocusSettled()"
+            (failed)="onFocusFailed()"
           />
         </section>
       }
