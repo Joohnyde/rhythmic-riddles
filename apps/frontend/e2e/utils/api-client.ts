@@ -3,9 +3,13 @@ import { BACKEND_URL } from './env';
 
 export type Team = { id: string; name: string; image?: string; buttonCode?: string };
 
-export async function createRoom(request: APIRequestContext): Promise<string> {
+export async function createRoom(
+  request: APIRequestContext,
+  maxSongs = 10,
+  maxAlbums = 10,
+): Promise<string> {
   const response = await request.post(`${BACKEND_URL}/api/v1/games`, {
-    data: { maxSongs: 10, maxAlbums: 10 },
+    data: { maxSongs, maxAlbums },
   });
   expect(
     response.ok(),

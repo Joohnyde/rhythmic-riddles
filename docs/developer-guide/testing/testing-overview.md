@@ -95,6 +95,46 @@ E2E_WORKERS=2 npm run e2e
 
 Any frontend test that is added, renamed, or removed must be reflected in `docs/developer-guide/testing/test-catalog.csv` in the same change. The frontend catalog consistency check enforces this independently for Vitest and Playwright.
 
+## Package / release testing
+
+The fast release-build contract is a Vitest source-contract test: it verifies the Maven-owned Node/npm
+versions are within `apps/frontend/package.json`'s supported ranges; frontend, backend and native
+package versions remain aligned; every builder preserves its platform selector; and required Windows
+native commands cannot silently continue after a non-zero exit. It does not need a browser.
+
+Run it from `apps/frontend`:
+
+```bash
+npm run test:release-contract
+```
+
+The native smoke runner is separate because a jpackage image must run on the OS that built it. Build a native image, then run `node scripts/prod/package-smoke.mjs --app <native-launcher>`. The smoke runner detects embedded-vs-external DB mode from the packaged launcher profile. Embedded mode uses an isolated application-data directory and verifies the packaged SQL run-once marker. External mode deliberately starts no database: it uses the PostgreSQL configured by `application-production.yml` (or normal `APP_DB_*` environment overrides), because provisioning belongs to the deployment environment for an `--embeddb=false` package. Both modes poll Actuator, prove schema compatibility with a real application write, assert production Swagger/OpenAPI remain disabled, boot both Angular entry points in Chromium, fetch packaged snippet/answer/album-image/team-icon resources from that same-origin browser context, persist a room across a clean application restart, isolate logs, and verify packaged-process cleanup. See `release-builds.md` for native launcher paths and external-DB requirements.
+
+## Hardware / receiver testing
+
+Receiver testing is split at the real architecture boundaries instead of treating Java as the firmware test layer.
+
+- **PlatformIO / Unity** host tests exercise the exact receiver constants and `ReceiverButtonFilter` used by the Arduino sketch: the `RHYTMIC_RIDDLES` discovery response/rejection contract, 100 ms timeout, 32-slot capacity, zero-code rejection, timeout boundary, independent buttons, saturated-capacity drop behavior, slot reuse and 32-bit `millis()` wraparound.
+- `pio run -d hardware/firmware/receiver -e nanoatmega328` compiles the actual sketch with the Arduino framework and pinned `RCSwitch` dependency.
+- **JUnit** `BuzzerSerialAdapterTest` continues to own Java serial discovery/framing/cleanup and forwarding into `BuzzerService`; only the distinct successful/wrong-device discovery cases were added to the already substantial pre-existing adapter suite.
+- Physical RF/antenna/USB behavior remains an optional HIL smoke because the repository has no RF transmitter.
+
+Run firmware tests/build from repository root:
+
+```bash
+pio test -d hardware/firmware/receiver -e native
+pio run -d hardware/firmware/receiver -e nanoatmega328
+```
+
+Run the Java serial-adapter suite:
+
+```bash
+cd apps/backend
+mvn test -Dtest=BuzzerSerialAdapterTest
+```
+
+Detailed instructions: `docs/developer-guide/hardware/receiver-testing.md`.
+
 ## Why `contextFetch` matters
 
 `GameServiceImpl.contextFetch(...)` is one of the most important parts of the backend because it is responsible for reconstructing the current state of the game for clients.
@@ -221,24 +261,15 @@ E2E timing.
 
 These tests should stay faster and narrower than Playwright tests and should not duplicate browser-level WebSocket coverage.
 
-### Planned layers
+#### 9. Full-product browser regression
 
-#### 1. E2E regression
-
-Then cover the user-visible product flow:
-
-- room creation;
-- both apps connected;
-- teams;
-- transitions;
-- category;
-- song;
-- interrupt;
-- answer;
-- scoring;
-- finish/results.
-
-This layer should not duplicate every low-level WebSocket assertion already covered by the seeded WebSocket integration suite.
+Six serial Playwright journeys now cover the user-visible runtime composition path: an HTTP-arranged
+room with UI-created teams, Admin and TV, stage transitions, album choice, songs, buzzer/answer/scoring,
+real winner results, wrong-answer continuation, repeated song/album loops and picker rotation,
+answering-state TV recovery with exactly-once scoring, standalone technical-interruption recovery, and
+selected-album pre-start recovery. Game/preparation UI is intentionally outside this suite. Deterministic catalog arrangement and
+receiver substitution are available only in the `e2e` profile. Raw WebSocket contracts, invalid request
+matrices and simultaneous buzz races remain in their focused suites.
 
 ## What should be tested when code changes
 
@@ -272,16 +303,16 @@ Future additions may include:
 - the real-PostgreSQL DB integration suite as a merge/release gate;
 - Playwright end-to-end smoke tests;
 - seeded WebSocket E2E in CI;
-- full product E2E regression for release branches.
+- promotion of the existing full-product suite into a separately designed release gate.
 
 ## Test catalog
 
 A catalog of the current test suite should be maintained separately in:
 
 - `test-catalog.md` for human-readable overview;
-- `test-catalog.csv` for the detailed JUnit, Vitest, and Playwright inventory.
+- `test-catalog.csv` for the detailed JUnit, Vitest, Playwright, PlatformIO and standalone Node-harness inventory.
 
-Every test addition, rename, or deletion must update the CSV in the same change. Backend and frontend consistency checks enforce that source and catalog remain synchronized. This allows contributors to understand what is already covered and where gaps remain.
+Every test addition, rename, or deletion must update the CSV in the same change. Backend JUnit and frontend/firmware catalog consistency checks enforce that source and catalog remain synchronized. This allows contributors to understand what is already covered and where gaps remain.
 
 ## Document ownership
 

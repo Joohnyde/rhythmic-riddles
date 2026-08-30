@@ -99,4 +99,46 @@ public class E2eGameFixtureServiceImpl implements E2eGameFixtureService {
                       });
             });
   }
+
+  @Override
+  @Transactional
+  public void attachCatalog(final String roomCode, final E2eCatalogFixtureRequest request)
+      throws E2eGameFixtureValidationException {
+    final GameEntity game =
+        gameRepository
+            .findByCode(roomCode)
+            .orElseThrow(
+                () ->
+                    new E2eGameFixtureValidationException(
+                        java.util.List.of("room must exist before attaching a catalog")));
+    if (game.getStage() != 0) {
+      throw new E2eGameFixtureValidationException(
+          java.util.List.of("catalog can only be attached while the room is in the lobby"));
+    }
+    if (request.categories().size() < game.getMaxAlbums()) {
+      throw new E2eGameFixtureValidationException(
+          java.util.List.of("catalog must contain at least maxAlbums categories"));
+    }
+
+    for (E2eGameFixtureRequest.Category category : request.categories()) {
+      if (category.pickedByTeamId() != null
+          || category.ordinalNumber() != null
+          || Boolean.TRUE.equals(category.done())) {
+        throw new E2eGameFixtureValidationException(
+            java.util.List.of("attached catalog categories must be unplayed"));
+      }
+      if (category.album().tracks().size() < game.getMaxSongs()) {
+        throw new E2eGameFixtureValidationException(
+            java.util.List.of("every catalog album must contain at least maxSongs tracks"));
+      }
+
+      final CategoryEntity newCategory = new CategoryEntity(category, game);
+      final AlbumEntity newAlbum = albumRepository.saveAndFlush(newCategory.getAlbumId());
+      categoryRepository.saveAndFlush(newCategory);
+      trackRepository.saveAllAndFlush(
+          category.album().tracks().stream()
+              .map(track -> new TrackEntity(track, newAlbum))
+              .toList());
+    }
+  }
 }

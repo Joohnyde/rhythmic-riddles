@@ -1,22 +1,70 @@
-# Seeded WebSocket Playwright E2E
+# Product and Seeded WebSocket Playwright E2E
 
 This document explains the seeded browser-level WebSocket E2E system used by the frontend tests.
 
 The short version: the frontend `e2e` suite creates deterministic backend game rooms, opens real Admin and TV browser clients, observes the actual WebSocket frames delivered by Spring Boot, and validates that routing, ordering, recovery, and schema contracts remain correct.
 
+It also contains a deliberately small full-product regression portfolio. Game creation/preparation is
+out of scope: each journey arranges a finite room over HTTP, attaches deterministic media through the
+profile-gated fixture API, then drives the real Admin and TV applications through event-time runtime
+actions. The only substituted physical boundary is the RF receiver: the E2E endpoint forwards a button
+code to the real `BuzzerService` entry point.
+
+## From-scratch local runbook
+
+PostgreSQL must be reachable with the credentials in `application-e2e.yml`. By default the E2E
+profile uses the repository root Docker database on `localhost:2345`; set `E2E_DB_URL` only when a
+different PostgreSQL instance is intentional. Use three terminals after the one-time frontend setup.
+
+```bash
+# one time
+cd apps/frontend
+npm ci
+npx playwright install chromium
+
+# terminal 1, repository root
+docker compose up -d db
+cd apps/backend
+mvn spring-boot:run -Pe2e -De2e.clean=true
+
+# terminal 2
+cd apps/frontend
+npm start
+
+# terminal 3: the six full-product journeys, serial because they share one receiver/game runtime
+cd apps/frontend
+npm run e2e:product
+
+# all Playwright coverage against the same services
+# seeded specs run first; product journeys then run alone with one worker
+npm run e2e
+
+# headed/debug variants and failure diagnostics
+npx playwright test --config=playwright.product.config.ts --headed
+npx playwright test --config=playwright.product.config.ts --debug
+npm run e2e:report
+npx playwright show-trace test-results/<failed-test>/trace.zip
+```
+
+`npm run e2e` intentionally executes two Playwright runs. Seeded/protocol specs use the ordinary
+configuration and may use up to `E2E_WORKERS` workers. Product journeys use
+`playwright.product.config.ts`, which always uses one worker and cannot overlap another Playwright
+spec. This is required because the receiver boundary resolves the single active game.
+
+The product portfolio owns six composition risks: a competitive game through real results; wrong
+answer followed by a different successful team; song/album loops with picker rotation and persistent
+scores; TV recovery during an answer with exactly-once scoring; standalone technical-interruption
+recovery during playback; and selected-album recovery before play. Invalid REST/WS inputs, raw frames and simultaneous buzz races remain in their cheaper focused
+test layers. Product catalog fixtures reuse repository-backed album cover IDs so a normal journey does not treat expected image 404s as acceptable background noise.
+
 ## Scope
 
-These tests are **WebSocket integration tests**.
+Most tests are **WebSocket integration tests**. Specs under `e2e/specs/product` are full-product E2E.
 
-They are not meant to replace:
-
-- backend unit tests for service-level business rules
-- backend controller tests for REST request/response details
-- frontend unit tests for components/services
-- full E2E gameplay regression tests that exercise the UI like a human host
-- visual regression tests
-
-They sit between backend integration tests and full product E2E. They prove that the real browser clients and backend WebSocket runtime communicate correctly.
+The seeded WebSocket specs are not meant to replace backend unit/controller tests, frontend unit
+tests, the full-product journeys in `specs/product`, or visual regression testing. They sit between
+backend integration tests and full product E2E and prove that real browser clients and the backend
+WebSocket runtime communicate correctly.
 
 ## Why this suite exists
 
@@ -67,6 +115,7 @@ e2e/
     smoke/
     sockets/
     stage2/
+    product/
   utils/
     api-client.ts
     backend-schema-governance.ts
@@ -90,6 +139,7 @@ The exact spec grouping may evolve, but the intent should stay stable:
 | `smoke`     | Minimal connection/login/routing sanity checks.                                     |
 | `sockets`   | Duplicate-role, replacement, disconnect, and socket-slot behavior.                  |
 | `stage2`    | Song-state WebSocket behavior: repeat, reveal, pause, answer, error recovery, next. |
+| `product`   | Six real Admin/TV workflows through gameplay, recovery and results.                |
 
 ## Backend support: the `e2e` Spring profile
 
@@ -97,7 +147,7 @@ The seeded tests require the backend to run with the `e2e` profile.
 
 ```bash
 cd apps/backend
-./mvnw spring-boot:run -Pe2e -De2e.clean=true
+mvn spring-boot:run -Pe2e -De2e.clean=true
 ```
 
 The profile exists so browser tests do not mutate normal development data. It enables test-only endpoints and configures the application to work against an isolated `e2e` schema.
@@ -174,10 +224,12 @@ The test-only fixture API is exposed under:
 
 Endpoints:
 
-| Method   | Path                                   | Purpose                                            |
-| -------- | -------------------------------------- | -------------------------------------------------- |
-| `POST`   | `/api/e2e/v1/game-fixtures`            | Create a complete deterministic game fixture.      |
-| `DELETE` | `/api/e2e/v1/game-fixtures/{roomCode}` | Delete a fixture room and dependent runtime state. |
+| Method   | Path                                              | Purpose                                                     |
+| -------- | ------------------------------------------------- | ----------------------------------------------------------- |
+| `POST`   | `/api/e2e/v1/game-fixtures`                       | Create a complete deterministic seeded fixture.             |
+| `POST`   | `/api/e2e/v1/game-fixtures/{roomCode}/catalog`    | Attach finite deterministic catalog data to an HTTP-arranged runtime room. |
+| `POST`   | `/api/e2e/v1/game-fixtures/receiver/{buttonCode}` | Feed one code at the receiver/BuzzerService boundary.       |
+| `DELETE` | `/api/e2e/v1/game-fixtures/{roomCode}`            | Delete a fixture room and dependent runtime state.          |
 
 The backend branch exposes these through an `e2e` package containing the fixture controller, request DTO, service, service implementation, and validator.
 The controller is profile-gated with `@Profile("e2e")`, and the service persists game, teams, categories, albums, tracks, schedules, and interrupts in dependency order.
@@ -286,7 +338,7 @@ Start backend:
 
 ```bash
 cd apps/backend
-./mvnw spring-boot:run -Pe2e -De2e.clean=true
+mvn spring-boot:run -Pe2e -De2e.clean=true
 ```
 
 Start frontend:
