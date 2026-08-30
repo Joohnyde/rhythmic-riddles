@@ -160,7 +160,7 @@ You should see a numeric code printed, e.g.:
 Notes:
 
 - Each press should produce **one line**
-- Holding the button should **not spam** lines (firmware uses a release gap)
+- Holding/repeating the same button should **not spam** lines inside the firmware's 100 ms per-code suppression window
 
 If you see nothing, jump to Troubleshooting.
 

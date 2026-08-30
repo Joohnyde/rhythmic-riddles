@@ -158,3 +158,6 @@ logs/
 # But ignore logs inside scripts
 scripts/**/*.log
 scripts/**/*.log.*
+
+# PlatformIO firmware build output
+.pio/

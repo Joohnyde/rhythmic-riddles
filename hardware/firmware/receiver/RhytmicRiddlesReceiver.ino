@@ -1,22 +1,18 @@
 #include <RCSwitch.h>
+#include "ReceiverButtonFilter.h"
+#include "ReceiverConfig.h"
+#include "ReceiverProtocol.h"
 
 RCSwitch rf;
 
-const unsigned long BUTTON_TIMEOUT_MS = 100;
-const int MAX_ACTIVE_BUTTONS = 32;
-
-struct ButtonState {
-  unsigned long code;
-  unsigned long lastPressedMs;
-};
-
-ButtonState buttons[MAX_ACTIVE_BUTTONS] = {};
+ReceiverButtonFilter<ReceiverConfig::MAX_ACTIVE_BUTTONS> buttonFilter(
+    ReceiverConfig::BUTTON_TIMEOUT_MS);
 
 void setup() {
   Serial.begin(9600);
   rf.enableReceive(0); // D2
 
-  Serial.println("RHYTMIC_RIDDLES");
+  Serial.println(ReceiverConfig::DEVICE_IDENTIFIER);
 }
 
 void loop() {
@@ -25,8 +21,9 @@ void loop() {
     String command = Serial.readStringUntil('\n');
     command.trim();
 
-    if (command == "RHYTMIC_RIDDLES") {
-      Serial.println("RHYTMIC_RIDDLES");
+    const char* response = ReceiverProtocol::responseForCommand(command.c_str());
+    if (response != nullptr) {
+      Serial.println(response);
     }
   }
 
@@ -34,34 +31,10 @@ void loop() {
     return;
   }
 
-  unsigned long code = rf.getReceivedValue();
+  const uint32_t code = static_cast<uint32_t>(rf.getReceivedValue());
   rf.resetAvailable();
 
-  if (code == 0) {
-    return;
+  if (buttonFilter.shouldEmit(code, static_cast<uint32_t>(millis()))) {
+    Serial.println(code);
   }
-
-  unsigned long now = millis();
-  int freeSlot = -1;
-
-  for (int i = 0; i < MAX_ACTIVE_BUTTONS; i++) {
-
-    // Same button still in timeout
-    if (buttons[i].code == code &&
-        now - buttons[i].lastPressedMs < BUTTON_TIMEOUT_MS) {
-      return;
-    }
-
-    // Empty or expired slot can be reused
-    if (buttons[i].code == 0 ||
-        now - buttons[i].lastPressedMs >= BUTTON_TIMEOUT_MS) {
-      freeSlot = i;
-    }
-  }
-
-  if (freeSlot != -1) {
-    buttons[freeSlot] = {code, now};
-  }
-
-  Serial.println(code);
 }
