@@ -10,6 +10,21 @@ public final class AppDataDirs {
   private AppDataDirs() {}
 
   public static Path appDataBaseDir() {
+    // This explicit override is intentionally useful for release smoke tests and support
+    // investigations. It keeps packaged test runs away from a user's real application data.
+    final String configured = System.getProperty("app.data.dir");
+    if (configured != null && !configured.isBlank()) {
+      return Path.of(configured);
+    }
+
+    // Native launchers forward application arguments to Spring rather than to the JVM, so the
+    // release smoke harness uses this equivalent process-scoped override. Keeping both forms makes
+    // the seam useful from ordinary Java launches and from jpackage images on every platform.
+    final String configuredEnvironment = System.getenv("APP_DATA_DIR");
+    if (configuredEnvironment != null && !configuredEnvironment.isBlank()) {
+      return Path.of(configuredEnvironment);
+    }
+
     final String os = System.getProperty("os.name").toLowerCase();
 
     // Windows: %LOCALAPPDATA%\cestereg

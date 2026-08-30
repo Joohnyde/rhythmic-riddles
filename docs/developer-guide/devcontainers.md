@@ -127,8 +127,8 @@ What it installs:
 - Base image: Ubuntu 24.04 (Dev Containers base)
 - Java (Temurin JDK 25) installed under `/opt/java`
 - Maven 3.9.6 installed under `/opt/maven` and linked into PATH
-- Node 24.11.1 and npm 11.9.0
-- Angular CLI 21.0.1 (global)
+- Node 24.18.0 and npm 11.18.0
+- Angular CLI 22.0.4 (global)
 - PostgreSQL client (`psql`) for debugging
 
 Why it exists:

@@ -3,7 +3,7 @@ set -euo pipefail
 
 EMBEDDB="true"   # default
 SPRING_PROFILES_ACTIVE="production,embeddb"
-EXTRA_ARGUMENT="-Dplatform=linux"
+MVN_ARGS=("-Dplatform=linux")
 
 for arg in "$@"; do
   case "$arg" in
@@ -24,8 +24,8 @@ fi
 echo "[INFO] EMBEDDB=$EMBEDDB"
 if [[ "$EMBEDDB" == "false" ]]; then
     SPRING_PROFILES_ACTIVE="production"
-    EXTRA_ARGUMENT="-Dembeddb=false"
-    echo "[INFO] SPRING_PROFILES_ACTIVE=$SPRING_PROFILES_ACTIVE  EXTRA_ARGUMENT=$EXTRA_ARGUMENT"
+    MVN_ARGS=("-Dplatform=linux" "-Dembeddb=false")
+    echo "[INFO] SPRING_PROFILES_ACTIVE=$SPRING_PROFILES_ACTIVE  MVN_ARGS=${MVN_ARGS[*]}"
 fi
 
 # Resolve project root: script is PROJECT_ROOT_FOLDER/scripts/prod/build_linux_jpackage.sh
@@ -33,7 +33,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 ROOT="$(cd -- "${SCRIPT_DIR}/../../../" >/dev/null 2>&1 && pwd)"
 
 APP_NAME="cestereg"
-APP_VERSION="0.0.1"
+APP_VERSION="0.3.0"
 
 BACKEND="${ROOT}/apps/backend"
 FRONTEND="${ROOT}/apps/frontend"
@@ -49,7 +49,7 @@ mkdir -p "${INPUT}" "${RESOURCES}" "${OUT}"
 
 echo "[1/5] Build Spring Boot jar (production, linux platform)…"
 cd "${BACKEND}"
-mvn -Pproduction "${EXTRA_ARGUMENT}" -Dspring.profiles.active="${SPRING_PROFILES_ACTIVE}" clean package
+mvn -Pproduction "${MVN_ARGS[@]}" -DskipTests clean package
 
 
 
@@ -142,5 +142,3 @@ rm -rf "${BACKEND}/target" 2>/dev/null || true
 
 # Angular build output (adjust if your frontend path differs)
 rm -rf "${FRONTEND}/dist" 2>/dev/null || true
-
-

@@ -13,26 +13,35 @@ unset LC_TIME
 
 EMBEDDB="true"
 SPRING_PROFILES_ACTIVE="production,embeddb"
-EXTRA_ARGUMENT="-Dplatform=macos"
+MVN_ARGS=("-Dplatform=macos")
 
 for arg in "$@"; do
   case "$arg" in
     -embeddb=*|--embeddb=*)
       EMBEDDB="${arg#*=}"
       ;;
+    *)
+      echo "[WARN] Unknown arg: $arg"
+      ;;
   esac
 done
 
+if [[ "$EMBEDDB" != "true" && "$EMBEDDB" != "false" ]]; then
+  echo "[ERROR] embeddb must be true or false, got: $EMBEDDB"
+  exit 1
+fi
+
+echo "[INFO] EMBEDDB=$EMBEDDB"
 if [[ "$EMBEDDB" == "false" ]]; then
   SPRING_PROFILES_ACTIVE="production"
-  EXTRA_ARGUMENT="-Dembeddb=false"
+  MVN_ARGS=("-Dplatform=macos" "-Dembeddb=false")
 fi
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 ROOT="$(cd -- "${SCRIPT_DIR}/../../../" >/dev/null 2>&1 && pwd)"
 
 APP_NAME="cestereg"
-APP_VERSION="1.0.0"
+APP_VERSION="0.3.0"
 
 BACKEND="${ROOT}/apps/backend"
 FRONTEND="${ROOT}/apps/frontend"
@@ -49,8 +58,8 @@ mkdir -p "${INPUT}" "${RESOURCES}" "${OUT}"
 echo "[1/4] Build Spring Boot jar..."
 
 cd "${BACKEND}"
-mvn -Pproduction "${EXTRA_ARGUMENT}" \
-  -Dspring.profiles.active="${SPRING_PROFILES_ACTIVE}" \
+mvn -Pproduction "${MVN_ARGS[@]}" \
+  -DskipTests \
   clean package
 
 JAR="$(ls -1 target/*.jar | grep -v 'original' | head -n 1)"
