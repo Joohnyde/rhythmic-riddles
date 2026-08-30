@@ -1,4 +1,4 @@
-# Seeded WebSocket Playwright E2E
+# Product and Seeded WebSocket Playwright E2E
 
 This folder contains browser-level WebSocket integration tests for the Angular frontend.
 
@@ -29,13 +29,25 @@ but a small number of high-value Stage 1 journeys intentionally use the real Adm
 the UI would miss the regression boundary (selection confirmation, focus lifecycle, Play, and fresh-TV
 recovery). Do not turn every protocol assertion into a duplicate full gameplay walkthrough.
 
+The six journeys in `specs/product/full-product-game-journeys.spec.ts` are the full-product layer. They
+use separate Admin/TV contexts and real UI, HTTP, PostgreSQL, game-state and WebSocket behavior. A
+profile-gated endpoint substitutes only the unavailable RF/serial device and calls the same
+`BuzzerService` boundary as production.
+
 ## Required services
+
+Start the repository PostgreSQL service from the repository root. The E2E profile defaults to the
+root Docker mapping on `localhost:2345`:
+
+```bash
+docker compose up -d db
+```
 
 Start the backend with the `e2e` Spring profile:
 
 ```bash
 cd apps/backend
-./mvnw spring-boot:run -Pe2e -De2e.clean=true
+mvn spring-boot:run -Pe2e -De2e.clean=true
 ```
 
 Start the frontend:
@@ -52,13 +64,22 @@ cd apps/frontend
 npm run e2e:ws
 ```
 
+Run the shared-state full-product portfolio. Its dedicated Playwright config always uses one worker:
+
+```bash
+npm run e2e:product
+```
+
 Run frontend unit tests, test-catalog governance, and then the complete Playwright suite:
 
 ```bash
 npm run test:all
 ```
 
-The Playwright config deliberately caps the shared E2E environment at two workers by default. The suite uses one Spring/PostgreSQL stack, so Playwright's default of half the machine's logical CPUs can create severe contention on high-core machines. Override the cap only when the environment can sustain it:
+The seeded Playwright config caps the shared E2E environment at two workers by default. The product
+portfolio is deliberately excluded from that run and then executed separately by `npm run e2e` using
+`playwright.product.config.ts` with exactly one worker. `E2E_WORKERS` therefore tunes only the seeded
+suite and cannot make product buzzer tests race another active game:
 
 ```bash
 E2E_WORKERS=2 npm run e2e
@@ -69,6 +90,9 @@ Expected `package.json` scripts:
 ```json
 {
     "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
+    "e2e": "npm run e2e:seeded && npm run e2e:product",
+    "e2e:seeded": "playwright test",
+    "e2e:product": "playwright test --config=playwright.product.config.ts",
     "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\""
 }
 ```
@@ -83,6 +107,11 @@ The suite uses backend-only E2E fixture endpoints exposed under the `e2e` Spring
 | -------- | -------------------------------------- | --------------------------------------- |
 | `POST`   | `/api/e2e/v1/game-fixtures`            | Create a deterministic game fixture.    |
 | `DELETE` | `/api/e2e/v1/game-fixtures/{roomCode}` | Delete the fixture room after the test. |
+
+The product journeys arrange the already-prepared runtime room with `POST /api/v1/games`, then use
+`POST /{roomCode}/catalog` only to attach finite media data and `POST /receiver/{buttonCode}` to
+substitute the physical receiver. Game/preparation UI is intentionally outside this runtime suite. The
+catalog and receiver endpoints do not exist outside the `e2e` Spring profile.
 
 Use the frontend helpers instead of calling these endpoints manually from specs:
 
@@ -194,7 +223,7 @@ Check that the backend is running with the `e2e` profile:
 
 ```bash
 cd apps/backend
-./mvnw spring-boot:run -Pe2e -De2e.clean=true
+mvn spring-boot:run -Pe2e -De2e.clean=true
 ```
 
 Also verify that the E2E schema was created and that the fixture API is available.

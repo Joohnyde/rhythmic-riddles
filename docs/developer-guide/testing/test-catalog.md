@@ -14,16 +14,26 @@ A more detailed inventory of individual test cases is maintained in `test-catalo
 
 Current columns:
 
-| Field         | Meaning                                                                                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `framework`   | Test runner/framework. Use `junit` for Java/Spring tests, `vitest` for Angular unit/component tests, and `playwright` for browser E2E tests.                             |
-| `file`        | Source file that contains the test, relative to the owning project test root.                                                                                            |
-| `suite`       | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group. |
-| `test_name`   | Short stable name of the test or parameterized test family.                                                                                                              |
-| `description` | One-sentence explanation of the behavior protected by the test.                                                                                                          |
-| `importance`  | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior.                                                             |
+| Field         | Meaning                                                                                                                                                                              |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `framework`   | Test runner/framework. Use `junit` for Java/Spring, `vitest` for frontend unit/source contracts, `playwright` for browser E2E, `platformio` for Arduino firmware tests, and `node` for the standalone native package harness. |
+| `file`        | Source file that contains the test, relative to the owning project test root.                                                                                                        |
+| `suite`       | Logical suite/group/describe block. For JUnit this can be the nested class or service area; for Vitest/Playwright this is usually the surrounding `describe(...)` group.             |
+| `test_name`   | Short stable name of the test or parameterized test family.                                                                                                                          |
+| `description` | One-sentence explanation of the behavior protected by the test.                                                                                                                      |
+| `importance`  | Relative importance from `1` to `10`; `10` protects the most business-critical or regression-prone behavior.                                                                         |
 
 The catalog is not supposed to replace the source code. It is a map for reviewers and contributors.
+
+The `file` column is framework-relative rather than always repository-relative. Current roots are:
+
+- `junit`: backend Java test source root (the existing checker normalizes to the Java test file name);
+- `vitest` / `playwright`: `apps/frontend`;
+- `platformio`: `hardware/firmware/receiver`;
+- `node`: repository root for standalone release harnesses.
+
+This keeps catalog paths short while still giving every framework one deterministic base directory.
+
 
 Use `importance` consistently:
 
@@ -41,7 +51,7 @@ Use it to answer:
 
 ## Test runners and ownership
 
-The repository has three main automated test worlds.
+The repository has five automated test worlds: JUnit, Vitest, Playwright, PlatformIO/Unity firmware tests, and the standalone Node packaged-product smoke harness.
 
 ### Java / Spring tests
 
@@ -116,7 +126,7 @@ Typical location:
 apps/frontend/e2e/...
 ```
 
-Frontend catalog governance checks both Vitest and Playwright rows:
+Catalog governance for frontend and firmware source tests runs through the frontend Playwright catalog config:
 
 ```bash
 cd apps/frontend
@@ -131,6 +141,8 @@ Expected script:
 }
 ```
 
+The catalog config also runs `test-catalog-platformio-consistency.spec.ts`, which validates `platformio` rows against firmware Unity `RUN_TEST(...)` cases. The backend JUnit checker continues to ignore every non-`junit` row.
+
 Playwright tests should own behavior that requires real browser clients:
 
 - browser WebSocket connections;
@@ -138,7 +150,22 @@ Playwright tests should own behavior that requires real browser clients:
 - duplicate socket behavior;
 - replacement/reconnect behavior;
 - browser-observed WebSocket frame routing, ordering, and schemas;
-- high-value end-to-end user flows once full E2E regression is added.
+- the small set of high-value full-product user journeys.
+
+### Arduino firmware / PlatformIO tests
+
+Receiver firmware tests live under `hardware/firmware/receiver/test` and use PlatformIO's native Unity runner. Run them from repository root so no working-directory assumption is required:
+
+```bash
+pio test -d hardware/firmware/receiver -e native
+pio run -d hardware/firmware/receiver -e nanoatmega328
+```
+
+The native suite owns deterministic decoded-button suppression behavior. The Nano build owns target compilation with the real Arduino framework and pinned `RCSwitch` dependency. Physical RF propagation remains an optional hardware smoke concern. `npm run test:catalog:frontend` also validates that `platformio` catalog rows match Unity `RUN_TEST(...)` cases; Java catalog governance continues to ignore non-JUnit rows.
+
+### Native packaged-product smoke / Node
+
+`scripts/prod/package-smoke.mjs` owns the native app-image release boundary in both supported DB modes: embedded builds verify packaged PostgreSQL/bootstrap and persistence in an isolated app-data directory; external-DB builds use the PostgreSQL configured by `application-production.yml` or `APP_DB_*` overrides and verify runtime/schema compatibility plus persistence without pretending the package provisions that database. Both modes cover Actuator readiness/shutdown, Angular boot, same-origin media access, and packaged-process cleanup. It is intentionally not another gameplay E2E suite. See [Release builds](../release-builds.md) for native OS commands.
 
 ## Current backend test groups
 
@@ -367,24 +394,29 @@ These tests protect:
 - buzz window behavior;
 - deterministic interrupt and seek states.
 
-## Future E2E regression tests
+## Full-product E2E regression
 
-The current Playwright suite is primarily WebSocket integration. Full product E2E regression should be tracked separately when added.
+`e2e/specs/product/full-product-game-journeys.spec.ts` contains six serial, browser-driven journeys:
 
-Full E2E should cover complete user-visible flows:
+- a two-team golden game through meaningful scores and winner results on Admin and TV;
+- wrong Team A answer followed by Team B competing, scoring and winning;
+- two songs across repeated albums, persistent scores, team picker rotation and the Admin-picker branch;
+- TV replacement while a team is answering, including blocked unsafe scoring and exactly one score after recovery;
+- standalone TV-loss technical interruption during playback, followed by recovery, Admin resume, and successful gameplay;
+- selected-album recovery in fresh Admin/TV contexts before gameplay starts.
 
-- room creation;
-- both apps connected;
-- team creation;
-- stage transitions;
-- category/album selection;
-- song play/repeat/reveal/next;
-- interrupt;
-- answer;
-- scoring;
-- finish/results.
+They arrange the already-prepared room over HTTP, then create/link teams through the real Admin UI. A
+profile-gated fixture boundary arranges only finite catalog data and substitutes the unavailable RF
+receiver at `BuzzerService`. Game/preparation UI is intentionally not part of this runtime portfolio. They do not
+duplicate invalid controller inputs, raw WS schema assertions or concurrent buzzer arbitration.
 
-These tests should assert the user-facing journey through UI. They should not duplicate every low-level WebSocket assertion already covered by the WS integration suite.
+## Release and receiver contracts
+
+The catalog includes five fast Vitest release-build contracts for Node/npm drift, builder platform propagation, invalid embeddb values, frontend/backend/native package-version alignment, and Windows native-command failure handling. The standalone native `package-smoke.mjs` remains an executable release harness rather
+than a unit test; its single `node` catalog row represents the native
+process/DB/Angular/media/restart contract and is documented in `release-builds.md`. The JUnit catalog validator remains JUnit-only; frontend catalog governance validates Vitest, Playwright, and PlatformIO source rows while tolerating the separately executed standalone Node harness classification.
+
+PlatformIO receiver rows cover the Arduino firmware anti-spam state machine used by the real sketch, while JUnit receiver rows cover serial identification/rejection, framing, forwarding and cleanup at the mocked jSerialComm port boundary. The Java adapter suite already existed and remains the correct owner of host-side serial behavior; firmware suppression is intentionally not duplicated there. Backend concurrency and product browser effects remain separate owners.
 
 ## Most critical coverage areas
 
@@ -462,7 +494,7 @@ Before writing new tests:
 
 When reviewing a new test, ask:
 
-- does this test belong in JUnit, Vitest, or Playwright?
+- does this test belong in JUnit, Vitest, Playwright, PlatformIO, or a standalone release harness?
 - does it assert the most meaningful observable effect?
 - does it cover a new rule or just repeat an existing case?
 - does it use a valid fixture or reachable runtime state?
@@ -472,14 +504,15 @@ When reviewing a new test, ask:
 
 When adding, renaming, merging, or deleting tests:
 
-- update `test-catalog.csv` in the same change; this is required for every JUnit, Vitest, and Playwright test, not optional documentation cleanup;
+- update `test-catalog.csv` in the same change for every catalogued test family, including PlatformIO firmware tests; this is not optional documentation cleanup;
 - keep descriptions short and behavior-focused;
 - note the test suite/group where the test belongs;
 - keep `importance` realistic: reserve `10` for business-critical or highly regression-prone behavior and do not inflate cosmetic assertions;
 - update this file when a new major test family is added.
 
-The backend consistency test enforces JUnit rows. The frontend catalog-governance check independently enforces both `vitest` and `playwright` rows, so a new test without a catalog entry must fail validation.
+The backend consistency test enforces only `junit` rows. The frontend source-catalog checker enforces `vitest` and `playwright` rows, while separate checkers (run by the same catalog command) enforce PlatformIO source discovery and standalone `node` harness path/syntax validity. The Node harness keeps one conceptual catalog row because it is an executable native smoke contract rather than a collection of source-level test functions.
 
 ## Future expansion
 
-This catalog should later expand further as new test families are introduced, including full product E2E regression coverage beyond the current seeded WebSocket suite.
+Expand the catalog only when a new focused test adds confidence not already owned by the full-product,
+seeded WebSocket, backend, release or receiver layers.
