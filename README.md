@@ -66,8 +66,8 @@ Then run:
 Prereqs:
 
 - Java: **JDK 25.0.1** (or whatever is specified in `docs/developer-guide/getting-started.md`)
-- Node: **24.11.1**
-- npm: **11.6.2**
+- Node: **24.15+ on the Node 24 line** (`>=24.15.0 <25`)
+- npm: **11 or 12** (`>=11 <13`)
 - PostgreSQL: **18.1**
 
 Run:

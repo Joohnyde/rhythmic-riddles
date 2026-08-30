@@ -30,7 +30,7 @@ $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ROOT = Resolve-Path (Join-Path $SCRIPT_DIR "..\..\..") | Select-Object -ExpandProperty Path
 
 $APP_NAME = "cestereg"
-$APP_VERSION = "0.0.1"
+$APP_VERSION = "0.3.0"
 
 $BACKEND = Join-Path $ROOT "apps\backend"
 $FRONTEND = Join-Path $ROOT "apps\frontend"
@@ -48,9 +48,12 @@ New-Item -ItemType Directory -Force $INPUT, $RESOURCES, $OUT | Out-Null
 Info "[1/5] Build Spring Boot jar (production, windows platform)..."
 Push-Location $BACKEND
 try {
-  # Note: -Dspring.profiles.active here is only for build-time if you rely on it;
-  # runtime profile is passed to jpackage via --arguments below.
-  & mvn @MVN_ARGS "-Dspring.profiles.active=$SPRING_PROFILES_ACTIVE" clean package
+  # Tests are an explicit pre-build gate. Runtime profiles belong only to the packaged launcher;
+  # applying production,embeddb to Maven's test JVM can touch normal application data.
+  & mvn @MVN_ARGS "-DskipTests" clean package
+  if ($LASTEXITCODE -ne 0) {
+    throw "Maven build failed with exit code $LASTEXITCODE"
+  }
 } finally {
   Pop-Location
 }
@@ -100,6 +103,9 @@ Info "[3/5] Create .EXE portable app-image (no Java required)..."
   @ICON_ARGS `
   --arguments "--spring.profiles.active=$SPRING_PROFILES_ACTIVE" `
   --arguments "--app.assets.base-dir=`$APPDIR/resources/data"
+if ($LASTEXITCODE -ne 0) {
+  throw "jpackage app-image build failed with exit code $LASTEXITCODE"
+}
 
 $appImage = Join-Path $OUT $APP_NAME
 if (-not (Test-Path $appImage)) {
@@ -149,6 +155,9 @@ try {
     --win-shortcut `
     --win-dir-chooser `
     --win-per-user-install
+  if ($LASTEXITCODE -ne 0) {
+    throw "jpackage MSI build failed with exit code $LASTEXITCODE"
+  }
   Info "MSI created in: $OUT"
 } catch {
   Warn "MSI build failed; skipping installer build."
@@ -172,4 +181,3 @@ if (Test-Path $backendTarget) { Remove-Item -Recurse -Force $backendTarget }
 # Angular build output
 $frontendDist = Join-Path $FRONTEND "dist"
 if (Test-Path $frontendDist) { Remove-Item -Recurse -Force $frontendDist }
-

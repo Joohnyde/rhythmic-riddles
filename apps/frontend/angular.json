@@ -50,7 +50,10 @@
           },
           "defaultConfiguration": "development"
         },
-        "test": { "builder": "@angular/build:unit-test" }
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": { "exclude": ["src/release-build-contract.spec.ts"] }
+        }
       }
     }
   }

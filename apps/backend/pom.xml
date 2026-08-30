@@ -30,7 +30,7 @@
     <!-- Project coordinates -->
     <groupId>com.cevapinxile</groupId>
     <artifactId>cestereg</artifactId>
-    <version>0.0.1</version>
+    <version>0.3.0</version>
 
     <!-- Human-readable project name -->
     <name>RhytmicRiddles</name>
@@ -651,8 +651,8 @@
                                     <goal>install-node-and-npm</goal>
                                 </goals>
                                 <configuration>
-                                    <nodeVersion>v24.11.1</nodeVersion>
-                                    <npmVersion>11.6.2</npmVersion>
+                                    <nodeVersion>v24.20.0</nodeVersion>
+                                    <npmVersion>11.19.0</npmVersion>
                                 </configuration>
                             </execution>
 
