@@ -21,5 +21,5 @@ When the frontend runs inside a container, the dev server must listen on `0.0.0.
 ## Documentation
 
 - Dev environment & IDE integration: `docs/developer-guide/devcontainers.md`
-- Packaging & SPA routing behavior: `docs/developer-guide/release_builds.md`
+- Packaging & SPA routing behavior: `docs/developer-guide/release-builds.md`
 - User-facing operation: `docs/user-guide/`

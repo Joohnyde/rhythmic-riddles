@@ -2,6 +2,94 @@
 
 This document explains how **release mode** works for RhythmicRiddles (Cestereg), how to build production artifacts on each platform, and how embedded PostgreSQL + assets + frontend are bundled so end users can **click and run** without installing developer tooling.
 
+## Native package smoke test
+
+Run package tests on the same operating system that created the app image; `jpackage` images are not cross-platform artifacts. The fast source contract is run from `apps/frontend` with `npm run test:release-contract`. It prevents Maven/frontend Node/npm drift, native package-version drift, missing platform propagation, invalid `embeddb` values, and the Windows builder accidentally ignoring non-zero Maven/jpackage exit codes.
+
+Install frontend dependencies and Chromium once, run the release contract, then build the mode you want to verify:
+
+```bash
+cd apps/frontend
+npm ci
+npx playwright install chromium
+npm run test:release-contract
+cd ../..
+
+# Embedded-DB Linux example
+bash scripts/prod/build/build_linux_jpackage.sh --embeddb=true
+
+# External-DB Linux example
+bash scripts/prod/build/build_linux_jpackage.sh --embeddb=false
+```
+
+The builders use `-DskipTests` intentionally: runtime `production,embeddb` or `production` profiles belong to the native launcher and must not leak into Maven's test JVM or normal user data. Run the repository test commands before the clean builder command; the builder owns reproducible compilation and packaging, not a second profile-mutated test execution.
+
+The smoke runner supports **both package modes** and auto-detects the mode from the Spring profile stored in the jpackage launcher configuration. Do not repeat `--embeddb` when running the smoke test; the packaged launcher is the source of truth.
+
+### Embedded PostgreSQL package
+
+For a package built with `--embeddb=true`:
+
+```bash
+# Linux
+node scripts/prod/package-smoke.mjs --app dist/linux/out/cestereg/bin/cestereg
+
+# Windows
+node scripts/prod/package-smoke.mjs --app dist/windows/out/cestereg/cestereg.exe
+
+# macOS
+node scripts/prod/package-smoke.mjs --app dist/macos/out/cestereg.app/Contents/MacOS/cestereg
+```
+
+The runner creates temporary `APP_DATA_DIR` and `APP_LOG_DIR` locations, selects an isolated PostgreSQL port, waits for Actuator readiness, proves the embedded SQL run-once marker and a representative schema write, creates persistent application state, cleanly restarts the same package against the same embedded database directory, and verifies the state survived. It also checks Angular boot, same-origin snippet/answer/album-image/team-icon fetches, production Swagger/OpenAPI policy, Actuator shutdown, and Java/PostgreSQL process cleanup.
+
+### External PostgreSQL package (`--embeddb=false`)
+
+A package built with `--embeddb=false` intentionally contains **no embedded PostgreSQL runtime** and launches with only the `production` Spring profile. The package expects PostgreSQL to be provisioned separately. By default the smoke runner therefore uses the same database configuration as `application-production.yml` (`127.0.0.1:5432`, database `cestereg`) instead of starting Docker or another database process.
+
+```bash
+# Build without embedded PostgreSQL
+bash scripts/prod/build/build_linux_jpackage.sh --embeddb=false
+
+# Smoke the external-DB package against application-production.yml defaults
+node scripts/prod/package-smoke.mjs \
+  --app dist/linux/out/cestereg/bin/cestereg
+```
+
+The configured PostgreSQL must already exist and already contain the application's schema. External mode verifies that the packaged application can connect to that database, perform a real application write, restart, and recover the persisted state. It does **not** claim that the package executed `db/*.sql`; database provisioning is outside an `--embeddb=false` package.
+
+Spring Boot environment overrides can point the same package at another PostgreSQL without changing the package:
+
+```bash
+APP_DB_HOST=127.0.0.1 \
+APP_DB_PORT=5432 \
+APP_DB_DATABASE=cestereg \
+APP_DB_USERNAME=cevapinxile \
+APP_DB_PASSWORD='<password>' \
+node scripts/prod/package-smoke.mjs \
+  --app dist/linux/out/cestereg/bin/cestereg
+```
+
+Use the same command shape natively on Windows/macOS, changing only the launcher path. Because the external smoke performs a real persistence write, use a database where one smoke-test game record is acceptable (or point the `APP_DB_*` variables at a dedicated test database).
+
+### Optional ports and failure cleanup
+
+Optional non-default ports are explicit:
+
+```bash
+node scripts/prod/package-smoke.mjs \
+  --app <launcher> \
+  --app-port 18080 \
+  --management-port 18081 \
+  --db-port 15432
+```
+
+`--db-port` applies only when the launcher is auto-detected as an embedded-DB package; when omitted, the harness reserves an available loopback port so bundled PostgreSQL cannot collide with an existing server on 5432. External packages use `application-production.yml` and normal `APP_DB_*` Spring environment overrides instead.
+
+Production intentionally disables Springdoc OpenAPI and Swagger UI. The smoke test asserts they remain disabled instead of requiring development-only endpoints. It launches Chromium to prove Angular actually bootstraps and renders both TV and Admin login screens and fetches representative snippet, answer, album-image and team-icon resources from the browser's same-origin context.
+
+The runner removes its temporary application/log directory even after failure and prints the packaged process output tail on failure. It only owns processes started by the packaged application; an external PostgreSQL is deliberately left untouched. Windows, macOS and Linux images must each execute this behavioral contract natively; parsing another platform's builder does not count as packaged execution.
+
 ## Goals and non-goals
 
 ### Goals
@@ -36,6 +124,7 @@ The `production` Spring profile enables “desktop UX” behavior and production
 - **Actuator** bound to localhost on a dedicated port and exposes only limited endpoints.
 - **Browser auto-launch** on app start (`BrowserLauncher`, production-only).
 - **SPA routing support** (`ProductionSpaRoutingConfig`, production-only) so deep links in the Angular app work when served from Spring Boot.
+- **OpenAPI and Swagger disabled** in the shipped desktop runtime; they remain development tools.
 
 ### `embeddb` profile (runtime behavior)
 
@@ -63,7 +152,7 @@ A release build is composed of:
 
 1. A **jpackage application image** (bundles a Java runtime + launchers)
 2. **Assets folder** (shipped as a runtime payload)
-3. OS installer artifact (.deb, .exe)
+3. OS installer artifact (`.deb`, `.msi`, or `.dmg`)
 4. Optional: **embedded Postgres binaries + pg-client** (when embeddb mode is intended)
 
 ## Frontend bundling: Angular into the backend jar
@@ -162,6 +251,10 @@ Embedded Postgres uses OS-specific application data directories via `AppDataDirs
 - Windows: `%LOCALAPPDATA%\cestereg`
 - macOS: `~/Library/Application Support/cestereg`
 - Linux: `$XDG_DATA_HOME/cestereg` or `~/.local/share/cestereg`
+
+For isolated diagnostics and package tests, `-Dapp.data.dir=<path>` overrides those locations. Native
+app-image launchers cannot accept arbitrary JVM `-D` options as ordinary application arguments, so the
+equivalent process-scoped `APP_DATA_DIR=<path>` environment variable is also supported.
 
 Within that base directory, embedded Postgres uses:
 
@@ -278,7 +371,7 @@ If you distribute as a zip:
 
 The Linux builder script is:
 
-- `build/build_linux_jpackage.sh`
+- `scripts/prod/build/build_linux_jpackage.sh`
 
 ### Prerequisites (builder machine)
 
@@ -293,13 +386,13 @@ The Linux builder script is:
 Embedded build (default):
 
 ```bash
-bash build/build_linux_jpackage.sh --embeddb=true
+bash scripts/prod/build/build_linux_jpackage.sh --embeddb=true
 ```
 
 External DB build:
 
 ```bash
-bash build/build_linux_jpackage.sh --embeddb=false
+bash scripts/prod/build/build_linux_jpackage.sh --embeddb=false
 ```
 
 ### Outputs
@@ -321,7 +414,7 @@ dist/linux/out/cestereg/bin/cestereg
 
 The Windows builder script is:
 
-- `build/build_windows_jpackage.ps1`
+- `scripts/prod/build/build_windows_jpackage.ps1`
 
 ### Prerequisites (builder machine)
 
@@ -352,13 +445,13 @@ Helpful download sources (matching one working builder setup):
 Embedded build (default):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File build\build_windows_jpackage.ps1 -embeddb "true"
+powershell -ExecutionPolicy Bypass -File scripts\prod\build\build_windows_jpackage.ps1 -embeddb "true"
 ```
 
 External DB build:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File build\build_windows_jpackage.ps1 -embeddb "false"
+powershell -ExecutionPolicy Bypass -File scripts\prod\build\build_windows_jpackage.ps1 -embeddb "false"
 ```
 
 ### Outputs
@@ -392,7 +485,7 @@ This keeps the repo clean after creating the release artifacts.
 
 The macOS builder script is:
 
-- `build/build_macos_jpackage.sh`
+- `scripts/prod/build/build_macos_jpackage.sh`
 
 ### Builder status and supported architectur
 
@@ -405,12 +498,12 @@ A working macOS builder should have the following installed:
 - macOS at least **Ventura 13.5.x** (this is the currently validated builder environment)
 - Oracle [JDK 25](https://download.oracle.com/java/25/latest/jdk-25_macos-x64_bin.dmg) with `jpackage` available
 - Apache [Maven 3.9.13](https://dlcdn.apache.org/maven/maven-3/3.9.13/binaries/apache-maven-3.9.13-bin.tar.gz) available
-- Node.js 24.11.1 available:
+- Node.js 24.20.0 available:
 
 ```bash
 curl  -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 source ~/.zshrc
-nvm install 24.11.1
+nvm install 24.20.0
 ```
 
 - [PostgreSQL 18](https://sbp.enterprisedb.com/getfile.jsp?fileid=1260055) installed locally so the macOS pg-client packer can copy real binaries from `/Library/PostgreSQL/18`
@@ -424,13 +517,13 @@ nvm install 24.11.1
 Embedded build (default):
 
 ```bash
-bash build/build_macos_jpackage.sh --embeddb=true
+bash scripts/prod/build/build_macos_jpackage.sh --embeddb=true
 ```
 
 External DB build:
 
 ```bash
-bash build/build_macos_jpackage.sh --embeddb=false
+bash scripts/prod/build/build_macos_jpackage.sh --embeddb=false
 ```
 
 ### Output
