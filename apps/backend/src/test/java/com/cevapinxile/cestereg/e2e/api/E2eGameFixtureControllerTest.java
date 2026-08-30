@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.cevapinxile.cestereg.core.service.BuzzerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDateTime;
@@ -38,6 +39,7 @@ class E2eGameFixtureControllerTest {
   private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
   @Mock private E2eGameFixtureService fixtureService;
+  @Mock private BuzzerService buzzerService;
 
   private MockMvc mockMvc;
 
@@ -45,6 +47,7 @@ class E2eGameFixtureControllerTest {
   void setUp() {
     E2eGameFixtureController controller = new E2eGameFixtureController();
     ReflectionTestUtils.setField(controller, "e2eGameFixtureService", fixtureService);
+    ReflectionTestUtils.setField(controller, "buzzerService", buzzerService);
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }
 
@@ -282,6 +285,17 @@ class E2eGameFixtureControllerTest {
           .andExpect(status().isBadRequest());
 
       verify(fixtureService, never()).createFixture(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /api/e2e/v1/game-fixtures/receiver/{buttonCode}")
+  class ReceiverBoundary {
+    @Test
+    void receiverButtonForwardsOneCodeToTheRealBuzzerBoundary() throws Exception {
+      mockMvc.perform(post(BASE_URL + "/receiver/710001")).andExpect(status().isOk());
+
+      verify(buzzerService).buzz("710001");
     }
   }
 }

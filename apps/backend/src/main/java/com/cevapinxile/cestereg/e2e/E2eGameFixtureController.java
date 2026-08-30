@@ -3,7 +3,9 @@ package com.cevapinxile.cestereg.e2e;
 import static com.cevapinxile.cestereg.api.support.ApiErrorResponses.handleApiException;
 
 import com.cevapinxile.cestereg.common.util.RoomCodePath;
+import com.cevapinxile.cestereg.core.service.BuzzerService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,6 +35,8 @@ public class E2eGameFixtureController {
   private static final Logger LOG = LoggerFactory.getLogger(E2eGameFixtureController.class);
 
   @Autowired private E2eGameFixtureService e2eGameFixtureService;
+
+  @Autowired private BuzzerService buzzerService;
 
   @Operation(
       summary = "Delete an E2E game fixture",
@@ -118,6 +122,58 @@ This endpoint is test infrastructure only and must not be enabled in production.
   public ResponseEntity<String> createFixture(@Valid @RequestBody E2eGameFixtureRequest request) {
     try {
       e2eGameFixtureService.createFixture(request);
+      return ResponseEntity.ok().build();
+    } catch (Exception ex) {
+      return handleApiException(LOG, ex);
+    }
+  }
+
+  @Operation(
+      summary = "Attach deterministic catalog content to a product-created E2E room",
+      description =
+          "Adds only finite album/track data to an existing lobby room. The room and later game "
+              + "actions still use the real product flow. Available only under the e2e profile.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Catalog attached successfully."),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Invalid room code, catalog shape, lobby state, or insufficient content.",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error while attaching the catalog.",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  })
+  @PostMapping("{roomCode}/catalog")
+  public ResponseEntity<String> attachCatalog(
+      @RoomCodePath @PathVariable String roomCode,
+      @Valid @RequestBody E2eCatalogFixtureRequest request) {
+    try {
+      e2eGameFixtureService.attachCatalog(roomCode, request);
+      return ResponseEntity.ok().build();
+    } catch (Exception ex) {
+      return handleApiException(LOG, ex);
+    }
+  }
+
+  @Operation(
+      summary = "Emit one receiver code at the E2E hardware boundary",
+      description =
+          "Substitutes only RF/serial transport and forwards the code to the real BuzzerService. "
+              + "Available only under the e2e profile.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Receiver code forwarded successfully."),
+    @ApiResponse(
+        responseCode = "500",
+        description = "Unexpected internal server error while forwarding the receiver code.",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  })
+  @PostMapping("receiver/{buttonCode}")
+  public ResponseEntity<String> receiverButton(
+      @Parameter(description = "Receiver button code", required = true) @PathVariable
+          String buttonCode) {
+    try {
+      buzzerService.buzz(buttonCode);
       return ResponseEntity.ok().build();
     } catch (Exception ex) {
       return handleApiException(LOG, ex);

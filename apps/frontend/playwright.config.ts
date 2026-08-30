@@ -20,6 +20,7 @@ function resolveWorkers(): number {
 
 export default defineConfig({
   testDir: './e2e/specs',
+  testIgnore: ['**/product/**'],
   timeout: 45_000,
   expect: {
     timeout: 12_000,

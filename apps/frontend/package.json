@@ -12,17 +12,20 @@
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run generate:team-icons",
     "test": "ng test",
-    "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run e2e",
+    "test:all": "npm test -- --watch=false && npm run test:catalog:frontend && npm run test:release-contract && npm run e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "e2e": "playwright test",
+    "e2e": "npm run e2e:seeded && npm run e2e:product",
+    "e2e:seeded": "playwright test",
+    "e2e:product": "playwright test --config=playwright.product.config.ts",
     "e2e:ws": "playwright test \"e2e/specs/(.*/)?websocket-.*\\.spec\\.ts\"",
-    "e2e:headed": "playwright test --headed",
-    "e2e:debug": "playwright test --debug",
+    "e2e:headed": "playwright test --headed && playwright test --config=playwright.product.config.ts --headed",
+    "e2e:debug": "playwright test --debug && playwright test --config=playwright.product.config.ts --debug",
     "e2e:report": "playwright show-report",
-    "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts"
+    "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts",
+    "test:release-contract": "vitest run src/release-build-contract.spec.ts"
   },
   "prettier": {
     "printWidth": 100,
@@ -37,6 +40,10 @@
     ]
   },
   "private": true,
+  "engines": {
+    "node": ">=24.15.0 <25",
+    "npm": ">=11 <13"
+  },
   "dependencies": {
     "@angular/common": "^22.1.4",
     "@angular/compiler": "^22.1.4",

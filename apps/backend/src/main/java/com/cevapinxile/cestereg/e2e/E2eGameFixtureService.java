@@ -14,4 +14,7 @@ public interface E2eGameFixtureService {
   void resetRuntimeState(String roomCode);
 
   void createFixture(E2eGameFixtureRequest request) throws E2eGameFixtureValidationException;
+
+  void attachCatalog(String roomCode, E2eCatalogFixtureRequest request)
+      throws E2eGameFixtureValidationException;
 }
