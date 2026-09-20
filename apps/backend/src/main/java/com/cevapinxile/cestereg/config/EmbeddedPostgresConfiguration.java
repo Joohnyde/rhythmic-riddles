@@ -8,6 +8,7 @@ import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,7 @@ public class EmbeddedPostgresConfiguration {
 
     final EmbeddedPostgres.Builder builder =
         EmbeddedPostgres.builder()
+            .setPGStartupWait(Duration.ofSeconds(60))
             .setOverrideWorkingDirectory(distBase.toFile())
             .setDataDirectory(dataDir.toFile())
             .setCleanDataDirectory(false)

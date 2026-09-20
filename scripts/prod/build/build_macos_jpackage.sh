@@ -42,6 +42,7 @@ ROOT="$(cd -- "${SCRIPT_DIR}/../../../" >/dev/null 2>&1 && pwd)"
 
 APP_NAME="cestereg"
 APP_VERSION="0.3.0"
+MAC_PACKAGE_VERSION="1.0.0"    # Stupid mac doesn't allow 0.x.x package versions. Use this one...
 
 BACKEND="${ROOT}/apps/backend"
 FRONTEND="${ROOT}/apps/frontend"
@@ -94,7 +95,7 @@ run_jpackage() {
 APP_ARGS=(
   --type app-image
   --name "${APP_NAME}"
-  --app-version "${APP_VERSION}"
+  --app-version "${MAC_PACKAGE_VERSION}"
   --input "${INPUT}"
   --main-jar "${APP_NAME}.jar"
   --dest "${OUT}"
@@ -120,7 +121,7 @@ echo "[INFO] App image created at: ${APP_IMAGE}"
 DMG_ARGS=(
   --type dmg
   --name "${APP_NAME}"
-  --app-version "${APP_VERSION}"
+  --app-version "${MAC_PACKAGE_VERSION}"
   --app-image "${APP_IMAGE}"
   --dest "${OUT}"
 )
@@ -146,7 +147,7 @@ echo "    open ${OUT}/${APP_NAME}.app"
 echo
 
 echo "  Install DMG:"
-echo "    open ${OUT}/${APP_NAME}-${APP_VERSION}.dmg"
+echo "    open ${OUT}/${APP_NAME}-${MAC_PACKAGE_VERSION}.dmg"
 echo
 
 echo "[INFO] Cleanup build folders (backend target/, frontend dist/)..."

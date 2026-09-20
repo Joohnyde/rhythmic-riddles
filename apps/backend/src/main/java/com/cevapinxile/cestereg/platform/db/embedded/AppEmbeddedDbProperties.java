@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.db")
 public class AppEmbeddedDbProperties {
-  private String host;
+  private String host = "127.0.0.1";
   private int port;
   private String database;
   private String username;
