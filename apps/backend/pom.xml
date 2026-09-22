@@ -35,7 +35,9 @@
     <!-- Human-readable project name -->
     <name>RhytmicRiddles</name>
     <description>
-        RhytmicRiddles is a Spring Boot backend for a real-time music quiz game, coordinating TV and Admin clients via REST and WebSockets, handling game flow, scoring, buzzer interrupts, and crash-safe state recovery using PostgreSQL.
+        RhytmicRiddles is a Spring Boot backend for a real-time music quiz game, coordinating TV and Admin clients via
+        REST and WebSockets, handling game flow, scoring, buzzer interrupts, and crash-safe state recovery using
+        PostgreSQL.
     </description>
     <url/>
     <licenses>
@@ -524,8 +526,8 @@
                     <version>${embedded.postgres.binaries.version}</version>
                     <scope>runtime</scope>
                 </dependency>
-                <!--         ARM VERSION - ADD LATER        
-                <dependency> 
+                <!--         ARM VERSION - ADD LATER
+                <dependency>
                     <groupId>io.zonky.test.postgres</groupId>
                     <artifactId>embedded-postgres-binaries-darwin-arm64</artifactId>
                     <version>${embedded.postgres.binaries.version}</version>
@@ -738,9 +740,28 @@
                                         <delete>
                                             <fileset dir="${project.build.outputDirectory}/db" includes="*.sql"/>
                                         </delete>
-                                        <copy todir="${project.build.outputDirectory}/db" overwrite="true" failonerror="true">
-                                            <fileset dir="${project.basedir}/../../db" includes="*.sql"/>
+
+                                        <!-- Copy all normal DB scripts, but never package the private local db_00. -->
+                                        <copy
+                                            todir="${project.build.outputDirectory}/db"
+                                            overwrite="true"
+                                            failonerror="true">
+                                            <fileset dir="${project.basedir}/../../db">
+                                                <include name="*.sql"/>
+                                                <exclude name="db_00_create_db.sql"/>
+                                            </fileset>
                                         </copy>
+
+                                        <!--
+                                          Embedded packages use the committed safe bootstrap template for now.
+                                          TODO: replace with customer-specific build-time credential generation
+                                          when licensing/activation packaging is implemented.
+                                        -->
+                                        <copy
+                                            file="${project.basedir}/../../db/db_00_create_db.sql.example"
+                                            tofile="${project.build.outputDirectory}/db/db_00_create_db.sql"
+                                            overwrite="true"
+                                            failonerror="true"/>
                                     </target>
                                 </configuration>
                             </execution>
@@ -757,7 +778,7 @@
                                     </target>
                                 </configuration>
                             </execution>
-                            
+
                             <execution>
                                 <id>remove-pg-client</id>
                                 <phase>package</phase>

@@ -262,18 +262,21 @@ The base path is logged at startup.
 
 This keeps repository clean and lightweight.
 
-## Asset Extraction in Production
+## Asset Packaging in Production
 
-When running packaged desktop builds:
+The native package builders treat the repository-root `data/` directory as an input payload and copy it into the application image under `resources/data`.
 
-- Assets are extracted or copied into a persistent data directory.
-- `app.assets.base-dir` is overridden at runtime.
-- LocalAssetGateway operates identically regardless of environment.
+The packaged launcher points:
 
-This ensures:
+```text
+app.assets.base-dir=$APPDIR/resources/data
+```
 
-- Desktop users do not need manual setup.
-- Dev and production use the same gateway logic.
+`LocalAssetGateway` therefore uses the same folder contract in development and in a packaged application.
+
+Real binary media remains outside Git. In CI, package-qualification jobs download `baseline-data.zip` from the repository's `baseline-data` GitHub Release and extract its top-level `data/` directory before running the existing package builders. The package builders do not care whether that directory came from a developer machine, CI, or a future customer-specific packaging process.
+
+The baseline asset payload must stay consistent with the seeded song/album IDs exercised by package smoke. Frontend-owned team icons remain committed under `apps/frontend/public/team-icons/` and are packaged with the frontend rather than supplied through `data/`.
 
 ## Operational Notes
 

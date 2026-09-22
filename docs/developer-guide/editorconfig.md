@@ -114,8 +114,8 @@ Tip: If your IDE shows mixed line endings, look for an indicator in the status b
 
 EditorConfig should be treated as a **baseline**, while language-specific tooling handles style:
 
-- **Frontend**: Prettier + ESLint (recommended in CI)
-- **Backend**: Spotless + google-java-format (recommended in CI)
+- **Frontend**: Prettier + ESLint (enforced by the CI code-quality gate)
+- **Backend**: Spotless + google-java-format (enforced by the CI code-quality gate)
 
 EditorConfig prevents the “death by a thousand cuts” issues:
 
@@ -124,22 +124,12 @@ EditorConfig prevents the “death by a thousand cuts” issues:
 - CRLF vs LF changes
 - missing final newline diffs
 
-## Future improvements (recommended)
+## CI enforcement and future improvements
 
-### 1) Enforce formatting in CI
+### 1) Formatting in CI
 
-Add CI checks so formatting issues are caught automatically:
+`.github/workflows/ci.yml` runs `scripts/ci/verify-code-quality.sh` as the dedicated `Code Quality` gate. Keep formatter/linter commands centralized in that repository script rather than duplicating them in workflow YAML.
 
-- Frontend: `npm run lint` + `npm run format:check`
-- Backend: `mvn spotless:check`
-
-### 2) Add Spotless for Java (Maven)
-
-Use Spotless to standardize formatting across IDEs:
-
-- google-java-format (simple, consistent)
-- or Eclipse formatter config (more customizable)
-
-### 3) Add a “format-all” developer script
+### 2) Add a “format-all” developer script
 
 Standardize one command for formatting the whole repo (backend + frontend), so devs don’t need to guess.

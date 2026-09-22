@@ -321,6 +321,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Fetch baseline-data from github releases
+      - name: Prepare baseline data
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/baseline-data"
+
+          gh release download baseline-data \
+            --repo "${{ github.repository }}" \
+            --pattern "baseline-data.zip" \
+            --dir "${RUNNER_TEMP}/baseline-data"
+
+          unzip -o "${RUNNER_TEMP}/baseline-data/baseline-data.zip" -d .
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
       - name: Set up JDK
         uses: actions/setup-java@v6
         with:
@@ -396,6 +428,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      # Fetch baseline-data from github releases
+      - name: Prepare baseline data
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "baseline-data"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+
+          gh release download baseline-data `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --pattern "baseline-data.zip" `
+            --dir $dir
+
+          Expand-Archive `
+            -Path (Join-Path $dir "baseline-data.zip") `
+            -DestinationPath "." `
+            -Force
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
 
       - name: Set up JDK
         uses: actions/setup-java@v6
@@ -501,6 +569,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      # Fetch baseline-data from github releases
+      - name: Prepare baseline data
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/baseline-data"
+
+          gh release download baseline-data \
+            --repo "${{ github.repository }}" \
+            --pattern "baseline-data.zip" \
+            --dir "${RUNNER_TEMP}/baseline-data"
+
+          unzip -o "${RUNNER_TEMP}/baseline-data/baseline-data.zip" -d .
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
 
       - name: Set up JDK
         uses: actions/setup-java@v6
