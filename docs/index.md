@@ -22,6 +22,7 @@
 - [EditorConfig](developer-guide/editorconfig.md)
 - [Logging](developer-guide/logging.md)
 - [Release builds](developer-guide/release-builds.md)
+- [Continuous integration & merge qualification](developer-guide/ci.md)
 
 ## Testing docs
 

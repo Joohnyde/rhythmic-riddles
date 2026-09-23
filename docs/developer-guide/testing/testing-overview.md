@@ -287,23 +287,22 @@ At minimum:
 
 ## CI expectations
 
-The long-term expectation is that pull requests should pass automated quality gates before merge.
+Pull requests targeting `master` are qualified by `.github/workflows/ci.yml` before merge.
 
-Desired minimum CI gates:
+The current required safety net includes:
 
-- backend build;
-- backend automated tests;
-- frontend build;
-- frontend automated tests;
-- formatting / lint checks.
+- code-quality verification;
+- complete backend verification on Linux;
+- frontend unit/catalog/contract tests and Playwright E2E on Linux;
+- PlatformIO firmware host tests and Arduino compilation;
+- native backend tests on Windows and Intel macOS;
+- Linux, Windows, and macOS production package qualification;
+- native packaged-product smoke tests with embedded PostgreSQL;
+- one final `Merge Gate` status used as the stable branch-protection contract.
 
-Future additions may include:
+The package jobs run only after the logical/source qualification jobs succeed. Each native package is built and smoke-tested on the same operating system, because jpackage output and bundled native PostgreSQL tooling are platform-specific.
 
-- coverage reporting;
-- the real-PostgreSQL DB integration suite as a merge/release gate;
-- Playwright end-to-end smoke tests;
-- seeded WebSocket E2E in CI;
-- promotion of the existing full-product suite into a separately designed release gate.
+See `../ci.md` for the workflow topology, baseline asset input, generated CI production configuration, and merge-gate maintenance rules.
 
 ## Test catalog
 

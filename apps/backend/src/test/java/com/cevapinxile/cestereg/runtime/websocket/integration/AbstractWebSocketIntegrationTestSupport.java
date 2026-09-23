@@ -69,7 +69,10 @@ import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = AbstractWebSocketIntegrationTestSupport.TestApplication.class)
+    classes = AbstractWebSocketIntegrationTestSupport.TestApplication.class,
+    properties =
+        "spring.autoconfigure.exclude="
+            + "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration")
 abstract class AbstractWebSocketIntegrationTestSupport {
 
   protected static final String ROOM_A = "AKKU";

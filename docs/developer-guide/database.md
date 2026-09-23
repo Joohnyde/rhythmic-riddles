@@ -336,11 +336,12 @@ All scripts are **idempotent** (safe to run multiple times) and designed to work
 
 Recommended pattern:
 
-- Keep `db_00_create_db.sql.example` in the repo
-- In local/devcontainer:
-    - Use docker environment variables
-- In production:
-    - generate a concrete `db_00_create_db.sql` during build/deploy
+- Keep `db_00_create_db.sql.example` in the repo.
+- Keep any real local `db_00_create_db.sql` ignored.
+- In local/devcontainer setups, use environment-specific credentials outside Git.
+- During the current embedded production build, Maven explicitly excludes any local `db_00_create_db.sql` and materializes the committed safe template as `target/classes/db/db_00_create_db.sql`.
+- `AppEmbeddedDbProperties` provides matching safe embedded defaults (`127.0.0.1`, `rhytmic_riddles`, `rhytmic_riddles`, `change_me`) so a clean package can bootstrap without a private local configuration file.
+- When customer-specific packaging/licensing is implemented, replace the safe-template materialization step with explicit generated customer credentials rather than relying on a developer's local file.
 
 #### `db_01_create_schema.sql` (schema)
 
@@ -480,6 +481,12 @@ So:
 
 > Devcontainer details (how we attach IDE, run services, etc.) will be documented in a separate devcontainer document later. This DB guide assumes docker-compose is the entry point.
 
+## Release freeze and future upgrades
+
+For the current embedded release model, `.cestereg_sql_done` marks the whole bootstrap as complete. Existing installations therefore do **not** execute newly added `db_XX` scripts on a normal application update. This preserves customer data and prevents bootstrap scripts from being replayed, but it is not a schema-migration mechanism.
+
+After a release, treat the shipped bootstrap/schema scripts as frozen for installed customers. A future migration/versioning mechanism must explicitly track and execute upgrades before schema-changing updates are distributed. External PostgreSQL installations remain operator-managed and must be upgraded separately.
+
 ## Idempotency requirements (non-negotiable)
 
 All scripts should be safe to re-run without destroying data.
@@ -536,7 +543,7 @@ Do **not**:
 - `TRUNCATE`
 - `DELETE FROM ...` without very strict guards
 
-If you need changes over time, add dedicated **patch scripts** (e.g. `db_patch_2026_02_01_11_52_add_column.sql`) and track their execution.
+If you need changes over time, use dedicated versioned migration/patch scripts **with an execution-tracking mechanism**. Simply adding another bootstrap SQL file is not sufficient for existing embedded installations because the run-once marker skips bootstrap after first initialization.
 
 ## References
 

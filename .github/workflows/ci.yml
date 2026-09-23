@@ -1,0 +1,713 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ["master"]
+  push:
+    branches: ["master"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PLATFORMIO_VERSION: "6.2.0"
+  POSTGRES_MAJOR: "18"
+  WINDOWS_POSTGRES_VERSION: "18.6.3"
+
+jobs:
+  # Fast static/code-quality verification using the repository's canonical script.
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Run code quality verification
+        run: scripts/ci/verify-code-quality.sh
+
+  # Complete backend qualification on Linux.
+  backend-linux:
+    name: Backend Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Verify backend
+        run: mvn -B -ntp -Dplatform=linux verify
+
+  # Frontend unit/catalog/contract tests plus the complete Playwright E2E suite.
+  frontend-linux:
+    name: Frontend + Playwright Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    defaults:
+      run:
+        working-directory: apps/frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      # setup-e2e-schema.sh uses the real PostgreSQL client tools.
+      - name: Install PostgreSQL client
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+
+          . /etc/os-release
+
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            "postgresql-client-${POSTGRES_MAJOR}"
+
+          echo "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin" >> "$GITHUB_PATH"
+
+      # Local application-e2e.yml remains ignored. CI creates a disposable one.
+      - name: Configure E2E backend
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/audio/snippets"
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/audio/answers"
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/images/teams"
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/images/albums"
+
+          cat > apps/backend/src/main/resources/application-e2e.yml <<EOF
+          spring:
+            datasource:
+              url: "jdbc:postgresql://127.0.0.1:2345/rhytmicriddles?currentSchema=e2e"
+              username: "rhytmicriddles"
+              password: "change_me"
+            jpa:
+              properties:
+                hibernate:
+                  default_schema: e2e
+
+          app:
+            assets:
+              base-dir: "$RUNNER_TEMP/cestereg-e2e-assets"
+          EOF
+
+      - name: Start E2E PostgreSQL
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker compose -f docker-compose.yml.example up -d db
+
+          for i in {1..60}; do
+            if docker compose -f docker-compose.yml.example exec -T db \
+              pg_isready \
+              -h 127.0.0.1 \
+              -p 5432 \
+              -U rhytmicriddles \
+              -d rhytmicriddles
+            then
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          docker compose -f docker-compose.yml.example logs db
+          exit 1
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run frontend test suite
+        run: |
+          set -euo pipefail
+
+          BACKEND_LOG="$RUNNER_TEMP/backend-e2e.log"
+          FRONTEND_LOG="$RUNNER_TEMP/frontend-e2e.log"
+
+          cleanup() {
+            kill "${FRONTEND_PID:-}" 2>/dev/null || true
+            kill "${BACKEND_PID:-}" 2>/dev/null || true
+          }
+
+          trap cleanup EXIT
+
+          (
+            cd ../backend
+            exec mvn -B -ntp spring-boot:run -Pe2e -De2e.clean=true
+          ) >"$BACKEND_LOG" 2>&1 &
+          BACKEND_PID=$!
+
+          for i in {1..180}; do
+            if curl -fsS http://127.0.0.1:8080/actuator/health >/dev/null; then
+              break
+            fi
+
+            if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+              cat "$BACKEND_LOG"
+              exit 1
+            fi
+
+            if [ "$i" -eq 180 ]; then
+              cat "$BACKEND_LOG"
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          npm start >"$FRONTEND_LOG" 2>&1 &
+          FRONTEND_PID=$!
+
+          for i in {1..120}; do
+            if curl -fsS http://127.0.0.1:4200 >/dev/null; then
+              break
+            fi
+
+            if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+              cat "$FRONTEND_LOG"
+              exit 1
+            fi
+
+            if [ "$i" -eq 120 ]; then
+              cat "$FRONTEND_LOG"
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          npm run test:all
+
+      - name: Build production frontend
+        run: npm run build -- --configuration production
+
+      - name: Stop E2E PostgreSQL
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: docker compose -f docker-compose.yml.example down -v
+
+  # Firmware host tests plus compilation for the actual Arduino target.
+  firmware:
+    name: Firmware
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install "platformio==${PLATFORMIO_VERSION}"
+          pio --version
+
+      - name: Run firmware unit tests
+        run: pio test -d hardware/firmware/receiver -e native
+
+      - name: Build Arduino firmware
+        run: pio run -d hardware/firmware/receiver -e nanoatmega328
+
+  # Exercise native backend behavior on the other supported operating systems.
+  platform-tests:
+    name: Platform Tests (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: windows
+          - os: macos-15-intel
+            platform: macos
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Run native backend tests
+        run: mvn -B -ntp -Dplatform=${{ matrix.platform }} test
+
+  # Package qualification starts only after the logical safety net passes.
+  # All three supported packages must succeed before Merge Gate can pass.
+  linux-package:
+    name: Linux Package Qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    needs:
+      - code-quality
+      - backend-linux
+      - frontend-linux
+      - firmware
+      - platform-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Fetch baseline-data from github releases
+      - name: Prepare baseline data
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/baseline-data"
+
+          gh release download baseline-data \
+            --repo "${{ github.repository }}" \
+            --pattern "baseline-data.zip" \
+            --dir "${RUNNER_TEMP}/baseline-data"
+
+          unzip -o "${RUNNER_TEMP}/baseline-data/baseline-data.zip" -d .
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      # The embedded package builder copies the real PostgreSQL 18 client.
+      - name: Install PostgreSQL 18 client and packaging dependencies
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+
+          . /etc/os-release
+
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            "postgresql-client-${POSTGRES_MAJOR}" \
+            fakeroot
+
+          echo "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin" >> "$GITHUB_PATH"
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Build Linux production package
+        run: bash scripts/prod/build/build_linux_jpackage.sh --embeddb=true
+
+      - name: Require Linux installer
+        shell: bash
+        run: |
+          if ! find dist/linux/out -maxdepth 1 -type f -name '*.deb' -print -quit | grep -q .; then
+            echo "Expected .deb installer was not produced."
+            exit 1
+          fi
+
+      - name: Smoke Linux production package
+        run: |
+          node scripts/prod/package-smoke.mjs \
+            --app dist/linux/out/cestereg/bin/cestereg \
+            --embeddb true
+
+  windows-package:
+    name: Windows Package Qualification
+    runs-on: windows-2025
+    timeout-minutes: 60
+
+    needs:
+      - code-quality
+      - backend-linux
+      - frontend-linux
+      - firmware
+      - platform-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Fetch baseline-data from github releases
+      - name: Prepare baseline data
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "baseline-data"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+
+          gh release download baseline-data `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --pattern "baseline-data.zip" `
+            --dir $dir
+
+          Expand-Archive `
+            -Path (Join-Path $dir "baseline-data.zip") `
+            -DestinationPath "." `
+            -Force
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      # windows-2025 currently ships PostgreSQL 17; the production packer needs 18.
+      - name: Install PostgreSQL 18
+        shell: pwsh
+        run: |
+          choco install postgresql18 `
+            --version="$env:WINDOWS_POSTGRES_VERSION" `
+            --yes `
+            --no-progress `
+            --params "'/Password:ci-build-only /Port:55432'"
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          $pgHome = "C:\Program Files\PostgreSQL\$env:POSTGRES_MAJOR"
+
+          if (-not (Test-Path "$pgHome\bin\psql.exe")) {
+            throw "PostgreSQL $env:POSTGRES_MAJOR psql.exe was not installed at $pgHome\bin\psql.exe"
+          }
+
+          "$pgHome\bin" | Out-File `
+            -FilePath $env:GITHUB_PATH `
+            -Encoding utf8 `
+            -Append
+
+          # The package smoke owns its own isolated embedded database.
+          Get-Service -Name "postgresql-x64-$env:POSTGRES_MAJOR" `
+            -ErrorAction SilentlyContinue |
+            Stop-Service -Force -ErrorAction SilentlyContinue
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install chromium
+
+      - name: Build Windows production package
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
+            scripts/prod/build/build_windows_jpackage.ps1 `
+            -embeddb true
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      # The current builder can warn if MSI creation fails, so CI requires it explicitly.
+      - name: Require Windows installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem `
+            -Path "dist/windows/out" `
+            -Filter "*.msi" `
+            -File `
+            -ErrorAction SilentlyContinue
+
+          if (-not $installer) {
+            throw "Expected MSI installer was not produced."
+          }
+
+      - name: Smoke Windows production package
+        shell: pwsh
+        run: |
+          node scripts/prod/package-smoke.mjs `
+            --app dist/windows/out/cestereg/cestereg.exe `
+            --embeddb true
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+  macos-package:
+    name: macOS Package Qualification
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+
+    needs:
+      - code-quality
+      - backend-linux
+      - frontend-linux
+      - firmware
+      - platform-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Fetch baseline-data from github releases
+      - name: Prepare baseline data
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/baseline-data"
+
+          gh release download baseline-data \
+            --repo "${{ github.repository }}" \
+            --pattern "baseline-data.zip" \
+            --dir "${RUNNER_TEMP}/baseline-data"
+
+          unzip -o "${RUNNER_TEMP}/baseline-data/baseline-data.zip" -d .
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      # The macOS packer expects the PostgreSQL 18 installation under /Library/PostgreSQL/18.
+      - name: Install PostgreSQL 18
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          brew install "postgresql@${POSTGRES_MAJOR}"
+
+          PG_HOME="$(brew --prefix "postgresql@${POSTGRES_MAJOR}")"
+
+          sudo mkdir -p /Library/PostgreSQL
+          sudo rm -rf "/Library/PostgreSQL/${POSTGRES_MAJOR}"
+          sudo ln -s "$PG_HOME" "/Library/PostgreSQL/${POSTGRES_MAJOR}"
+
+          test -x "/Library/PostgreSQL/${POSTGRES_MAJOR}/bin/psql"
+
+          echo "$PG_HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install chromium
+
+      - name: Build macOS production package
+        run: bash scripts/prod/build/build_macos_jpackage.sh --embeddb=true
+
+      - name: Require macOS installer
+        shell: bash
+        run: |
+          if ! find dist/macos/out -maxdepth 1 -type f -name '*.dmg' -print -quit | grep -q .; then
+            echo "Expected DMG installer was not produced."
+            exit 1
+          fi
+
+      - name: Smoke macOS production package
+        run: |
+          node scripts/prod/package-smoke.mjs \
+            --app dist/macos/out/cestereg.app/Contents/MacOS/cestereg \
+            --embeddb true
+
+  # One stable branch-protection contract. Every supported platform must pass.
+  merge-gate:
+    name: Merge Gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: always()
+
+    needs:
+      - code-quality
+      - backend-linux
+      - frontend-linux
+      - firmware
+      - platform-tests
+      - linux-package
+      - windows-package
+      - macos-package
+
+    steps:
+      - name: Verify required qualification jobs
+        env:
+          CODE_QUALITY_RESULT: ${{ needs['code-quality'].result }}
+          BACKEND_RESULT: ${{ needs['backend-linux'].result }}
+          FRONTEND_RESULT: ${{ needs['frontend-linux'].result }}
+          FIRMWARE_RESULT: ${{ needs['firmware'].result }}
+          PLATFORM_RESULT: ${{ needs['platform-tests'].result }}
+          LINUX_PACKAGE_RESULT: ${{ needs['linux-package'].result }}
+          WINDOWS_PACKAGE_RESULT: ${{ needs['windows-package'].result }}
+          MACOS_PACKAGE_RESULT: ${{ needs['macos-package'].result }}
+        run: |
+          echo "Code Quality:                $CODE_QUALITY_RESULT"
+          echo "Backend Linux:               $BACKEND_RESULT"
+          echo "Frontend + Playwright Linux: $FRONTEND_RESULT"
+          echo "Firmware:                    $FIRMWARE_RESULT"
+          echo "Platform Tests:              $PLATFORM_RESULT"
+          echo "Linux Package:               $LINUX_PACKAGE_RESULT"
+          echo "Windows Package:             $WINDOWS_PACKAGE_RESULT"
+          echo "macOS Package:               $MACOS_PACKAGE_RESULT"
+
+          if [[ "$CODE_QUALITY_RESULT" != "success" ||
+                "$BACKEND_RESULT" != "success" ||
+                "$FRONTEND_RESULT" != "success" ||
+                "$FIRMWARE_RESULT" != "success" ||
+                "$PLATFORM_RESULT" != "success" ||
+                "$LINUX_PACKAGE_RESULT" != "success" ||
+                "$WINDOWS_PACKAGE_RESULT" != "success" ||
+                "$MACOS_PACKAGE_RESULT" != "success" ]]; then
+            echo "One or more required qualification jobs failed or were skipped."
+            exit 1
+          fi
+
+          echo "All required cross-platform qualification jobs passed."

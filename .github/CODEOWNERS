@@ -1,0 +1,16 @@
+# CI/CD Pipelines & Automation
+.github/workflows/           @Joohnyde
+
+# Infrastructure & Containers
+Dockerfile                   @Joohnyde
+docker-compose*.yml          @Joohnyde
+
+# Maintenance & Execution Scripts
+/scripts/                    @Joohnyde
+
+# Dependencies & DB Schema
+package.json                 @Joohnyde
+/db/                         @Joohnyde
+/migrations/                 @Joohnyde
+
+# I left out .eslintrc and .editorconfig because I trust us not to start a civil war over double quotes.

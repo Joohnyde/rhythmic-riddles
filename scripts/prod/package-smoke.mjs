@@ -167,15 +167,15 @@ async function assertBrowserMedia(page) {
   const teamIcon = await representativeTeamIconResource();
   const expectations = [
     {
-      resource: '/assets/v1/audio/snippets/c041398e-8e63-40ed-8f17-d7f1ca8ca405',
+      resource: '/assets/v1/audio/snippets/76f9bf7f-713c-4a46-a800-8964b263c7d7',
       contentType: 'audio/mpeg',
     },
     {
-      resource: '/assets/v1/audio/answers/c041398e-8e63-40ed-8f17-d7f1ca8ca405',
+      resource: '/assets/v1/audio/answers/76f9bf7f-713c-4a46-a800-8964b263c7d7',
       contentType: 'audio/mpeg',
     },
     {
-      resource: '/assets/v1/image/albums/6214ed07-03df-41c7-a1fa-b1a9b9e9bd01',
+      resource: '/assets/v1/image/albums/f972a6c6-c688-40a0-b978-489d3d6d645c',
       contentType: 'image/',
     },
     {

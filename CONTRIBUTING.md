@@ -27,7 +27,7 @@ Each issue should include:
 
 A ticket is “Done” only when:
 
-- code is merged to `main`
+- code is merged to `master`
 - CI is green
 - tests added/updated
 - docs updated (user/dev docs when relevant)
@@ -35,7 +35,7 @@ A ticket is “Done” only when:
 
 ## Branch naming
 
-Create a branch from `main` per ticket:
+Create a branch from `master` per ticket:
 
 `<name>/<ticketNr>_<short_description>`
 
@@ -82,7 +82,7 @@ Include:
 
 - All PRs require review by the other two people (unless explicitly agreed otherwise).
 - Use **Draft PRs** for work-in-progress.
-- No direct pushes to `main`.
+- No direct pushes to `master`.
 
 ## Formatting & linting
 

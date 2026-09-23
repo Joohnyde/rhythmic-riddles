@@ -35,7 +35,9 @@
     <!-- Human-readable project name -->
     <name>RhytmicRiddles</name>
     <description>
-        RhytmicRiddles is a Spring Boot backend for a real-time music quiz game, coordinating TV and Admin clients via REST and WebSockets, handling game flow, scoring, buzzer interrupts, and crash-safe state recovery using PostgreSQL.
+        RhytmicRiddles is a Spring Boot backend for a real-time music quiz game, coordinating TV and Admin clients via
+        REST and WebSockets, handling game flow, scoring, buzzer interrupts, and crash-safe state recovery using
+        PostgreSQL.
     </description>
     <url/>
     <licenses>
@@ -107,7 +109,7 @@
         <embedded.postgres.version>2.2.2</embedded.postgres.version>
 
         <!-- Version of bundled Postgres binaries artifacts (one selected per platform profile) -->
-        <embedded.postgres.binaries.version>18.4.0</embedded.postgres.binaries.version>
+        <embedded.postgres.binaries.version>18.6.0</embedded.postgres.binaries.version>
     </properties>
 
     <dependencies>
@@ -216,7 +218,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.1.0</version>
+            <version>3.1.1</version>
         </dependency>
 
         <!-- Utility library -->
@@ -332,7 +334,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.10.0</version>
+                <version>3.10.2</version>
                 <configuration>
                     <java>
                         <googleJavaFormat version="1.22.0"/>
@@ -372,7 +374,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.6.3</version>
+                <version>3.6.4</version>
             </plugin>
 
             <!--
@@ -524,8 +526,8 @@
                     <version>${embedded.postgres.binaries.version}</version>
                     <scope>runtime</scope>
                 </dependency>
-                <!--         ARM VERSION - ADD LATER        
-                <dependency> 
+                <!--         ARM VERSION - ADD LATER
+                <dependency>
                     <groupId>io.zonky.test.postgres</groupId>
                     <artifactId>embedded-postgres-binaries-darwin-arm64</artifactId>
                     <version>${embedded.postgres.binaries.version}</version>
@@ -738,9 +740,28 @@
                                         <delete>
                                             <fileset dir="${project.build.outputDirectory}/db" includes="*.sql"/>
                                         </delete>
-                                        <copy todir="${project.build.outputDirectory}/db" overwrite="true" failonerror="true">
-                                            <fileset dir="${project.basedir}/../../db" includes="*.sql"/>
+
+                                        <!-- Copy all normal DB scripts, but never package the private local db_00. -->
+                                        <copy
+                                            todir="${project.build.outputDirectory}/db"
+                                            overwrite="true"
+                                            failonerror="true">
+                                            <fileset dir="${project.basedir}/../../db">
+                                                <include name="*.sql"/>
+                                                <exclude name="db_00_create_db.sql"/>
+                                            </fileset>
                                         </copy>
+
+                                        <!--
+                                          Embedded packages use the committed safe bootstrap template for now.
+                                          TODO: replace with customer-specific build-time credential generation
+                                          when licensing/activation packaging is implemented.
+                                        -->
+                                        <copy
+                                            file="${project.basedir}/../../db/db_00_create_db.sql.example"
+                                            tofile="${project.build.outputDirectory}/db/db_00_create_db.sql"
+                                            overwrite="true"
+                                            failonerror="true"/>
                                     </target>
                                 </configuration>
                             </execution>
@@ -757,7 +778,7 @@
                                     </target>
                                 </configuration>
                             </execution>
-                            
+
                             <execution>
                                 <id>remove-pg-client</id>
                                 <phase>package</phase>

@@ -155,6 +155,15 @@ A release build is composed of:
 3. OS installer artifact (`.deb`, `.msi`, or `.dmg`)
 4. Optional: **embedded Postgres binaries + pg-client** (when embeddb mode is intended)
 
+### CI package inputs
+
+Native package qualification starts from a clean checkout, so it materializes two ignored/external inputs before calling the normal builders:
+
+- `baseline-data.zip` is downloaded from the repository's `baseline-data` GitHub Release and extracted as the root `data/` payload.
+- a minimal `application-production.yml` is generated with loopback Actuator `health`, `info`, and `shutdown` endpoints required by the package-smoke lifecycle.
+
+The builders themselves remain environment-agnostic: they package the prepared `data/` directory and normal application resources regardless of whether those inputs came from a developer machine, CI, or a future customer-specific packaging process. See `ci.md` for the merge-qualification flow.
+
 ## Frontend bundling: Angular into the backend jar
 
 When building with `-Pproduction`, the Maven build runs the Angular build and packages it into the backend jar.
@@ -181,11 +190,13 @@ Single Page Applications handle routing client-side. If a user refreshes a deep 
 
 ### Which SQL scripts are shipped in production builds
 
-When `-Dspring.profiles.active=embeddb` is set, the build **copies** a set of SQL scripts from a repository-level directory (`../../db`) into:
+The production Maven profile assembles the release SQL set under:
 
 - `target/classes/db`
 
-This ensures the packaged jar always contains the intended “release SQL script set”.
+The build copies normal `db/*.sql` scripts but explicitly excludes any local `db_00_create_db.sql`. It then copies the committed safe `db_00_create_db.sql.example` into the build output as `db_00_create_db.sql`. This prevents an ignored developer credential file from being packaged accidentally while still allowing a clean checkout to bootstrap embedded PostgreSQL. Embedded mode executes these resources on first initialization; external-DB mode does not provision the database from them.
+
+The current safe bootstrap values match the defaults in `AppEmbeddedDbProperties`. Customer-specific credential generation is intentionally deferred to the future packaging/licensing flow.
 
 ### How scripts execute in embedded mode
 
@@ -212,6 +223,8 @@ This means:
 
 - On first run: scripts execute.
 - On subsequent runs: scripts are skipped (for speed and safety).
+
+The marker is a bootstrap guard, not a migration/version tracker. Existing embedded installations will not execute newly added SQL scripts during a normal application update. Treat the released bootstrap/schema set as frozen until an explicit migration mechanism is introduced.
 
 ### Why idempotency still matters
 
@@ -265,6 +278,7 @@ Within that base directory, embedded Postgres uses:
 The embedded Postgres configuration explicitly sets:
 
 - `setCleanDataDirectory(false)` so DB state persists across restarts.
+- a maximum PostgreSQL startup wait of 60 seconds so slower packaged environments are not failed by the library's shorter default timeout.
 
 ### How embedded DB is disabled
 
@@ -532,6 +546,8 @@ bash scripts/prod/build/build_macos_jpackage.sh --embeddb=false
 - `dist/macos/out/cestereg.app`
 - `.dmg`
 - `dist/macos/out/*.dmg`
+
+The application project version remains `0.3.0`, while the current macOS jpackage metadata uses `1.0.0` because macOS packaging rejects a version whose first numeric component is `0`. This is packaging metadata only and does not change the project release version.
 
 ### Smoke test
 
