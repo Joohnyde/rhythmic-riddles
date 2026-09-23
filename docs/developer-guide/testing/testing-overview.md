@@ -93,6 +93,8 @@ The Playwright suite uses a bounded worker count because the E2E tests share the
 E2E_WORKERS=2 npm run e2e
 ```
 
+CI uses four workers for the seeded suite to reduce runtime. Full-product journeys remain explicitly serial (`workers: 1`) because they share one game/runtime state.
+
 Any frontend test that is added, renamed, or removed must be reflected in `docs/developer-guide/testing/test-catalog.csv` in the same change. The frontend catalog consistency check enforces this independently for Vitest and Playwright.
 
 ## Package / release testing
@@ -300,7 +302,7 @@ The current required safety net includes:
 - native packaged-product smoke tests with embedded PostgreSQL;
 - one final `Merge Gate` status used as the stable branch-protection contract.
 
-The package jobs run only after the logical/source qualification jobs succeed. Each native package is built and smoke-tested on the same operating system, because jpackage output and bundled native PostgreSQL tooling are platform-specific.
+After the fast code-quality gate succeeds, the package jobs run in parallel with the remaining logical/source qualification jobs. `Merge Gate` still waits for every required job. Each native package is built and smoke-tested on the same operating system, because jpackage output and bundled native PostgreSQL tooling are platform-specific.
 
 See `../ci.md` for the workflow topology, baseline asset input, generated CI production configuration, and merge-gate maintenance rules.
 
