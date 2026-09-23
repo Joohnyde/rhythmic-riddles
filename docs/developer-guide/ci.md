@@ -34,7 +34,7 @@ Workflow permissions are read-only (`contents: read`). Build/test credentials us
 
 ## Qualification flow
 
-The workflow has three stages.
+Logical/source qualification and native package qualification overlap where they are independent. The final merge gate waits for both groups.
 
 ### 1. Logical and source qualification
 
@@ -71,7 +71,7 @@ The local `application-e2e.yml` remains ignored. CI creates a disposable profile
 npm run test:all
 ```
 
-The job also performs a production Angular build after the test suite.
+The job also performs a production Angular build after the test suite. CI runs the seeded Playwright suite with `E2E_WORKERS=4`; the full-product journey configuration remains serial (`workers: 1`) because those journeys share one game/runtime state.
 
 #### `Firmware`
 
@@ -95,7 +95,7 @@ The matrix uses `fail-fast: false` so one platform failure does not hide the res
 
 ### 2. Native package qualification
 
-Linux, Windows, and macOS package jobs start only after all logical/source qualification jobs succeed.
+Linux, Windows, and macOS package jobs wait only for the fast `Code Quality` job, then run in parallel with the remaining logical/source qualification jobs. This shortens the merge critical path without weakening the final gate.
 
 Each package job:
 
@@ -107,9 +107,19 @@ Each package job:
 6. requires the expected native installer to exist;
 7. runs the packaged product smoke test on that same operating system.
 
+The native builders use Maven `-DskipTests`; backend and platform tests are already owned by dedicated qualification jobs, so package jobs do not repeat the same test suites.
+
 The current merge gate qualifies the embedded-PostgreSQL package (`embeddb=true`) on all three supported platforms. External-DB packaging remains supported by the build scripts but is not currently a required CI package job.
 
 See `release-builds.md` for the native packaging contract and smoke-test behavior.
+
+## Dependency and tool caching
+
+CI treats caches only as performance optimizations; a cache miss must never change what is tested or packaged.
+
+- Java jobs use `actions/setup-java` Maven caching keyed from `apps/backend/pom.xml`.
+- Node jobs use `actions/setup-node` npm caching keyed from `apps/frontend/package-lock.json`; `npm ci` still performs the deterministic install.
+- Windows package qualification caches the extracted PostgreSQL 18 client binaries by version. On a cache miss it downloads the official EDB binary archive and extracts only `pgsql/bin`; it does not install or start a PostgreSQL server just to run the pg-client packer.
 
 ## Baseline asset payload
 

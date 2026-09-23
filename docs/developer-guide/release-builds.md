@@ -162,6 +162,8 @@ Native package qualification starts from a clean checkout, so it materializes tw
 - `baseline-data.zip` is downloaded from the repository's `baseline-data` GitHub Release and extracted as the root `data/` payload.
 - a minimal `application-production.yml` is generated with loopback Actuator `health`, `info`, and `shutdown` endpoints required by the package-smoke lifecycle.
 
+CI package builds use the normal builders with Maven tests skipped; test execution remains owned by the dedicated backend/platform jobs and the final merge gate still requires both test and package results. Windows CI prepares the PostgreSQL 18 client from the official binary archive (cached by version) instead of installing a database server solely for the pg-client packer.
+
 The builders themselves remain environment-agnostic: they package the prepared `data/` directory and normal application resources regardless of whether those inputs came from a developer machine, CI, or a future customer-specific packaging process. See `ci.md` for the merge-qualification flow.
 
 ## Frontend bundling: Angular into the backend jar

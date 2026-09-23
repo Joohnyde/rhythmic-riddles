@@ -37,6 +37,7 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+          cache-dependency-path: apps/backend/pom.xml
 
       - name: Set up Node
         uses: actions/setup-node@v7
@@ -50,7 +51,7 @@ jobs:
 
   # Complete backend qualification on Linux.
   backend-linux:
-    name: Backend Linux
+    name: Backend Tests (Linux)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
@@ -68,13 +69,50 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+          cache-dependency-path: apps/backend/pom.xml
 
       - name: Verify backend
         run: mvn -B -ntp -Dplatform=linux verify
 
+  # Exercise native backend behavior on the other supported operating systems.
+  platform-tests:
+    name: Backend Tests (${{ matrix.display-platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: windows
+            display-platform: Windows
+          - os: macos-15-intel
+            platform: macos
+            display-platform: macOS
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      - name: Run native backend tests
+        run: mvn -B -ntp -Dplatform=${{ matrix.platform }} test
+
   # Frontend unit/catalog/contract tests plus the complete Playwright E2E suite.
   frontend-linux:
-    name: Frontend + Playwright Linux
+    name: Frontend + E2E Tests (Linux)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
 
@@ -245,7 +283,7 @@ jobs:
 
   # Firmware host tests plus compilation for the actual Arduino target.
   firmware:
-    name: Firmware
+    name: Firmware Tests + Build
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
@@ -269,53 +307,15 @@ jobs:
       - name: Build Arduino firmware
         run: pio run -d hardware/firmware/receiver -e nanoatmega328
 
-  # Exercise native backend behavior on the other supported operating systems.
-  platform-tests:
-    name: Platform Tests (${{ matrix.platform }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-2025
-            platform: windows
-          - os: macos-15-intel
-            platform: macos
-
-    defaults:
-      run:
-        working-directory: apps/backend
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up JDK
-        uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: "25"
-          cache: maven
-          cache-dependency-path: apps/backend/pom.xml
-
-      - name: Run native backend tests
-        run: mvn -B -ntp -Dplatform=${{ matrix.platform }} test
-
-  # Package qualification starts only after the logical safety net passes.
-  # All three supported packages must succeed before Merge Gate can pass.
+  # Package qualification waits only for the fast quality gate, then runs in parallel with tests.
+  # All three supported packages must still succeed before Merge Gate can pass.
   linux-package:
-    name: Linux Package Qualification
+    name: Package Qualification (Linux)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
 
     needs:
       - code-quality
-      - backend-linux
-      - frontend-linux
-      - firmware
-      - platform-tests
 
     steps:
       - name: Checkout
@@ -388,16 +388,15 @@ jobs:
 
           echo "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin" >> "$GITHUB_PATH"
 
-      - name: Install frontend dependencies
-        working-directory: apps/frontend
-        run: npm ci
+      # Package tests run in dedicated qualification jobs; skip test compilation here too.
+      - name: Build Linux production package
+        env:
+          MAVEN_ARGS: "-Dmaven.test.skip=true"
+        run: bash scripts/prod/build/build_linux_jpackage.sh --embeddb=true
 
       - name: Install Playwright Chromium
         working-directory: apps/frontend
         run: npx playwright install --with-deps chromium
-
-      - name: Build Linux production package
-        run: bash scripts/prod/build/build_linux_jpackage.sh --embeddb=true
 
       - name: Require Linux installer
         shell: bash
@@ -414,16 +413,12 @@ jobs:
             --embeddb true
 
   windows-package:
-    name: Windows Package Qualification
+    name: Package Qualification (Windows)
     runs-on: windows-2025
     timeout-minutes: 60
 
     needs:
       - code-quality
-      - backend-linux
-      - frontend-linux
-      - firmware
-      - platform-tests
 
     steps:
       - name: Checkout
@@ -480,24 +475,42 @@ jobs:
           cache: npm
           cache-dependency-path: apps/frontend/package-lock.json
 
-      # windows-2025 currently ships PostgreSQL 17; the production packer needs 18.
-      - name: Install PostgreSQL 18
+      # The packer needs psql + runtime DLLs, not an installed/running PostgreSQL server.
+      - name: Cache PostgreSQL 18 client binaries
+        uses: actions/cache@v6
+        with:
+          path: ~\postgresql-ci\${{ env.WINDOWS_POSTGRES_VERSION }}
+          key: windows-postgresql-client-${{ env.WINDOWS_POSTGRES_VERSION }}-x64-v1
+
+      - name: Prepare PostgreSQL 18 client
         shell: pwsh
         run: |
-          choco install postgresql18 `
-            --version="$env:WINDOWS_POSTGRES_VERSION" `
-            --yes `
-            --no-progress `
-            --params "'/Password:ci-build-only /Port:55432'"
+          $root = Join-Path $HOME "postgresql-ci\$env:WINDOWS_POSTGRES_VERSION"
+          $pgHome = Join-Path $root "pgsql"
+          $psql = Join-Path $pgHome "bin\psql.exe"
 
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+          if (-not (Test-Path $psql)) {
+            New-Item -ItemType Directory -Force $root | Out-Null
+
+            $archive = Join-Path $env:RUNNER_TEMP "postgresql-$env:WINDOWS_POSTGRES_VERSION.zip"
+            $edbVersion = $env:WINDOWS_POSTGRES_VERSION -replace '\.(\d+)$', '-$1'
+            $url = "https://get.enterprisedb.com/postgresql/postgresql-$edbVersion-windows-x64-binaries.zip"
+
+            curl.exe -fL --retry 3 --output $archive $url
+            if ($LASTEXITCODE -ne 0) {
+              throw "PostgreSQL client download failed with exit code $LASTEXITCODE"
+            }
+
+            # Extract only bin/: the Windows pg-client packer discovers psql from PATH and bundles its DLLs.
+            tar.exe -xf $archive -C $root pgsql/bin
+            if ($LASTEXITCODE -ne 0) {
+              throw "PostgreSQL client extraction failed with exit code $LASTEXITCODE"
+            }
+            Remove-Item $archive -Force
           }
 
-          $pgHome = "C:\Program Files\PostgreSQL\$env:POSTGRES_MAJOR"
-
-          if (-not (Test-Path "$pgHome\bin\psql.exe")) {
-            throw "PostgreSQL $env:POSTGRES_MAJOR psql.exe was not installed at $pgHome\bin\psql.exe"
+          if (-not (Test-Path $psql)) {
+            throw "PostgreSQL $env:POSTGRES_MAJOR psql.exe was not prepared at $psql"
           }
 
           "$pgHome\bin" | Out-File `
@@ -505,21 +518,13 @@ jobs:
             -Encoding utf8 `
             -Append
 
-          # The package smoke owns its own isolated embedded database.
-          Get-Service -Name "postgresql-x64-$env:POSTGRES_MAJOR" `
-            -ErrorAction SilentlyContinue |
-            Stop-Service -Force -ErrorAction SilentlyContinue
+          & $psql --version
 
-      - name: Install frontend dependencies
-        working-directory: apps/frontend
-        run: npm ci
-
-      - name: Install Playwright Chromium
-        working-directory: apps/frontend
-        run: npx playwright install chromium
-
+      # Package tests run in dedicated qualification jobs; skip test compilation here too.
       - name: Build Windows production package
         shell: pwsh
+        env:
+          MAVEN_ARGS: "-Dmaven.test.skip=true"
         run: |
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
             scripts/prod/build/build_windows_jpackage.ps1 `
@@ -528,6 +533,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install chromium
 
       # The current builder can warn if MSI creation fails, so CI requires it explicitly.
       - name: Require Windows installer
@@ -555,16 +564,12 @@ jobs:
           }
 
   macos-package:
-    name: macOS Package Qualification
+    name: Package Qualification (macOS)
     runs-on: macos-15-intel
     timeout-minutes: 60
 
     needs:
       - code-quality
-      - backend-linux
-      - frontend-linux
-      - firmware
-      - platform-tests
 
     steps:
       - name: Checkout
@@ -635,16 +640,15 @@ jobs:
 
           echo "$PG_HOME/bin" >> "$GITHUB_PATH"
 
-      - name: Install frontend dependencies
-        working-directory: apps/frontend
-        run: npm ci
+      # Package tests run in dedicated qualification jobs; skip test compilation here too.
+      - name: Build macOS production package
+        env:
+          MAVEN_ARGS: "-Dmaven.test.skip=true"
+        run: bash scripts/prod/build/build_macos_jpackage.sh --embeddb=true
 
       - name: Install Playwright Chromium
         working-directory: apps/frontend
         run: npx playwright install chromium
-
-      - name: Build macOS production package
-        run: bash scripts/prod/build/build_macos_jpackage.sh --embeddb=true
 
       - name: Require macOS installer
         shell: bash
@@ -689,14 +693,14 @@ jobs:
           WINDOWS_PACKAGE_RESULT: ${{ needs['windows-package'].result }}
           MACOS_PACKAGE_RESULT: ${{ needs['macos-package'].result }}
         run: |
-          echo "Code Quality:                $CODE_QUALITY_RESULT"
-          echo "Backend Linux:               $BACKEND_RESULT"
-          echo "Frontend + Playwright Linux: $FRONTEND_RESULT"
-          echo "Firmware:                    $FIRMWARE_RESULT"
-          echo "Platform Tests:              $PLATFORM_RESULT"
-          echo "Linux Package:               $LINUX_PACKAGE_RESULT"
-          echo "Windows Package:             $WINDOWS_PACKAGE_RESULT"
-          echo "macOS Package:               $MACOS_PACKAGE_RESULT"
+          echo "Code Quality:                     $CODE_QUALITY_RESULT"
+          echo "Backend Tests (Linux):            $BACKEND_RESULT"
+          echo "Backend Tests (Windows/macOS):    $PLATFORM_RESULT"
+          echo "Frontend + E2E Tests (Linux):     $FRONTEND_RESULT"
+          echo "Firmware Tests + Build:           $FIRMWARE_RESULT"
+          echo "Package Qualification (Linux):    $LINUX_PACKAGE_RESULT"
+          echo "Package Qualification (Windows):  $WINDOWS_PACKAGE_RESULT"
+          echo "Package Qualification (macOS):    $MACOS_PACKAGE_RESULT"
 
           if [[ "$CODE_QUALITY_RESULT" != "success" ||
                 "$BACKEND_RESULT" != "success" ||
