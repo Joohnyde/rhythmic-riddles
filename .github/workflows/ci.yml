@@ -113,9 +113,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Run native backend tests
-        env:
-          TEST_PLATFORM: ${{ matrix.platform }}
-        run: mvn -B -ntp "-Dplatform=$TEST_PLATFORM" test
+        run: mvn -B -ntp "-Dplatform=${{ matrix.platform }}" test
 
   # Frontend unit/catalog/contract tests plus the complete Playwright E2E suite.
   frontend-linux:
