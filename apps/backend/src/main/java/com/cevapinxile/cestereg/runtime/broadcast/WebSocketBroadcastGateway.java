@@ -36,7 +36,7 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
   public void toTv(final String code, final String payload) {
     final WebSocketSession tvSession = registry.getTvSession(code);
     if (tvSession == null) {
-      LOG.warn("Tried sending this {} to non-existing TV", payload);
+      LOG.warn("Tried sending this {} to non-existing TV", sanitizeForLog(payload));
       return;
     }
     try {
@@ -50,7 +50,7 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
   public void toAdmin(final String code, final String payload) {
     final WebSocketSession adminSession = registry.getAdminSession(code);
     if (adminSession == null) {
-      LOG.warn("Tried sending this {} to non-existing Admin", payload);
+      LOG.warn("Tried sending this {} to non-existing Admin", sanitizeForLog(payload));
       return;
     }
     try {
@@ -62,12 +62,12 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
 
   public void sendToSomeone(final WebSocketSession socket, final String payload) {
     if (socket == null || !socket.isOpen()) {
-      LOG.warn("Tried sending this {} to non-existing socket", payload);
+      LOG.warn("Tried sending this {} to non-existing socket", sanitizeForLog(payload));
       return;
     }
     try {
       sendSafely(socket, payload);
-      LOG.info("Sent {} to {}", payload, socket.getUri());
+      LOG.info("Sent {} to {}", sanitizeForLog(payload), socket.getUri());
     } catch (IOException ex) {
       LOG.error(null, ex);
     }
@@ -77,5 +77,12 @@ public class WebSocketBroadcastGateway implements BroadcastGateway {
     synchronized (session) {
       session.sendMessage(new TextMessage(payload));
     }
+  }
+
+  private String sanitizeForLog(final String value) {
+    if (value == null) {
+      return null;
+    }
+    return value.replaceAll("\\p{Cntrl}", "_");
   }
 }

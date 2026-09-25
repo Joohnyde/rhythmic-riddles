@@ -1,16 +1,24 @@
 # CI/CD Pipelines & Automation
-.github/workflows/           @Joohnyde
+/.github/CODEOWNERS                        @Joohnyde
+/.github/workflows/                        @Joohnyde
+/.github/dependabot.yml                    @Joohnyde
 
 # Infrastructure & Containers
-Dockerfile                   @Joohnyde
-docker-compose*.yml          @Joohnyde
+Dockerfile                                 @Joohnyde
+docker-compose*.yml                        @Joohnyde
 
 # Maintenance & Execution Scripts
-/scripts/                    @Joohnyde
+/scripts/                                  @Joohnyde
 
 # Dependencies & DB Schema
-package.json                 @Joohnyde
-/db/                         @Joohnyde
-/migrations/                 @Joohnyde
+/apps/backend/pom.xml                      @Joohnyde
+/apps/frontend/package.json                @Joohnyde
+/apps/frontend/package-lock.json           @Joohnyde
+/db/                                       @Joohnyde
+/migrations/                               @Joohnyde
+
+# Security Documentation
+/SECURITY.md                               @Joohnyde
+/docs/developer-guide/ci-security.md       @Joohnyde
 
 # I left out .eslintrc and .editorconfig because I trust us not to start a civil war over double quotes.
