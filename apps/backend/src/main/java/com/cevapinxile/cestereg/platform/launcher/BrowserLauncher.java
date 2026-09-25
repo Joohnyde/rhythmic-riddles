@@ -84,7 +84,7 @@ public class BrowserLauncher {
     }
 
     if (os.contains("mac")) {
-      new ProcessBuilder("open", url).start();
+      new ProcessBuilder("/usr/bin/open", url).start();
       return;
     }
 
