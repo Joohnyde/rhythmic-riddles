@@ -10,6 +10,10 @@ updates:
     labels:
       - "dependencies"
       - "backend"
+    groups:
+      maven-dependencies:
+        patterns:
+          - "*"
 
   # Frontend dependencies (npm)
   - package-ecosystem: "npm"
@@ -20,6 +24,10 @@ updates:
     labels:
       - "dependencies"
       - "frontend"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
 
   # GitHub Actions updates
   - package-ecosystem: "github-actions"
@@ -29,3 +37,7 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
