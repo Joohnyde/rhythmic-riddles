@@ -27,12 +27,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 1
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -40,7 +41,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -61,10 +62,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -97,10 +100,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -108,7 +113,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Run native backend tests
-        run: mvn -B -ntp -Dplatform=${{ matrix.platform }} test
+        run: mvn -B -ntp "-Dplatform=${{ matrix.platform }}" test
 
   # Frontend unit/catalog/contract tests plus the complete Playwright E2E suite.
   frontend-linux:
@@ -122,10 +127,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -133,7 +140,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -289,10 +296,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
 
@@ -319,7 +328,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       # Fetch baseline-data from github releases
       - name: Prepare baseline data
@@ -327,14 +338,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          BASELINE_TAG="baseline-data-v1"
+          BASELINE_ARCHIVE="${RUNNER_TEMP}/baseline-data/baseline-data.zip"
+
           mkdir -p "${RUNNER_TEMP}/baseline-data"
 
-          gh release download baseline-data \
-            --repo "${{ github.repository }}" \
+          gh release download "$BASELINE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
             --pattern "baseline-data.zip" \
             --dir "${RUNNER_TEMP}/baseline-data"
 
-          unzip -o "${RUNNER_TEMP}/baseline-data/baseline-data.zip" -d .
+          gh release verify-asset "$BASELINE_TAG" "$BASELINE_ARCHIVE" \
+            --repo "$GITHUB_REPOSITORY"
+
+          unzip -o "$BASELINE_ARCHIVE" -d .
 
       - name: Prepare production configuration
         shell: bash
@@ -354,7 +371,7 @@ jobs:
           EOF
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -362,7 +379,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -422,7 +439,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       # Fetch baseline-data from github releases
       - name: Prepare baseline data
@@ -430,18 +449,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $tag = "baseline-data-v1"
           $dir = Join-Path $env:RUNNER_TEMP "baseline-data"
+          $archive = Join-Path $dir "baseline-data.zip"
+
           New-Item -ItemType Directory -Force $dir | Out-Null
 
-          gh release download baseline-data `
+          gh release download $tag `
             --repo "$env:GITHUB_REPOSITORY" `
             --pattern "baseline-data.zip" `
             --dir $dir
 
-          Expand-Archive `
-            -Path (Join-Path $dir "baseline-data.zip") `
-            -DestinationPath "." `
-            -Force
+          if ($LASTEXITCODE -ne 0) {
+            throw "Baseline data download failed."
+          }
+
+          gh release verify-asset $tag $archive `
+            --repo "$env:GITHUB_REPOSITORY"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Baseline data release verification failed."
+          }
+
+          Expand-Archive -Path $archive -DestinationPath "." -Force
 
       - name: Prepare production configuration
         shell: bash
@@ -461,7 +491,7 @@ jobs:
           EOF
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -469,7 +499,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -477,7 +507,7 @@ jobs:
 
       # The packer needs psql + runtime DLLs, not an installed/running PostgreSQL server.
       - name: Cache PostgreSQL 18 client binaries
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~\postgresql-ci\${{ env.WINDOWS_POSTGRES_VERSION }}
           key: windows-postgresql-client-${{ env.WINDOWS_POSTGRES_VERSION }}-x64-v1
@@ -573,7 +603,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  #v7.0.1
+        with:
+          persist-credentials: false
 
       # Fetch baseline-data from github releases
       - name: Prepare baseline data
@@ -581,14 +613,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          BASELINE_TAG="baseline-data-v1"
+          BASELINE_ARCHIVE="${RUNNER_TEMP}/baseline-data/baseline-data.zip"
+
           mkdir -p "${RUNNER_TEMP}/baseline-data"
 
-          gh release download baseline-data \
-            --repo "${{ github.repository }}" \
+          gh release download "$BASELINE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
             --pattern "baseline-data.zip" \
             --dir "${RUNNER_TEMP}/baseline-data"
 
-          unzip -o "${RUNNER_TEMP}/baseline-data/baseline-data.zip" -d .
+          gh release verify-asset "$BASELINE_TAG" "$BASELINE_ARCHIVE" \
+            --repo "$GITHUB_REPOSITORY"
+
+          unzip -o "$BASELINE_ARCHIVE" -d .
 
       - name: Prepare production configuration
         shell: bash
@@ -608,7 +646,7 @@ jobs:
           EOF
 
       - name: Set up JDK
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: "25"
@@ -616,7 +654,7 @@ jobs:
           cache-dependency-path: apps/backend/pom.xml
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm

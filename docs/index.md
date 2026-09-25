@@ -23,6 +23,7 @@
 - [Logging](developer-guide/logging.md)
 - [Release builds](developer-guide/release-builds.md)
 - [Continuous integration & merge qualification](developer-guide/ci.md)
+- [CI security](developer-guide/ci-security.md)
 
 ## Testing docs
 
