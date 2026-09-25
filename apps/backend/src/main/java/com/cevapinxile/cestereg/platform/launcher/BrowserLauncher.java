@@ -19,6 +19,9 @@ import org.springframework.stereotype.Component;
 @Profile("production")
 public class BrowserLauncher {
 
+  private static final String WINDOWS_CMD = "C:\\Windows\\System32\\cmd.exe";
+  private static final String MAC_OPEN = "/usr/bin/open";
+  private static final String LINUX_XDG_OPEN = "/usr/bin/xdg-open";
   private final ServerProperties serverProperties;
 
   public BrowserLauncher(ServerProperties serverProperties) {
@@ -79,16 +82,16 @@ public class BrowserLauncher {
 
     if (os.contains("win")) {
       // "start" is a cmd built-in; empty title "" prevents URL being treated as title
-      new ProcessBuilder("cmd", "/c", "start", "", url).start();
+      new ProcessBuilder(WINDOWS_CMD, "/c", "start", "", url).start();
       return;
     }
 
     if (os.contains("mac")) {
-      new ProcessBuilder("open", url).start();
+      new ProcessBuilder(MAC_OPEN, url).start();
       return;
     }
 
     // Linux / other Unix
-    new ProcessBuilder("xdg-open", url).start();
+    new ProcessBuilder(LINUX_XDG_OPEN, url).start();
   }
 }
