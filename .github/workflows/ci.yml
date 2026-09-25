@@ -730,6 +730,7 @@ jobs:
   # One stable branch-protection contract. Every supported platform must pass.
   merge-gate:
     name: Merge Gate
+    permissions: {}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()

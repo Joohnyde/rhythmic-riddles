@@ -15,9 +15,9 @@ The security boundary is therefore based on containment rather than trying to ma
 
 ## Workflow authority
 
-Normal repository qualification uses `pull_request` and `push` for `master`. Repository Workflow Execution Protections restrict allowed workflow trigger events independently of workflow YAML.
+Normal repository qualification uses `pull_request` and `push` for `master`. The periodic Scorecard workflow additionally uses `schedule`. Repository Workflow Execution Protections restrict allowed workflow trigger events independently of workflow YAML.
 
-Do not add `pull_request_target`, `workflow_run`, `issue_comment`, `repository_dispatch`, `workflow_dispatch` or scheduled execution merely for convenience. If a future workflow needs another event, review the trust boundary first and change the repository policy deliberately.
+Do not add `pull_request_target`, `workflow_run`, `issue_comment`, `repository_dispatch`, `workflow_dispatch` or additional scheduled execution merely for convenience. If a future workflow needs another event, review the trust boundary first and change the repository policy deliberately.
 
 Self-hosted runners must not be made available to ordinary pull-request workflows. If they are introduced later, isolate them from untrusted code and from privileged deployment/signing infrastructure.
 
@@ -29,6 +29,7 @@ External Actions are executable dependencies.
 - Keep the corresponding release version as a comment.
 - Let Dependabot manage normal Action-version updates.
 - Allow only GitHub-owned Actions and explicitly reviewed third-party Actions in repository settings.
+- The selected third-party allowlist contains only reviewed SHA-pinned revisions of Zizmor, Harden-Runner and OpenSSF Scorecard; changes require the same review as workflow changes.
 - Use `persist-credentials: false` for checkout unless a narrowly scoped job intentionally pushes.
 - Prefer shallow checkout (`fetch-depth: 1`) unless a specific workflow requires history.
 
@@ -83,6 +84,21 @@ Dependabot version updates remain enabled for Maven, npm and GitHub Actions, tog
 CodeQL uses GitHub's default setup for Java/Kotlin, JavaScript/TypeScript and workflow analysis with the `security-extended` query suite. Secret scanning and push protection are enabled as repository security controls.
 
 These checks are defense in depth. They do not replace least privilege, trust separation or review of privileged workflow changes.
+
+
+## CI security tooling
+
+### Zizmor
+
+Zizmor provides GitHub Actions-specific static analysis. Low and medium findings remain visible for triage, while high-severity findings block the workflow. The Action is full-SHA pinned and CI does not auto-fix workflow files.
+
+### Harden-Runner
+
+Harden-Runner runs first in substantial Linux qualification jobs to provide runtime visibility and defense in depth. It remains in `audit` mode while expected outbound endpoints, subprocesses, source-tree changes and token recommendations are reviewed. Egress blocking requires a separate decision after a stable baseline is understood.
+
+### OpenSSF Scorecard
+
+OpenSSF Scorecard runs on pushes to `master` and on a weekly schedule as a periodic repository/supply-chain posture report. It is not a pull-request merge gate. The current workflow keeps repository permissions read-only and does not enable public result publishing or SARIF upload.
 
 ## Review and maintainer hygiene
 
