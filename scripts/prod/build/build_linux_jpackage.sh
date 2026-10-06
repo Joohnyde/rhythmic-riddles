@@ -34,6 +34,9 @@ ROOT="$(cd -- "${SCRIPT_DIR}/../../../" >/dev/null 2>&1 && pwd)"
 
 APP_NAME="cestereg"
 APP_VERSION="0.3.0"
+if [[ -n "${RELEASE_VERSION:-}" ]]; then
+  APP_VERSION="${RELEASE_VERSION}"
+fi
 
 BACKEND="${ROOT}/apps/backend"
 FRONTEND="${ROOT}/apps/frontend"

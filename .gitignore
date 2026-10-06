@@ -161,3 +161,11 @@ scripts/**/*.log.*
 
 # PlatformIO firmware build output
 .pio/
+
+
+############################################
+# Generated release/SBOM outputs
+############################################
+apps/frontend/sbom-frontend.cdx.json
+apps/backend/target/sbom-backend.cdx.json
+release-assets/
