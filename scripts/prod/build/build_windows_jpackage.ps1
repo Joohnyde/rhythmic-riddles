@@ -31,6 +31,9 @@ $ROOT = Resolve-Path (Join-Path $SCRIPT_DIR "..\..\..") | Select-Object -ExpandP
 
 $APP_NAME = "cestereg"
 $APP_VERSION = "0.3.0"
+if ($env:RELEASE_VERSION) {
+  $APP_VERSION = $env:RELEASE_VERSION
+}
 
 $BACKEND = Join-Path $ROOT "apps\backend"
 $FRONTEND = Join-Path $ROOT "apps\frontend"
@@ -160,6 +163,10 @@ try {
   }
   Info "MSI created in: $OUT"
 } catch {
+  if ($env:RELEASE_MODE -eq "true") {
+    throw
+  }
+
   Warn "MSI build failed; skipping installer build."
 }
 

@@ -1,0 +1,1041 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PLATFORMIO_VERSION: "6.2.0"
+  POSTGRES_MAJOR: "18"
+  WINDOWS_POSTGRES_VERSION: "18.6.3"
+  NODE_VERSION: "24.20.0"
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    outputs:
+      release_version: ${{ steps.validate.outputs.release_version }}
+      source_version: ${{ steps.validate.outputs.source_version }}
+      build_code: ${{ steps.validate.outputs.build_code }}
+      prerelease: ${{ steps.validate.outputs.prerelease }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Fetch release branch
+        run: |
+          git fetch --no-tags origin \
+            +refs/heads/master:refs/remotes/origin/master
+
+      - name: Test release helpers
+        run: node --test scripts/release/release-lib.test.mjs
+
+      - name: Check release-aware builders
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'RELEASE_VERSION' scripts/prod/build/build_linux_jpackage.sh
+          grep -q 'RELEASE_VERSION' scripts/prod/build/build_windows_jpackage.ps1
+          grep -q 'RELEASE_MODE' scripts/prod/build/build_linux_jpackage.sh
+          grep -q 'RELEASE_MODE' scripts/prod/build/build_windows_jpackage.ps1
+
+      - name: Validate release identity
+        id: validate
+        run: node scripts/release/validate-release.mjs
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Verify existing source-version contract
+        working-directory: apps/frontend
+        run: npm run test:release-contract
+
+  release-code-quality:
+    name: Release Code Quality
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Run code quality verification
+        run: scripts/ci/verify-code-quality.sh
+
+  release-backend-linux:
+    name: Release Backend Tests (Linux)
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Verify backend
+        run: mvn -B -ntp -Dplatform=linux verify
+
+  release-platform-tests:
+    name: Release Backend Tests (${{ matrix.display-platform }})
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: windows
+            display-platform: Windows
+          - os: macos-15-intel
+            platform: macos
+            display-platform: macOS
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Run native backend tests
+        run: mvn -B -ntp "-Dplatform=${{ matrix.platform }}" test
+
+  release-frontend:
+    name: Release Frontend + E2E Tests (Linux)
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    defaults:
+      run:
+        working-directory: apps/frontend
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install PostgreSQL client
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            "postgresql-client-${POSTGRES_MAJOR}"
+          echo "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin" >> "$GITHUB_PATH"
+
+      - name: Configure E2E backend
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/audio/snippets"
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/audio/answers"
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/images/teams"
+          mkdir -p "$RUNNER_TEMP/cestereg-e2e-assets/images/albums"
+          cat > apps/backend/src/main/resources/application-e2e.yml <<EOF
+          spring:
+            datasource:
+              url: "jdbc:postgresql://127.0.0.1:2345/rhytmicriddles?currentSchema=e2e"
+              username: "rhytmicriddles"
+              password: "change_me"
+            jpa:
+              properties:
+                hibernate:
+                  default_schema: e2e
+
+          app:
+            assets:
+              base-dir: "$RUNNER_TEMP/cestereg-e2e-assets"
+          EOF
+
+      - name: Start E2E PostgreSQL
+        working-directory: ${{ github.workspace }}
+        run: |
+          docker compose -f docker-compose.yml.example up -d db
+          for i in {1..60}; do
+            if docker compose -f docker-compose.yml.example exec -T db \
+              pg_isready \
+              -h 127.0.0.1 \
+              -p 5432 \
+              -U rhytmicriddles \
+              -d rhytmicriddles
+            then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose -f docker-compose.yml.example logs db
+          exit 1
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run frontend test suite
+        run: |
+          set -euo pipefail
+
+          BACKEND_LOG="$RUNNER_TEMP/backend-e2e.log"
+          FRONTEND_LOG="$RUNNER_TEMP/frontend-e2e.log"
+
+          cleanup() {
+            kill "${FRONTEND_PID:-}" 2>/dev/null || true
+            kill "${BACKEND_PID:-}" 2>/dev/null || true
+          }
+
+          trap cleanup EXIT
+
+          (
+            cd ../backend
+            exec mvn -B -ntp spring-boot:run -Pe2e -De2e.clean=true
+          ) >"$BACKEND_LOG" 2>&1 &
+          BACKEND_PID=$!
+
+          for i in {1..180}; do
+            if curl -fsS http://127.0.0.1:8080/actuator/health >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+              cat "$BACKEND_LOG"
+              exit 1
+            fi
+            if [ "$i" -eq 180 ]; then
+              cat "$BACKEND_LOG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          npm start >"$FRONTEND_LOG" 2>&1 &
+          FRONTEND_PID=$!
+
+          for i in {1..120}; do
+            if curl -fsS http://127.0.0.1:4200 >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+              cat "$FRONTEND_LOG"
+              exit 1
+            fi
+            if [ "$i" -eq 120 ]; then
+              cat "$FRONTEND_LOG"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          npm run test:all
+
+      - name: Build production frontend
+        run: npm run build -- --configuration production
+
+      - name: Stop E2E PostgreSQL
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: docker compose -f docker-compose.yml.example down -v
+
+  release-firmware:
+    name: Release Firmware Tests + Build
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install "platformio==${PLATFORMIO_VERSION}"
+          pio --version
+
+      - name: Run firmware unit tests
+        run: pio test -d hardware/firmware/receiver -e native
+
+      - name: Build Arduino firmware
+        run: pio run -d hardware/firmware/receiver -e nanoatmega328
+
+  build-linux:
+    name: Build Release (Linux)
+    needs:
+      - validate
+      - release-code-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    env:
+      RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+      RELEASE_MODE: "true"
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Prepare baseline data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BASELINE_TAG="baseline-data-v1"
+          BASELINE_DIR="${RUNNER_TEMP}/baseline-data"
+          BASELINE_ARCHIVE="${BASELINE_DIR}/baseline-data.zip"
+          mkdir -p "$BASELINE_DIR"
+          gh release download "$BASELINE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "baseline-data.zip" \
+            --dir "$BASELINE_DIR"
+          gh release verify-asset "$BASELINE_TAG" "$BASELINE_ARCHIVE" \
+            --repo "$GITHUB_REPOSITORY"
+          unzip -o "$BASELINE_ARCHIVE" -d .
+
+      - name: Prepare production configuration
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install PostgreSQL 18 client and packaging dependencies
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            "postgresql-client-${POSTGRES_MAJOR}" \
+            fakeroot
+          echo "/usr/lib/postgresql/${POSTGRES_MAJOR}/bin" >> "$GITHUB_PATH"
+
+      - name: Build Linux production package
+        env:
+          MAVEN_ARGS: "-Dmaven.test.skip=true"
+        run: bash scripts/prod/build/build_linux_jpackage.sh --embeddb=true
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Require one Linux installer
+        id: installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          count="$(find dist/linux/out -maxdepth 1 -type f -name '*.deb' | wc -l | tr -d ' ')"
+          if [[ "$count" -ne 1 ]]; then
+            echo "Expected exactly one .deb installer, found $count."
+            find dist/linux/out -maxdepth 1 -type f -name '*.deb' -print
+            exit 1
+          fi
+          installer="$(find dist/linux/out -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          echo "path=$installer" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke Linux production package
+        run: |
+          node scripts/prod/package-smoke.mjs \
+            --app dist/linux/out/cestereg/bin/cestereg \
+            --embeddb true
+
+      - name: Stage Linux release artifact
+        id: stage
+        run: |
+          node scripts/release/stage-release-artifact.mjs \
+            --platform linux \
+            --input "${{ steps.installer.outputs.path }}" \
+            --out-dir release-assets
+
+      - name: Attest Linux release artifact
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            ${{ steps.stage.outputs.artifact_path }}
+            ${{ steps.stage.outputs.manifest_path }}
+
+      - name: Upload Linux release files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-linux
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  build-windows:
+    name: Build Release (Windows)
+    needs:
+      - validate
+      - release-code-quality
+    runs-on: windows-2025
+    timeout-minutes: 75
+
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    env:
+      RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+      RELEASE_MODE: "true"
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Prepare baseline data
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "baseline-data-v1"
+          $dir = Join-Path $env:RUNNER_TEMP "baseline-data"
+          $archive = Join-Path $dir "baseline-data.zip"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          gh release download $tag `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --pattern "baseline-data.zip" `
+            --dir $dir
+          if ($LASTEXITCODE -ne 0) {
+            throw "Baseline data download failed."
+          }
+          gh release verify-asset $tag $archive `
+            --repo "$env:GITHUB_REPOSITORY"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Baseline data release verification failed."
+          }
+          Expand-Archive -Path $archive -DestinationPath "." -Force
+
+      - name: Prepare production configuration
+        shell: bash
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Prepare PostgreSQL 18 client
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "postgresql-$env:WINDOWS_POSTGRES_VERSION"
+          $pgHome = Join-Path $root "pgsql"
+          $psql = Join-Path $pgHome "bin\psql.exe"
+          New-Item -ItemType Directory -Force $root | Out-Null
+          $archive = Join-Path $env:RUNNER_TEMP "postgresql-$env:WINDOWS_POSTGRES_VERSION.zip"
+          $edbVersion = $env:WINDOWS_POSTGRES_VERSION -replace '\.(\d+)$', '-$1'
+          $url = "https://get.enterprisedb.com/postgresql/postgresql-$edbVersion-windows-x64-binaries.zip"
+          curl.exe -fL --retry 3 --output $archive $url
+          if ($LASTEXITCODE -ne 0) {
+            throw "PostgreSQL client download failed with exit code $LASTEXITCODE"
+          }
+          tar.exe -xf $archive -C $root pgsql/bin
+          if ($LASTEXITCODE -ne 0) {
+            throw "PostgreSQL client extraction failed with exit code $LASTEXITCODE"
+          }
+          if (-not (Test-Path $psql)) {
+            throw "PostgreSQL $env:POSTGRES_MAJOR psql.exe was not prepared at $psql"
+          }
+          "$pgHome\bin" | Out-File `
+            -FilePath $env:GITHUB_PATH `
+            -Encoding utf8 `
+            -Append
+          & $psql --version
+
+      - name: Build Windows production package
+        shell: pwsh
+        env:
+          MAVEN_ARGS: "-Dmaven.test.skip=true"
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
+            scripts/prod/build/build_windows_jpackage.ps1 `
+            -embeddb true
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install chromium
+
+      - name: Require one Windows installer
+        id: installer
+        shell: pwsh
+        run: |
+          $installers = @(
+            Get-ChildItem `
+              -Path "dist/windows/out" `
+              -Filter "*.msi" `
+              -File `
+              -ErrorAction SilentlyContinue
+          )
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one MSI installer, found $($installers.Count)."
+          }
+          "path=$($installers[0].FullName)" | Out-File `
+            -FilePath $env:GITHUB_OUTPUT `
+            -Encoding utf8 `
+            -Append
+
+      - name: Smoke Windows production package
+        shell: pwsh
+        run: |
+          node scripts/prod/package-smoke.mjs `
+            --app dist/windows/out/cestereg/cestereg.exe `
+            --embeddb true
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Stage Windows release artifact
+        id: stage
+        shell: pwsh
+        run: |
+          node scripts/release/stage-release-artifact.mjs `
+            --platform windows `
+            --input "${{ steps.installer.outputs.path }}" `
+            --out-dir release-assets
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Attest Windows release artifact
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            ${{ steps.stage.outputs.artifact_path }}
+            ${{ steps.stage.outputs.manifest_path }}
+
+      - name: Upload Windows release files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-windows
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  build-macos:
+    name: Build Release (macOS Intel)
+    needs:
+      - validate
+      - release-code-quality
+    runs-on: macos-15-intel
+    timeout-minutes: 75
+
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    env:
+      RELEASE_VERSION: ${{ needs.validate.outputs.release_version }}
+      RELEASE_MODE: "true"
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Prepare baseline data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BASELINE_TAG="baseline-data-v1"
+          BASELINE_DIR="${RUNNER_TEMP}/baseline-data"
+          BASELINE_ARCHIVE="${BASELINE_DIR}/baseline-data.zip"
+          mkdir -p "$BASELINE_DIR"
+          gh release download "$BASELINE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "baseline-data.zip" \
+            --dir "$BASELINE_DIR"
+          gh release verify-asset "$BASELINE_TAG" "$BASELINE_ARCHIVE" \
+            --repo "$GITHUB_REPOSITORY"
+          unzip -o "$BASELINE_ARCHIVE" -d .
+
+      - name: Prepare production configuration
+        run: |
+          cat > apps/backend/src/main/resources/application-production.yml <<'EOF'
+          management:
+            server:
+              port: 8081
+              address: 127.0.0.1
+            endpoints:
+              web:
+                exposure:
+                  include: shutdown,health,info
+            endpoint:
+              shutdown:
+                enabled: true
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Install PostgreSQL 18
+        run: |
+          set -euo pipefail
+          brew install "postgresql@${POSTGRES_MAJOR}"
+          PG_HOME="$(brew --prefix "postgresql@${POSTGRES_MAJOR}")"
+          sudo mkdir -p /Library/PostgreSQL
+          sudo rm -rf "/Library/PostgreSQL/${POSTGRES_MAJOR}"
+          sudo ln -s "$PG_HOME" "/Library/PostgreSQL/${POSTGRES_MAJOR}"
+          test -x "/Library/PostgreSQL/${POSTGRES_MAJOR}/bin/psql"
+          echo "$PG_HOME/bin" >> "$GITHUB_PATH"
+
+      - name: Build macOS production package
+        env:
+          MAVEN_ARGS: "-Dmaven.test.skip=true"
+        run: bash scripts/prod/build/build_macos_jpackage.sh --embeddb=true
+
+      - name: Install Playwright Chromium
+        working-directory: apps/frontend
+        run: npx playwright install chromium
+
+      - name: Require one macOS installer
+        id: installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          count="$(find dist/macos/out -maxdepth 1 -type f -name '*.dmg' | wc -l | tr -d ' ')"
+          if [[ "$count" -ne 1 ]]; then
+            echo "Expected exactly one .dmg installer, found $count."
+            find dist/macos/out -maxdepth 1 -type f -name '*.dmg' -print
+            exit 1
+          fi
+          installer="$(find dist/macos/out -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          echo "path=$installer" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke macOS production package
+        run: |
+          node scripts/prod/package-smoke.mjs \
+            --app dist/macos/out/cestereg.app/Contents/MacOS/cestereg \
+            --embeddb true
+
+      - name: Stage macOS release artifact
+        id: stage
+        run: |
+          node scripts/release/stage-release-artifact.mjs \
+            --platform macos \
+            --input "${{ steps.installer.outputs.path }}" \
+            --out-dir release-assets
+
+      - name: Attest macOS release artifact
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            ${{ steps.stage.outputs.artifact_path }}
+            ${{ steps.stage.outputs.manifest_path }}
+
+      - name: Upload macOS release files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-macos
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  sbom:
+    name: Generate Release SBOMs
+    needs:
+      - validate
+      - release-code-quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Generate backend SBOM
+        working-directory: apps/backend
+        run: mvn -B -ntp cyclonedx:makeBom
+
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        run: npm ci
+
+      - name: Generate frontend SBOM
+        working-directory: apps/frontend
+        run: npm run sbom
+
+      - name: Collect SBOMs
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          cp apps/backend/target/sbom-backend.cdx.json \
+            release-assets/sbom-backend.cdx.json
+          cp apps/frontend/sbom-frontend.cdx.json \
+            release-assets/sbom-frontend.cdx.json
+          node -e "JSON.parse(require('fs').readFileSync('release-assets/sbom-backend.cdx.json','utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('release-assets/sbom-frontend.cdx.json','utf8'))"
+
+      - name: Attest SBOM files
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            release-assets/sbom-backend.cdx.json
+            release-assets/sbom-frontend.cdx.json
+
+      - name: Upload SBOM files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-sboms
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish Release
+    needs:
+      - validate
+      - release-code-quality
+      - release-backend-linux
+      - release-platform-tests
+      - release-frontend
+      - release-firmware
+      - build-linux
+      - build-windows
+      - build-macos
+      - sbom
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Download release files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate SHA-256 checksums
+        run: node scripts/release/generate-checksums.mjs --dir release-assets
+
+      - name: Validate exact release asset set
+        run: node scripts/release/validate-release-assets.mjs --dir release-assets
+
+      - name: Attest release checksums
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: release-assets/SHA256SUMS
+
+      - name: Attach backend SBOM to native installers
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            release-assets/*.deb
+            release-assets/*.msi
+            release-assets/*.dmg
+          sbom-path: release-assets/sbom-backend.cdx.json
+
+      - name: Attach frontend SBOM to native installers
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            release-assets/*.deb
+            release-assets/*.msi
+            release-assets/*.dmg
+          sbom-path: release-assets/sbom-frontend.cdx.json
+
+      - name: Create draft GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          args=(
+            "$GITHUB_REF_NAME"
+            --repo "$GITHUB_REPOSITORY"
+            --verify-tag
+            --draft
+            --title "$GITHUB_REF_NAME"
+            --generate-notes
+          )
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease --latest=false)
+          fi
+
+          gh release create "${args[@]}" release-assets/*
+
+      - name: Verify uploaded release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t local_assets < <(
+            find release-assets -maxdepth 1 -type f -printf '%f\n' | sort
+          )
+
+          mapfile -t remote_assets < <(
+            gh release view "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --json assets \
+              --jq '.assets[].name' \
+              | sort
+          )
+
+          if [[ "${local_assets[*]}" != "${remote_assets[*]}" ]]; then
+            echo "Local assets:"
+            printf '  %s\n' "${local_assets[@]}"
+            echo "Remote draft assets:"
+            printf '  %s\n' "${remote_assets[@]}"
+            echo "Draft release asset set does not match."
+            exit 1
+          fi
+
+          echo "Draft release contains the exact validated asset set."
+
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --draft=false

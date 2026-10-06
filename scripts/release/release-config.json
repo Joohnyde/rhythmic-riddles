@@ -1,0 +1,20 @@
+{
+  "appName": "cestereg",
+  "releaseVersion": "0.2.0",
+  "sourceVersion": "0.3.0",
+  "releaseBranch": "master",
+  "platforms": {
+    "linux": {
+      "arch": "x64",
+      "artifactExtension": "deb"
+    },
+    "windows": {
+      "arch": "x64",
+      "artifactExtension": "msi"
+    },
+    "macos": {
+      "arch": "x64",
+      "artifactExtension": "dmg"
+    }
+  }
+}

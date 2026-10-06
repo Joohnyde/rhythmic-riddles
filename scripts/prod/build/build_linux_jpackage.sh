@@ -34,6 +34,9 @@ ROOT="$(cd -- "${SCRIPT_DIR}/../../../" >/dev/null 2>&1 && pwd)"
 
 APP_NAME="cestereg"
 APP_VERSION="0.3.0"
+if [[ -n "${RELEASE_VERSION:-}" ]]; then
+  APP_VERSION="${RELEASE_VERSION}"
+fi
 
 BACKEND="${ROOT}/apps/backend"
 FRONTEND="${ROOT}/apps/frontend"
@@ -125,6 +128,11 @@ if command -v dpkg-deb >/dev/null 2>&1; then
       --linux-shortcut
   echo "[INFO] .deb created in: ${OUT}"
 else
+  if [[ "${RELEASE_MODE:-false}" == "true" ]]; then
+    echo "[ERROR] dpkg-deb not found; .deb is required in release mode."
+    exit 1
+  fi
+
   echo "[WARN] dpkg-deb not found; skipping .deb build."
 fi
 

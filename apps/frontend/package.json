@@ -25,7 +25,8 @@
     "e2e:debug": "playwright test --debug && playwright test --config=playwright.product.config.ts --debug",
     "e2e:report": "playwright show-report",
     "test:catalog:frontend": "playwright test --config=playwright.catalog.config.ts",
-    "test:release-contract": "vitest run src/release-build-contract.spec.ts"
+    "test:release-contract": "vitest run src/release-build-contract.spec.ts",
+    "sbom": "cyclonedx-npm --output-format JSON --output-file sbom-frontend.cdx.json --spec-version 1.6 --validate"
   },
   "prettier": {
     "printWidth": 100,
@@ -64,6 +65,7 @@
     "@angular/build": "^22.1.8",
     "@angular/cli": "^22.1.8",
     "@angular/compiler-cli": "^22.1.7",
+    "@cyclonedx/cyclonedx-npm": "6.0.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
