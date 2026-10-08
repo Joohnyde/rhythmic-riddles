@@ -2,10 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-This project does not yet follow a strict release cadence. When tagged releases are introduced,
-a SemVer-like versioning scheme will be used.
+Published releases follow strict [Semantic Versioning 2.0.0](https://semver.org/):
+`MAJOR.MINOR.PATCH`, with explicit prereleases such as `0.2.0-rc.1`. From `1.0.0`,
+breaking public-contract changes increment MAJOR, compatible features MINOR, and
+compatible fixes PATCH. `0.x` is initial development and may change incompatibly.
+Release cadence is independent of versioning. Release manifests distinguish the
+published release version from the development source version.
 
-## Unreleased
+## [Unreleased]
+
+## [0.2.0] - Foundation Release - 2026-08-10
 
 ### Added
 
@@ -64,7 +70,10 @@ a SemVer-like versioning scheme will be used.
 - Clarified container vs local development workflows.
 - Added guidance for serial hardware integration in local and packaged environments.
 - Added release documentation describing how to produce distributable artifacts for all supported platforms.
-- Prepared groundwork for future CI pipelines for automated multi-platform release builds.
+- Implemented PR and `master` merge qualification, including native Linux/Windows/Intel macOS packages and a stable Merge Gate.
+- Added protected-tag Foundation RC/final release automation with no-cache qualification, release manifests, CycloneDX SBOMs, checksums and attestations.
+- Added supply-chain workflow checks and controlled coverage/performance evidence tooling.
+- Aligned contribution/security policies, proprietary Maven metadata, release runbook, report navigation and implemented-control README badges.
 
 ### Testing
 
@@ -116,7 +125,7 @@ a SemVer-like versioning scheme will be used.
 - Strengthened room ownership and stale-schedule validation for client-provided persistence identifiers.
 - Added a dedicated HTTP 423 room-busy response for conflicting same-room operations and documented the updated API behavior.
 
-## 0.1.0 – Initial MVP
+## [0.1.0] – Initial MVP
 
 ### Added
 

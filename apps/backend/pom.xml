@@ -2,7 +2,7 @@
 <!--
   Maven POM for "cestereg" backend.
   Key ideas:
-  - Uses Spring Boot parent (version 4.0.0) and Java 25.
+  - Uses the Spring Boot parent declared below and Java 25 bytecode.
   - Builds a Spring Boot WebMVC + WebSocket + JPA application.
   - Optionally bundles an embedded Postgres + psql client (controlled by properties/profiles).
   - "production" profile also builds Angular frontend and packages it into the Spring Boot jar under /static.
@@ -39,25 +39,32 @@
         REST and WebSockets, handling game flow, scoring, buzzer interrupts, and crash-safe state recovery using
         PostgreSQL.
     </description>
-    <url/>
+    <url>https://github.com/Joohnyde/rhythmic-riddles</url>
     <licenses>
-        <license/>
+        <license>
+            <name>Proprietary — All rights reserved</name>
+            <url>https://github.com/Joohnyde/rhythmic-riddles/blob/master/LICENSE</url>
+            <distribution>manual</distribution>
+        </license>
     </licenses>
     <developers>
-        <developer/>
+        <developer>
+            <id>Joohnyde</id>
+            <url>https://github.com/Joohnyde</url>
+        </developer>
     </developers>
     <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
+        <connection>scm:git:https://github.com/Joohnyde/rhythmic-riddles.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/Joohnyde/rhythmic-riddles.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/Joohnyde/rhythmic-riddles</url>
     </scm>
     <properties>
         <!--
           Java language level used to compile/run.
-          (Boot 4 is expected to support very recent Java versions; ensure your toolchain matches.)
+          (Java 25 is the compilation target; qualification/build workflows use JDK 25.)
         -->
-        <java.version>21</java.version>
+        <java.version>25</java.version>
 
         <!-- =========================
         Build switches
