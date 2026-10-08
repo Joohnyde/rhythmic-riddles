@@ -140,6 +140,20 @@ jobs:
       - name: Verify backend
         run: mvn -B -ntp -Dplatform=linux verify
 
+      - name: Summarize backend coverage
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: node scripts/ci/coverage-summary.mjs --backend apps/backend/target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-coverage-release
+          path: apps/backend/target/site/jacoco/**
+          if-no-files-found: warn
+          retention-days: 14
+
   release-platform-tests:
     name: Release Backend Tests (${{ matrix.display-platform }})
     needs: validate
@@ -330,6 +344,20 @@ jobs:
           done
 
           npm run test:all
+
+      - name: Summarize frontend coverage
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: node scripts/ci/coverage-summary.mjs --frontend apps/frontend/coverage >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload frontend coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: frontend-coverage-release
+          path: apps/frontend/coverage/**
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Build production frontend
         run: npm run build -- --configuration production
