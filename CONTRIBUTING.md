@@ -80,7 +80,8 @@ Include:
 
 ## Review policy
 
-- All PRs require review by the other two people (unless explicitly agreed otherwise).
+- All PRs require at least one independent approval. Request a second review for security-sensitive, database, concurrency, or release changes.
+- Require `CI / Merge Gate` and the repository security/code-scanning checks before merge; the repository ruleset is the enforcement point.
 - Use **Draft PRs** for work-in-progress.
 - No direct pushes to `master`.
 
@@ -139,11 +140,11 @@ To automatically fix formatting issues:
 
     ./scripts/dev/format-all.sh
 
-To verify that the repository passes all CI checks locally:
+To verify the formatting and lint checks locally:
 
     ./scripts/ci/verify-code-quality.sh
 
-The verification script runs the same checks that the CI pipeline runs.
+The verification script runs the same formatting and lint checks as the CI Code Quality job; the full qualification pipeline also runs tests and native package smoke.
 This helps ensure that pull requests pass the CI gate on the first
 attempt.
 
@@ -186,5 +187,6 @@ tools:
 - **Secret scanning & push protection** -- prevents credentials from
   entering the repository
 
-These tools run automatically and require no manual interaction beyond
-reviewing Dependabot pull requests.
+Review findings and dependency-update pull requests; automation does not replace triage.
+
+See [CI qualification](docs/developer-guide/ci.md) and [CI security](docs/developer-guide/ci-security.md). Releases are explicit protected-tag operations, never an automatic consequence of merging to `master`. Follow the [release runbook](docs/developer-guide/release-process.md).

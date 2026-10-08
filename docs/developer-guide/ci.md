@@ -50,7 +50,7 @@ scripts/ci/verify-code-quality.sh
 
 This is the fast formatting/lint/static contract used before the heavier test and packaging jobs.
 
-#### `Backend Linux`
+#### `Backend Tests (Linux)`
 
 Runs the complete backend Maven verification on Linux:
 
@@ -61,7 +61,7 @@ mvn -B -ntp -Dplatform=linux verify
 
 The explicit platform property selects the correct native embedded-PostgreSQL dependency.
 
-#### `Frontend + Playwright Linux`
+#### `Frontend + E2E Tests (Linux)`
 
 Runs the frontend unit/catalog/contract checks together with the complete Playwright E2E suite against a real PostgreSQL container and a real Spring Boot backend.
 
@@ -73,7 +73,7 @@ npm run test:all
 
 The job also performs a production Angular build after the test suite. CI runs the seeded Playwright suite with `E2E_WORKERS=4`; the full-product journey configuration remains serial (`workers: 1`) because those journeys share one game/runtime state.
 
-#### `Firmware`
+#### `Firmware Tests + Build`
 
 Uses the pinned PlatformIO version to:
 
@@ -84,7 +84,7 @@ pio run -d hardware/firmware/receiver -e nanoatmega328
 
 The first command protects deterministic receiver logic; the second proves the real Arduino target still compiles.
 
-#### `Platform Tests`
+#### Native backend platform tests
 
 Runs backend tests natively on the additional supported operating systems:
 
@@ -126,7 +126,7 @@ CI treats caches only as performance optimizations; a cache miss must never chan
 Large runtime media is intentionally not committed to Git. Package qualification retrieves the shared payload from the repository's GitHub Release:
 
 ```text
-tag:   baseline-data
+tag:   baseline-data-v1
 asset: baseline-data.zip
 ```
 
@@ -197,17 +197,21 @@ Merge Gate
 It depends on every required qualification job and succeeds only when all of them report `success`:
 
 - Code Quality
-- Backend Linux
-- Frontend + Playwright Linux
-- Firmware
-- Platform Tests
-- Linux Package Qualification
-- Windows Package Qualification
-- macOS Package Qualification
+- Backend Tests (Linux)
+- Frontend + E2E Tests (Linux)
+- Firmware Tests + Build
+- Backend Tests (Windows) and Backend Tests (macOS)
+- Package Qualification (Linux)
+- Package Qualification (Windows)
+- Package Qualification (macOS)
 
 This provides one stable branch-protection contract even if the internal CI graph changes later.
 
 The `master` repository ruleset should require `Merge Gate` before merge rather than independently requiring every implementation job. If a new mandatory qualification job is added, it must also be added to `merge-gate.needs` and to the final result check.
+
+## Tag-triggered release qualification
+
+Merging to `master` does not publish a release. `.github/workflows/release.yml` validates protected `v*` tags, re-runs code quality, backend/platform, frontend/E2E and firmware checks, and builds/smokes all three native packages without restoring dependency caches. Publication waits for qualification, native artifacts and SBOMs, validates the exact asset set, then publishes a draft. Follow the [release runbook](release-process.md); manual installer acceptance and controlled benchmarks are recorded in the [release reports](../reports/README.md).
 
 ## Ownership and change rules
 

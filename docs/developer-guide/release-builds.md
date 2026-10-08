@@ -2,6 +2,24 @@
 
 This document explains how **release mode** works for RhythmicRiddles (Cestereg), how to build production artifacts on each platform, and how embedded PostgreSQL + assets + frontend are bundled so end users can **click and run** without installing developer tooling.
 
+## Official release contract
+
+Official Foundation installers are built on GitHub-hosted native runners by `.github/workflows/release.yml`. Laptop/VM builds are for development and reproduction; manual release acceptance uses the downloaded CI-built artifact.
+
+| Platform | Architecture | Official artifact | Release runner |
+|---|---|---|---|
+| Linux | x64 | `.deb` | `ubuntu-24.04` |
+| Windows | x64 | `.msi` | `windows-2025` |
+| macOS Intel | x64 | `.dmg` | `macos-15-intel` |
+
+The native app-images below are supported local build/smoke outputs; portable archives are not part of the official release asset set. Apple Silicon is not a native qualified target; Rosetta use requires separate manual validation.
+
+Protected `v0.2.0-rc.N` tags publish prereleases; `v0.2.0` publishes the final release. Both requalify without restoring dependency caches. Manifests, CycloneDX SBOMs, `SHA256SUMS` and GitHub attestations accompany installers. Keep published tags/assets immutable; fixes require a new RC or release. Repository release immutability must be enabled in GitHub settings.
+
+The existing [release configuration](../../scripts/release/release-config.json) intentionally keeps source versions at `0.3.0` and Foundation release identity at `0.2.0`. Linux/Windows builders accept `RELEASE_VERSION` for native package version fields. macOS currently uses native package version `1.0.0` as a jpackage workaround. Its official filename and manifest still identify `0.2.0`; manifests record `sourceVersion: 0.3.0`. Do not infer the support version from a native package field or the development POM alone.
+
+Follow the [operator runbook](release-process.md) for tags, verification, manual acceptance and evidence. Release manifests supply version, build code and full SHA for support.
+
 ## Native package smoke test
 
 Run package tests on the same operating system that created the app image; `jpackage` images are not cross-platform artifacts. The fast source contract is run from `apps/frontend` with `npm run test:release-contract`. It prevents Maven/frontend Node/npm drift, native package-version drift, missing platform propagation, invalid `embeddb` values, and the Windows builder accidentally ignoring non-zero Maven/jpackage exit codes.
@@ -159,7 +177,7 @@ A release build is composed of:
 
 Native package qualification starts from a clean checkout, so it materializes two ignored/external inputs before calling the normal builders:
 
-- `baseline-data.zip` is downloaded from the repository's `baseline-data` GitHub Release and extracted as the root `data/` payload.
+- `baseline-data.zip` is downloaded from the repository's immutable `baseline-data-v1` GitHub Release (verified with `gh release verify-asset` before extraction) and extracted as the root `data/` payload.
 - a minimal `application-production.yml` is generated with loopback Actuator `health`, `info`, and `shutdown` endpoints required by the package-smoke lifecycle.
 
 CI package builds use the normal builders with Maven tests skipped; test execution remains owned by the dedicated backend/platform jobs and the final merge gate still requires both test and package results. Windows CI prepares the PostgreSQL 18 client from the official binary archive (cached by version) instead of installing a database server solely for the pg-client packer.
@@ -485,7 +503,7 @@ Run:
 
 ### MSI installer notes
 
-The Windows script can build both `.exe` and `.msi` installers from the same app-image. If WiX is missing, `jpackage` will still build the portable app-image but **installer** generation will fail.
+The Windows script creates an `.exe` launcher inside the app-image and a separate `.msi` installer. If WiX is missing, `jpackage` will still build the portable app-image but **installer** generation will fail.
 After installing WiX, verify that `candle.exe` and `light.exe` are available from a fresh PowerShell session before re-running the build script.
 
 ### Post-build cleanup behavior
@@ -503,7 +521,7 @@ The macOS builder script is:
 
 - `scripts/prod/build/build_macos_jpackage.sh`
 
-### Builder status and supported architectur
+### Builder status and supported architecture
 
 The current macOS packaging flow is implemented and validated on **Intel macOS** (`x86_64`). The current packaged pg-client bundle is also Intel-only (`macos-x86_64`). Apple Silicon users can run the Intel build through **Rosetta** until a native Apple Silicon builder is available.
 

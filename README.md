@@ -1,5 +1,9 @@
 # RhytmicRiddles
 
+[![CI](https://github.com/Joohnyde/rhythmic-riddles/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Joohnyde/rhythmic-riddles/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/Joohnyde/rhythmic-riddles)](https://github.com/Joohnyde/rhythmic-riddles/releases)
+[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-lightgrey)](LICENSE)
+
 RhytmicRiddles is a live, pub-quiz style music guessing game. A **10s snippet** plays on a big screen (TV app). Teams **buzz in** using 433MHz RF buttons and verbally answer (typically _artist + title_). A moderator runs the game from a separate **Admin app** that controls flow, scoring, and fairness.
 
 This repository is an **"enterprise-around-the-code"** setup: documentation, developer onboarding, strict CI, quality gates, and reproducible environments—so a 3-person team can ship reliably without heavy process.
@@ -93,7 +97,7 @@ See: `docs/developer-guide/assets.md`
 
 ## Documentation
 
-Start here: `docs/index.md`
+Start here: [Documentation index](docs/index.md)
 
 Key docs:
 
@@ -102,6 +106,11 @@ Key docs:
 - API conventions: `docs/developer-guide/api.md`
 - Error catalog: `docs/developer-guide/exceptions.md`
 - Logging policy: `docs/developer-guide/logging.md`
+- [Testing and CI tiers](docs/developer-guide/testing/testing-overview.md)
+- [CI security](docs/developer-guide/ci-security.md)
+- [Native release builds](docs/developer-guide/release-builds.md)
+- [RC/final release runbook](docs/developer-guide/release-process.md)
+- [Release evidence reports](docs/reports/README.md)
 
 ## Contributing & workflow
 

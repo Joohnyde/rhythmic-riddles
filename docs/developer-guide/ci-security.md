@@ -61,7 +61,7 @@ Build, test and package-qualification jobs are intentionally secretless. They mu
 
 Package qualification may build and execute application code, installers and smoke tests, but it must not have release-write authority.
 
-If release publication is added later, keep publication in a separate narrowly privileged job. Prefer no repository checkout there: download the intended trusted artifacts, publish them, and finish. Do not run Maven, npm, tests, installers or arbitrary repository scripts in that privileged publication job.
+Release publication runs in the separate `publish` job of `.github/workflows/release.yml`, after all release qualification jobs succeed. It checks out the tagged source to run the repository-owned checksum/asset validators, downloads only release artifacts from the same workflow, creates attestations, verifies the draft asset set, and publishes. It does not run Maven, npm installs, tests, or installers. Review changes to this privileged job and its validators as release-authority changes.
 
 For future external infrastructure, prefer GitHub OIDC and short-lived provider credentials over stored long-lived keys. Constrain provider trust to the intended repository, workflow/ref and environment.
 

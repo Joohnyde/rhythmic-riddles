@@ -110,7 +110,7 @@ Run it from `apps/frontend`:
 npm run test:release-contract
 ```
 
-The native smoke runner is separate because a jpackage image must run on the OS that built it. Build a native image, then run `node scripts/prod/package-smoke.mjs --app <native-launcher>`. The smoke runner detects embedded-vs-external DB mode from the packaged launcher profile. Embedded mode uses an isolated application-data directory and verifies the packaged SQL run-once marker. External mode deliberately starts no database: it uses the PostgreSQL configured by `application-production.yml` (or normal `APP_DB_*` environment overrides), because provisioning belongs to the deployment environment for an `--embeddb=false` package. Both modes poll Actuator, prove schema compatibility with a real application write, assert production Swagger/OpenAPI remain disabled, boot both Angular entry points in Chromium, fetch packaged snippet/answer/album-image/team-icon resources from that same-origin browser context, persist a room across a clean application restart, isolate logs, and verify packaged-process cleanup. See `release-builds.md` for native launcher paths and external-DB requirements.
+The native smoke runner is separate because a jpackage image must run on the OS that built it. Build a native image, then run `node scripts/prod/package-smoke.mjs --app <native-launcher>`. The smoke runner detects embedded-vs-external DB mode from the packaged launcher profile. Embedded mode uses an isolated application-data directory and verifies the packaged SQL run-once marker. External mode deliberately starts no database: it uses the PostgreSQL configured by `application-production.yml` (or normal `APP_DB_*` environment overrides), because provisioning belongs to the deployment environment for an `--embeddb=false` package. Both modes poll Actuator, prove schema compatibility with a real application write, assert production Swagger/OpenAPI remain disabled, boot both Angular entry points in Chromium, fetch packaged snippet/answer/album-image/team-icon resources from that same-origin browser context, persist a room across a clean application restart, isolate logs, and verify packaged-process cleanup. See [release builds](../release-builds.md) for native launcher paths and external-DB requirements.
 
 ## Hardware / receiver testing
 
@@ -286,6 +286,18 @@ At minimum:
 - changes to WebSocket-visible state require payload and side-effect assertions;
 - changes to persisted recovery state require DB-backed recovery tests;
 - changes to query behavior require repository/query integration tests.
+
+## Qualification tiers
+
+| Tier | Implemented checks / responsibility |
+|---|---|
+| Local developer | Formatting/lint, focused tests and release contracts; full suites and native smoke when relevant |
+| PR to `master` | Code quality, backend Linux verification, frontend unit/catalog/contracts + Playwright, firmware, Windows/Intel macOS backend tests, and all three native package smoke jobs |
+| Push to `master` | The same CI qualification; periodic posture reporting remains separate; no public release |
+| RC/final `v*` tag | Release identity/ancestry validation, fresh no-cache logical and native qualification, SBOMs, checksums, attestations, exact-asset validation and publication |
+| Manual / HIL | Downloaded RC installer acceptance on Linux/Windows/Intel macOS, controlled Linux benchmarks, physical receiver/RF checks where equipment is available |
+
+Coverage is collected by the existing backend/frontend jobs; release evidence is recorded in the [report index](../../reports/README.md). Shared-runner latency is not a performance SLA. See the [release runbook](../release-process.md) and [performance harness](../../../perf/README.md).
 
 ## CI expectations
 

@@ -22,6 +22,8 @@
 - [EditorConfig](developer-guide/editorconfig.md)
 - [Logging](developer-guide/logging.md)
 - [Release builds](developer-guide/release-builds.md)
+- [RC/final release runbook](developer-guide/release-process.md)
+- [Security policy / private reporting](../SECURITY.md)
 - [Continuous integration & merge qualification](developer-guide/ci.md)
 - [CI security](developer-guide/ci-security.md)
 
@@ -34,12 +36,12 @@
 - [Test catalog](developer-guide/testing/test-catalog.md)
 - [Unit testing](developer-guide/testing/unit-testing.md)
 
+## Release evidence
+
+- [Report index](reports/README.md)
+
 ## Hardware docs
 
 - [Hardware overview](developer-guide/hardware/hardware-setup-guide.md)
 - [Bill of Materials](developer-guide/hardware/bom.md)
 - [Receiver testing](developer-guide/hardware/receiver-testing.md)
-
-## ADRs
-
-- [ADR-0001: Monorepo](adr/0001-monorepo.md)
