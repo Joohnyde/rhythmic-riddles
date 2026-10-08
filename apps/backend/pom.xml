@@ -57,7 +57,7 @@
           Java language level used to compile/run.
           (Boot 4 is expected to support very recent Java versions; ensure your toolchain matches.)
         -->
-        <java.version>25</java.version>
+        <java.version>21</java.version>
 
         <!-- =========================
         Build switches
@@ -386,6 +386,25 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <!-- no special config here; external-db profile adds excludes when embeddb=false -->
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.15</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.cyclonedx</groupId>
