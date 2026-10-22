@@ -33,6 +33,7 @@ export class SeekTimerComponent implements OnChanges, OnDestroy {
   /** Optional debug display for admin. */
   @Input() showDebug = false;
 
+
   @Output() completed = new EventEmitter<void>();
   @Output() timeChange = new EventEmitter<number>();
   @Output() stateOut = new EventEmitter<{ seek: number; remaining: number }>();

@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,6 +65,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -79,9 +81,9 @@ public class InterruptServiceImplTest {
 
       // Allow 1ms tolerance because calculateSeek() uses LocalDateTime.now(),
       // which may advance slightly between creating `start` and executing the method.
-      final long TOLERANCE = 1;
-      final long seek = interruptService.calculateSeek(start, scheduleId);
-      assertTrue(13000L + TOLERANCE >= seek);
+      final double TOLERANCE = 0.001;
+      final double seek = interruptService.calculateSeek(start, scheduleId);
+      assertTrue(13.0 + TOLERANCE >= seek);
     }
 
     @Test
@@ -464,6 +466,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -472,10 +475,10 @@ public class InterruptServiceImplTest {
 
       when(interruptRepository.findInterrupts(eq(start), any(UUID.class))).thenReturn(null);
 
-      final long seek = interruptService.calculateSeek(start, UUID.randomUUID());
+      final double seek = interruptService.calculateSeek(start, UUID.randomUUID());
 
       assertTrue(seek >= 0L);
-      assertTrue(seek <= 2500L);
+      assertTrue(seek <= 2.5);
     }
 
     @Test
@@ -759,6 +762,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -767,7 +771,7 @@ public class InterruptServiceImplTest {
       final UUID scheduleId = UUID.randomUUID();
       when(interruptRepository.findInterrupts(start, scheduleId)).thenReturn(null);
 
-      final long seek = interruptService.calculateSeek(start, scheduleId);
+      final double seek = interruptService.calculateSeek(start, scheduleId);
 
       assertNotNull(seek);
     }
@@ -780,12 +784,12 @@ public class InterruptServiceImplTest {
           new ArrayList<>(List.of(new InterruptFrame(start.plusSeconds(2), start.plusSeconds(5))));
       when(interruptRepository.findInterrupts(start, scheduleId)).thenReturn(frames);
 
-      final long seek = interruptService.calculateSeek(start, scheduleId);
+      final double seek = interruptService.calculateSeek(start, scheduleId);
 
       // 0-2s played before pause, then 5s-now after pause. Any positive result means synthetic tail
       // was applied.
       assertNotNull(seek);
-      org.junit.jupiter.api.Assertions.assertTrue(seek >= 2_000L);
+      org.junit.jupiter.api.Assertions.assertTrue(seek >= 2.0);
     }
 
     @Test
@@ -1299,6 +1303,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -1307,7 +1312,7 @@ public class InterruptServiceImplTest {
       final UUID scheduleId = UUID.randomUUID();
       when(interruptRepository.findInterrupts(startedAt, scheduleId)).thenReturn(null);
 
-      final long seek = interruptService.calculateSeek(startedAt, scheduleId);
+      final double seek = interruptService.calculateSeek(startedAt, scheduleId);
 
       assertTruePositive(seek);
     }
@@ -1477,8 +1482,8 @@ public class InterruptServiceImplTest {
       verify(interruptRepository).saveAndFlush(pause);
     }
 
-    private static void assertTruePositive(final long seek) {
-      org.junit.jupiter.api.Assertions.assertTrue(seek >= 1500L && seek <= 4000L);
+    private static void assertTruePositive(final double seek) {
+      org.junit.jupiter.api.Assertions.assertTrue(seek >= 1.5 && seek <= 4.0);
     }
 
     private static GameEntity game(final String code) {
@@ -1539,6 +1544,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test

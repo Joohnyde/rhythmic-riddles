@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,7 @@ class InterruptServiceImplWebSocketTest {
       @Mock private BroadcastGateway broadcastGateway;
       @Mock private PresenceGateway presenceGateway;
 
+      @Mock private PlaybackDelayRepository playbackDelayRepository;
       @InjectMocks private InterruptServiceImpl service;
 
       @Test
@@ -360,6 +362,8 @@ class InterruptServiceImplWebSocketTest {
     @BeforeEach
     void setUp() {
       service = new InterruptServiceImpl();
+        ReflectionTestUtils.setField(service, "playbackDelayRepository",
+            org.mockito.Mockito.mock(com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository.class));
       ReflectionTestUtils.setField(service, "teamService", teamService);
       ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
       ReflectionTestUtils.setField(service, "gameRepository", gameRepository);

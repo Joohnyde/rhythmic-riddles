@@ -13,6 +13,7 @@ import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
 import com.cevapinxile.cestereg.core.service.TeamService;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
+import com.cevapinxile.cestereg.persistence.entity.PlaybackDelayEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +50,7 @@ class InterruptServiceImplClockTest {
   @Mock private BroadcastGateway broadcastGateway;
   @Mock private PresenceGateway presenceGateway;
 
+  @Mock private PlaybackDelayRepository playbackDelayRepository;
   @InjectMocks private InterruptServiceImpl interruptService;
 
   @BeforeEach
@@ -66,9 +69,57 @@ class InterruptServiceImplClockTest {
                     new InterruptFrame(start.plusSeconds(5), start.plusSeconds(10)),
                     new InterruptFrame(start.plusSeconds(18), start.plusSeconds(20)))));
 
-    final long seek = interruptService.calculateSeek(start, scheduleId);
+    final double seek = interruptService.calculateSeek(start, scheduleId);
 
-    assertEquals(13_000L, seek);
+    assertEquals(13.0, seek, 0.001);
+  }
+
+  @Test
+  void calculateSeekMergesNestedInterruptsAndMultiplePlaybackDelays() {
+    final LocalDateTime start = NOW.minusSeconds(20);
+    final UUID scheduleId = UUID.randomUUID();
+    final ScheduleEntity schedule = new ScheduleEntity(scheduleId);
+    final PlaybackDelayEntity initial = delay(schedule, start, start.plusSeconds(3));
+    final PlaybackDelayEntity buffering = delay(schedule, start.plusSeconds(9), start.plusSeconds(12));
+    final PlaybackDelayEntity open = delay(schedule, start.plusSeconds(16), null);
+    when(interruptRepository.findInterrupts(start, scheduleId)).thenReturn(List.of(
+        new InterruptFrame(start.plusSeconds(1), start.plusSeconds(2)),
+        new InterruptFrame(start.plusSeconds(10), start.plusSeconds(11)),
+        new InterruptFrame(start.plusSeconds(17), null)));
+    when(playbackDelayRepository.findBySchedule(scheduleId)).thenReturn(List.of(initial, buffering, open));
+
+    assertEquals(10.0, interruptService.calculateSeek(start, scheduleId), 0.001);
+    // Recovery must not mutate playback attempts or fabricate acknowledgements.
+    verify(playbackDelayRepository, org.mockito.Mockito.never()).saveAndFlush(
+        org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void calculateSeekHandlesTvLoadingInterruptedByDisconnectThenActualPlayback() {
+    final LocalDateTime start = NOW.minusSeconds(8);
+    final UUID scheduleId = UUID.randomUUID();
+    final ScheduleEntity schedule = new ScheduleEntity(scheduleId);
+    when(interruptRepository.findInterrupts(start, scheduleId)).thenReturn(List.of(
+        new InterruptFrame(start.plusNanos(900_000_000), start.plusSeconds(5))));
+    when(playbackDelayRepository.findBySchedule(scheduleId)).thenReturn(List.of(
+        delay(schedule, start, start.plusSeconds(6))));
+    assertEquals(2.0, interruptService.calculateSeek(start, scheduleId), 0.001);
+  }
+
+  @Test
+  void calculateSeekRemainsZeroWhenFirstDelayIsStillOpen() {
+    final LocalDateTime start = NOW.minusSeconds(12);
+    final UUID scheduleId = UUID.randomUUID();
+    when(playbackDelayRepository.findBySchedule(scheduleId)).thenReturn(List.of(
+        delay(new ScheduleEntity(scheduleId), start, null)));
+    assertEquals(0.0, interruptService.calculateSeek(start, scheduleId), 0.001);
+  }
+
+  private static PlaybackDelayEntity delay(final ScheduleEntity schedule,
+      final LocalDateTime start, final LocalDateTime acknowledged) {
+    final PlaybackDelayEntity delay = new PlaybackDelayEntity(schedule, start);
+    delay.setAcknowledgedAt(acknowledged);
+    return delay;
   }
 
   @Test

@@ -30,6 +30,7 @@ import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,8 +169,7 @@ public class GameServiceImpl implements GameService {
         /* The song isn't revealed so we have to figure out if it finished
         "seek" = effective playback time, excluding pauses/interrupts, computed from interrupt frames. */
         final double seek =
-            interruptService.calculateSeek(lastPlayedSong.getStartedAt(), lastPlayedSong.getId())
-                / 1000.0;
+            interruptService.calculateSeek(lastPlayedSong.getStartedAt(), lastPlayedSong.getId());
         final double remaining =
             lastPlayedSong.getTrackId().getSongId().getSnippetDuration() - seek;
         if (remaining < 0) {
@@ -183,6 +183,7 @@ public class GameServiceImpl implements GameService {
         Fields neccesairy for proper, continued playback */
         json.put("seek", seek);
         json.put("remaining", remaining);
+        // TV registers a fresh or existing attempt before audio starts after recovery.
         // We need to figure out if we are interrupted. Find last unresolved team and system
         // interrupt.
         final InterruptEntity[] interrupts =

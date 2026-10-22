@@ -363,6 +363,45 @@ WS side-effect:
 - broadcast `song_next`
 - or fresh `welcome` snapshot on stage transition
 
+## TV playback synchronization
+
+The TV alone registers an open loading interval before starting playback.
+Song start, replay and read-only `contextFetch` never create delays. The TV
+acknowledges only after `playing` and real media-clock progress; all seek values
+are seconds on the wire and all stored intervals use backend timestamps.
+
+### POST /api/v1/games/{roomCode}/delays
+
+TV-only workflow. Body: `{"scheduleId":"uuid"}`. Returns the attempt UUID as a JSON
+string (`200`). TV calls registration **before attempting playback**. Repeated requests
+reuse an existing open interval on the current schedule; a previous replay's open
+interval is replaced when TV next registers. Song start/replay does not insert delays.
+
+- `404` — schedule or room not found (`E001`)
+- `409` — wrong stage, stale or revealed schedule (`E003`)
+- `503` — Admin or TV disconnected (`E004`)
+- `422` — schedule belongs to a different room (`E002`)
+- Room-row locking and the unique open-delay index prevent concurrent duplicate attempts.
+
+### PUT /api/v1/games/{roomCode}/delays/{delayId}/acknowledge
+
+Body: none. Idempotent (`200`): duplicate requests do not rebroadcast `play`.
+Both clients must be present. After commit, the backend emits `play` to Admin
+with `scheduleId`; Admin's countdown begins. Only timestamps are stored, not a
+derived duration column.
+
+- `404` — attempt or room not found (`E001`)
+- `409` — stale replay or wrong stage (`E003`)
+- `503` — Admin or TV disconnected (`E004`)
+- `422` — attempt belongs to a different room (`E002`)
+
+The TV does not report completion. Admin finishes at its own timer zero. Mid-song
+buffering is not supported and does not produce another WebSocket message.
+
+**Important:** This existing room-code API is not authenticated as a TV-only principal;
+clients possessing the code can call these endpoints. Do not treat room-code ownership
+checks as user authentication. A dedicated TV session token is a future hardening task.
+
 ## POST /api/v1/games/{roomCode}/interrupts
 
 Creates interrupt.

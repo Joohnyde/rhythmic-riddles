@@ -76,7 +76,7 @@ public class GameServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
-    @InjectMocks private GameServiceImpl gameService;
+      @InjectMocks private GameServiceImpl gameService;
 
     @Test
     void createGameRejectsNegativeAlbumCount() {
@@ -255,7 +255,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(6000L);
+          .thenReturn(6.0);
 
       final HashMap<String, Object> json = gameService.contextFetch("AKKU");
 
@@ -275,7 +275,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(4000L);
+          .thenReturn(4.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {teamInterrupt, null});
 
@@ -297,7 +297,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(3000L);
+          .thenReturn(3.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {null, pause});
 
@@ -315,7 +315,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(2500L);
+          .thenReturn(2.5);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {null, null});
 
@@ -323,6 +323,8 @@ public class GameServiceImplTest {
 
       assertEquals(2.5, json.get("seek"));
       assertEquals(22.5, json.get("remaining"));
+      assertFalse(json.containsKey("playbackWaiting"));
+      assertFalse(json.containsKey("delayId"));
       assertFalse(json.containsKey("error"));
       assertFalse(json.containsKey("answeringTeam"));
     }
@@ -561,7 +563,7 @@ public class GameServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
-    @InjectMocks private GameServiceImpl gameService;
+      @InjectMocks private GameServiceImpl gameService;
 
     @Test
     void contextFetchStageOneReturnsAlbumSelectionAgainWhenPreviousCategoryAlreadyStarted()
@@ -624,7 +626,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(scores);
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(8_000L);
+          .thenReturn(8.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {teamInterrupt, systemInterrupt});
 
@@ -758,7 +760,7 @@ public class GameServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
-    @InjectMocks private GameServiceImpl gameService;
+      @InjectMocks private GameServiceImpl gameService;
 
     @Test
     void contextFetchStageZeroReturnsEmptyTeamListWhenNoTeamsExist() throws Exception {
@@ -846,7 +848,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(scores);
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(5_500L);
+          .thenReturn(5.5);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {null, null});
 
@@ -877,7 +879,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(3_000L);
+          .thenReturn(3.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {pendingAnswer, null});
 
@@ -910,7 +912,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(2_000L);
+          .thenReturn(2.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {pendingAnswer, unresolvedSystem});
 
@@ -934,7 +936,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(6_000L);
+          .thenReturn(6.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {resolvedTeamAnswer, unresolvedSystem});
 
@@ -957,7 +959,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(4_000L);
+          .thenReturn(4.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {null, resolvedSystem});
 
@@ -977,7 +979,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(11_200L);
+          .thenReturn(11.2);
 
       final HashMap<String, Object> json = gameService.contextFetch("AKKU");
 
@@ -1104,7 +1106,7 @@ public class GameServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
-    @InjectMocks private GameServiceImpl gameService;
+      @InjectMocks private GameServiceImpl gameService;
 
     @Test
     void isChangeStageLegalRejectsNegativeStage() {
@@ -1371,7 +1373,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new java.util.ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(1_000L);
+          .thenReturn(1.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(
               new com.cevapinxile.cestereg.persistence.entity.InterruptEntity[] {null, null});
@@ -1418,7 +1420,7 @@ public class GameServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
-    @InjectMocks private GameServiceImpl gameService;
+      @InjectMocks private GameServiceImpl gameService;
 
     @Test
     void createGameRejectsNegativeAlbumCount() {
@@ -1494,7 +1496,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(scores);
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(5_000L);
+          .thenReturn(5.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {teamInterrupt, null});
 
@@ -1526,7 +1528,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(5_000L);
+          .thenReturn(5.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {null, pause});
 
@@ -1548,7 +1550,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(8_500L);
+          .thenReturn(8.5);
 
       final HashMap<String, Object> result = gameService.contextFetch("AKKU");
 
@@ -1695,7 +1697,7 @@ public class GameServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
-    @InjectMocks private GameServiceImpl gameService;
+      @InjectMocks private GameServiceImpl gameService;
 
     @Test
     void contextFetchStageTwoMissingScheduleFailsFastWithoutLoadingScoresOrInterrupts()
@@ -1727,7 +1729,7 @@ public class GameServiceImplTest {
       when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
       when(teamService.getTeamScores("AKKU")).thenReturn(new ArrayList<>());
       when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-          .thenReturn(1_000L);
+          .thenReturn(1.0);
       when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
           .thenReturn(new InterruptEntity[] {teamInterrupt, null});
 

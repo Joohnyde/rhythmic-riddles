@@ -34,3 +34,10 @@ BEGIN
       ADD CONSTRAINT ck_game_positive_limits CHECK (max_songs > 0 AND max_albums > 0);
   END IF;
 END $$;
+
+-- Playback waiting invariant for databases upgraded from an earlier schema.
+-- Run db_01_create_schema.sql first so the playback_delay table exists.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_playback_delay_open
+  ON public.playback_delay USING btree (schedule_id)
+  WHERE acknowledged_at IS NULL;
+
