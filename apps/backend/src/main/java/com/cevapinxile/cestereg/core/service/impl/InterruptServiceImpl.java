@@ -4,6 +4,8 @@
  */
 package com.cevapinxile.cestereg.core.service.impl;
 
+import static com.cevapinxile.cestereg.core.service.support.ScheduleOwnership.validate;
+
 import com.cevapinxile.cestereg.api.quiz.dto.request.AnswerRequest;
 import com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame;
 import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
@@ -16,18 +18,20 @@ import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
 import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
 import com.cevapinxile.cestereg.core.service.InterruptService;
 import com.cevapinxile.cestereg.core.service.TeamService;
+import com.cevapinxile.cestereg.core.service.support.PlaybackTimeline;
 import com.cevapinxile.cestereg.core.service.support.RoomLocks;
 import com.cevapinxile.cestereg.core.service.support.TransactionCallbacks;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
+import com.cevapinxile.cestereg.persistence.entity.PlaybackDelayEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
 import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +50,7 @@ public class InterruptServiceImpl implements InterruptService {
   private static final Logger LOG = LoggerFactory.getLogger(InterruptServiceImpl.class);
 
   @Autowired private TeamService teamService;
+  @Autowired private PlaybackDelayRepository playbackDelayRepository;
 
   @Autowired private InterruptRepository interruptRepository;
 
@@ -63,37 +68,30 @@ public class InterruptServiceImpl implements InterruptService {
   @Autowired(required = false)
   private Clock clock = Clock.systemDefaultZone();
 
-  @Override
   /**
-   * Calculates the effective playback time ("seek") by subtracting time spent in interrupts.
-   *
-   * <p>Important invariant: Interrupt frames must be either fully disjoint OR properly nested.
-   * Partially overlapping interrupts are not allowed because they make "paused time" ambiguous (you
-   * would either double-count or under-count overlap).
-   *
-   * <p>To enforce this, we query only the outermost interrupt frames and subtract their durations.
-   * Nested interrupts are contained inside the outer frame and must not be counted separately.
-   *
-   * @param startTimestamp timestamp from which playback time is calculated
-   * @param scheduleId identifier of the schedule whose interrupts are considered
-   * @return effective playback time in milliseconds, excluding time spent paused by interrupts
+   * Returns effective playback seconds. Interrupts and TV-loading delays can overlap; their union
+   * is subtracted once, including open intervals. Neither client clock participates.
    */
-  public long calculateSeek(final LocalDateTime startTimestamp, final UUID scheduleId) {
-    List<InterruptFrame> interrupts =
+  @Override
+  public double calculateSeek(final LocalDateTime startTimestamp, final UUID scheduleId) {
+    final List<InterruptFrame> blocked = new ArrayList<>();
+    final List<InterruptFrame> interrupts =
         interruptRepository.findInterrupts(startTimestamp, scheduleId);
-    if (interrupts == null) {
-      interrupts = new ArrayList<>();
+    if (interrupts != null) {
+      for (InterruptFrame frame : interrupts) {
+        blocked.add(new InterruptFrame(frame.getStart(), frame.getEnd()));
+      }
     }
-    if (interrupts.isEmpty() || interrupts.getLast().getEnd() != null) {
-      interrupts.add(new InterruptFrame(LocalDateTime.now(clock), null));
+    final List<PlaybackDelayEntity> delays = playbackDelayRepository.findBySchedule(scheduleId);
+    if (delays != null) {
+      for (PlaybackDelayEntity delay : delays) {
+        if (delay.getSentAt().isBefore(startTimestamp)) {
+          continue;
+        }
+        blocked.add(new InterruptFrame(delay.getSentAt(), delay.getAcknowledgedAt()));
+      }
     }
-    LocalDateTime end = startTimestamp;
-    long seek = 0;
-    for (InterruptFrame interrupt : interrupts) {
-      seek += Duration.between(end, interrupt.getStart()).toMillis();
-      end = interrupt.getEnd();
-    }
-    return seek;
+    return PlaybackTimeline.seekSeconds(startTimestamp, LocalDateTime.now(clock), blocked);
   }
 
   @Override
@@ -108,13 +106,13 @@ public class InterruptServiceImpl implements InterruptService {
   @Override
   /* Interrupt invariant (critical for seek calculation):
    Interrupts may be DISJOINT (A ends, then B starts) or NESTED (B fully inside A).
-   Partially overlapping interrupts are forbidden because paused time becomes ambiguous
-   (overlap would be double-counted or missed).
+   Partially overlapping interrupts remain forbidden by gameplay rules, even though
+   PlaybackTimeline merges overlapping intervals safely.
    Forbidden example (partial overlap):
     1) TV disconnect triggers interrupt A (system pause)
     2) While A is active, a team buzz triggers interrupt B (team pause)
     3) Admin resolves A when TV reconnects, but B is still active
-       → A and B now overlap only partially (invalid state).
+       → A and B now overlap only partially (forbidden gameplay state).
   Therefore, creating a team interrupt while any system interrupt is active is only allowed
   if the new interrupt is guaranteed to be fully nested and resolved before the outer one ends. */
   @Transactional(rollbackOn = DerivedException.class)
@@ -139,8 +137,7 @@ public class InterruptServiceImpl implements InterruptService {
         throw new UnauthorizedException(
             "Team with id " + teamId + " isn't part of the game " + roomCode);
       }
-      final double seek =
-          calculateSeek(lastPlayedSong.getStartedAt(), lastPlayedSong.getId()) / 1000.0;
+      final double seek = calculateSeek(lastPlayedSong.getStartedAt(), lastPlayedSong.getId());
       final double remaining = lastPlayedSong.getTrackId().getSongId().getSnippetDuration() - seek;
       final List<InterruptEntity> interruptList = lastPlayedSong.getInterruptList();
       if (interruptList != null) {
@@ -195,7 +192,7 @@ public class InterruptServiceImpl implements InterruptService {
       throw new InvalidReferencedObjectException(
           "Order with id " + lastPlayedScheduleId + " does not exist");
     }
-    validateScheduleOwnership(maybeSchedule.get(), game, roomCode);
+    validate(maybeSchedule.get(), game, roomCode);
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
     }
@@ -229,7 +226,7 @@ public class InterruptServiceImpl implements InterruptService {
       throw new InvalidArgumentException(
           "Room code " + roomCode + " isn't consistent with the answer");
     }
-    validateScheduleOwnership(answer.getScheduleId(), game, roomCode);
+    validate(answer.getScheduleId(), game, roomCode);
     if (answer.isCorrect() != null || answer.getResolvedAt() != null) {
       throw new GuessNotAllowedException("That guess was already answered");
     }
@@ -268,7 +265,7 @@ public class InterruptServiceImpl implements InterruptService {
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
     final Optional<ScheduleEntity> maybeSchedule = scheduleRepository.findById(scheduleId);
     if (maybeSchedule.isPresent()) {
-      validateScheduleOwnership(maybeSchedule.get(), game, roomCode);
+      validate(maybeSchedule.get(), game, roomCode);
     }
     return interruptRepository.findCorrectAnswer(scheduleId);
   }
@@ -298,17 +295,6 @@ public class InterruptServiceImpl implements InterruptService {
         pause.setScoreOrScenarioId(scenarioId);
         interruptRepository.saveAndFlush(pause);
       }
-    }
-  }
-
-  private void validateScheduleOwnership(
-      final ScheduleEntity schedule, final GameEntity game, final String roomCode)
-      throws InvalidArgumentException {
-    if (schedule.getCategoryId() != null
-        && schedule.getCategoryId().getGameId() != null
-        && !game.getId().equals(schedule.getCategoryId().getGameId().getId())) {
-      throw new InvalidArgumentException(
-          "Room code " + roomCode + " isn't consistent with schedule " + schedule.getId());
     }
   }
 }

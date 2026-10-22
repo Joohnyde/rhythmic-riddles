@@ -11,40 +11,37 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * @author denijal Manages interruptions of song playback (team answers and system pauses) and
- *     derives effective playback position ("seek") from persisted interrupt frames.
- *     <p><b>Critical invariant:</b> interrupt intervals must be either disjoint (A ends, then B
- *     starts) or fully nested (B completely inside A). Partially overlapping interrupts are
- *     forbidden because seek calculation subtracts only outermost frames; partial overlaps make
- *     paused time ambiguous (overlap would be under-counted or double-counted).
- *     <p>State derived here is used to reconstruct stage 2 UI after reconnects.
+ * Handles team and system interruptions and computes the effective playback position.
+ *
+ * <p>Team/system overlap restrictions remain gameplay rules, while playback seek safely subtracts
+ * the union of all interruptions and TV-registered loading intervals.
+ *
+ * @author denijal
  */
 public interface InterruptService {
   /**
-   * Computes effective playback time since {@code startTimestamp}, excluding time spent paused in
-   * interrupts.
+   * Computes effective playback time since {@code startTimestamp}, excluding interruptions and
+   * registered TV loading intervals.
    *
-   * <p>Implementation uses only the outermost interrupt frames to avoid double-counting nested
-   * pauses. This is correct under the invariant that interrupts are disjoint or nested (no partial
-   * overlap).
+   * <p>Uses the union of interrupt and TV-loading intervals, including open intervals.
    *
    * @param startTimestamp timestamp when snippet playback started
    * @param scheduleId schedule identifier for the current song
-   * @return effective playback duration in milliseconds
+   * @return effective playback duration in seconds
    */
-  long calculateSeek(LocalDateTime startTimestamp, UUID scheduleId);
+  double calculateSeek(LocalDateTime startTimestamp, UUID scheduleId);
 
   InterruptEntity[] getLastTwoInterrupts(LocalDateTime startTimestamp, UUID scheduleId);
 
   /**
    * Creates a team interrupt (buzz-in pause) for the currently active song in the given room.
    *
-   * <p>Interrupts may be disjoint or nested. Partial overlaps are forbidden because seek
-   * computation assumes paused time can be represented by outermost interrupt frames.
+   * <p>Partial overlaps remain forbidden by the gameplay rules; seek computation is independently
+   * overlap-safe.
    *
    * <p><b>Forbidden example (partial overlap):</b> TV disconnect interrupt active → team buzz
-   * interrupt starts → TV interrupt resolved → team interrupt still active. This would create a
-   * partial overlap and make seek ambiguous.
+   * interrupt starts → TV interrupt resolved → team interrupt still active. The gameplay
+   * prohibition still applies even though the seek calculator safely merges overlaps.
    *
    * @param roomCode room identifier
    * @param teamId team that buzzed in

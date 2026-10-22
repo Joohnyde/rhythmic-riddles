@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
  *     <p>An {@code InterruptFrame} defines a time window during which playback was paused due to
  *     either a team buzz-in or a system interrupt.
  *     <p>{@code end} may be {@code null} if the interrupt is still active.
- *     <p>Instances of this class are primarily used for seek calculation, where only outermost
- *     interrupt frames are considered.
+ *     <p>Seek calculation merges all interrupt frames together with TV-loading intervals to avoid
+ *     double-counting overlapping pauses.
  */
 public class InterruptFrame {
 

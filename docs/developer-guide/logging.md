@@ -185,3 +185,12 @@ When someone reports “it didn’t work”:
     - DB started (if embeddb)
     - assets base dir resolved
     - WS connect/disconnect sequence
+
+## TV playback lifecycle
+
+- `INFO` on the first successful TV playback acknowledgement for a schedule, with
+  schedule ID (no song answers or room passwords).
+- `DEBUG` on TV attempt registration, to avoid noisy successful retries.
+- Expected duplicate HTTP ACKs are idempotent and do not deserve `WARN` logs.
+- Unexpected errors follow the common controller handler; do not double-log the same
+  failure in controller and service. Log after committed operations, not before.

@@ -40,7 +40,8 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
           "song_reveal",
           "pause",
           "answer",
-          "error_solved");
+          "error_solved",
+          "play");
 
   private final ObjectMapper schemaMapper = new ObjectMapper();
   private final SchemaRegistry schemaRegistry =

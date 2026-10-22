@@ -97,6 +97,7 @@ erDiagram
   TRACK    ||--o{ SCHEDULE : plays
 
   SCHEDULE ||--o{ INTERRUPT : receives
+  SCHEDULE ||--o{ PLAYBACK_DELAY : measures_tv_loading
   TEAM     ||--o{ INTERRUPT : triggers
 
   ALBUM {
@@ -156,6 +157,13 @@ erDiagram
     uuid category_id FK
   }
 
+  PLAYBACK_DELAY {
+    uuid id PK
+    uuid schedule_id FK
+    timestamp sent_at
+    timestamp acknowledged_at
+  }
+
   INTERRUPT {
     uuid id PK
     uuid schedule_id FK
@@ -182,6 +190,22 @@ Columns:
 - `id (uuid, PK)` — application-assigned UUID
 - `name (varchar, required)` — display name
 - `custom_question (varchar, optional)` — optional per-album question override. If null the question is "Guess the song"
+
+### `playback_delay`
+
+**Purpose:** One record for each TV-reported loading attempt. Only the TV calls the
+registration endpoint; `sent_at` is the backend receipt time. `acknowledged_at` is
+set when the TV confirms measurable media-clock progress. A nullable
+`acknowledged_at` represents a pending attempt. The backend never registers a delay
+as a side effect of starting a song or reconstructing a disconnected session.
+The interval-union seek calculation subtracts waiting and interrupt time once.
+
+Columns: `id (uuid, PK)`, `schedule_id (uuid, FK schedule.id ON DELETE CASCADE)`,
+`sent_at (timestamp, required)`, `acknowledged_at (timestamp, nullable)`.
+
+Indexes: `(schedule_id, sent_at)` for history and partial unique `(schedule_id)`
+where `acknowledged_at IS NULL` for pending-attempt integrity. See
+[State machine & recovery](state-machine-and-recovery.md#tv-playback-admin-timer-and-recovery).
 
 ### `song`
 

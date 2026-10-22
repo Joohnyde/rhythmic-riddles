@@ -117,3 +117,17 @@ Recovery covers lobby, album selection, song playback, and winner state. Song re
 Additional suites protect persisted lifecycle transitions, room ownership for externally supplied identifiers, rollback of multi-write operations, PostgreSQL/score-cache coherence, the current `db_01 + db_04` initializer composition, simultaneous team buzzes and duplicate answers, system-vs-team lock ordering, category allocation races, and duplicate progress requests.
 
 All new tests must also be registered in `test-catalog.csv`; `TestCatalogConsistencyTest` enforces that catalog/code contract.
+
+### Playback timeline persistence
+
+`InterruptRepositoryIntegrationTest` verifies that PostgreSQL returns **all**
+interrupt intervals in order, including nested and open frames. It then combines
+the real interrupt rows and `playback_delay` rows using
+`PlaybackTimeline.seekSeconds`, ensuring overlapped time is deducted once. The
+repository intentionally does **not** filter out inner interrupts.
+
+`PlaybackDelayRepositoryIntegrationTest` verifies the partial unique index
+(one open delay per schedule), independent schedules, foreign-key cascade, and
+chronological loading history. `DatabaseSchemaIntegrationTest` verifies that
+the indexes and foreign key exist in the production bootstrap. These must use
+embedded PostgreSQL, never H2 or mocked repositories.

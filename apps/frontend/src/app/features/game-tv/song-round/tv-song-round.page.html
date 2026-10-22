@@ -8,6 +8,10 @@
     }
   </header>
 
+  @if (vm.playbackError) {
+    <p role="alert">{{ vm.playbackError }}</p>
+  }
+
   <section class="grid two">
     <div>
       @switch (vm.scenario) {
@@ -38,6 +42,11 @@
             <rr-audio-player
               data-testid="tv-snippet-audio"
               [src]="audioUrls.snippetUrl(vm.songId)"
+              [scheduleId]="vm.lastPlayedSong"
+              [playbackDelayId]="vm.playbackDelayId"
+              (playbackRequested)="store.requestPlayback($event)"
+              (playbackStarted)="store.acknowledgePlayback()"
+              (playbackFailed)="store.playbackFailed()"
               [seek]="vm.seek ?? 0"
               [remaining]="vm.remaining"
               (completed)="store.onTrackFinished()"

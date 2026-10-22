@@ -539,3 +539,19 @@ Ask two questions:
 2. If yes, is the schema outdated or is the runtime payload wrong?
 
 Do not automatically widen the schema. If the test created an impossible state, fix the test.
+
+### TV playback acknowledgement journey
+
+`e2e/specs/stage2/websocket-tv-playback-handshake.seeded.spec.ts` exercises the
+real TV REST registration and acknowledgement endpoints, backend WebSocket routing,
+and the Admin countdown in two Chromium clients. It controls only the TV browser's
+media clock, so it is deterministic without requiring an audio device or an MP3
+fixture. The test deliberately delays the registration request and verifies that
+Admin stays in its loading state until the TV ACK produces `play`. Admin then
+finishes on its local timer, without a TV completion message.
+
+This contract does **not** cover unexpected mid-song buffering (unsupported in
+V1) or guarantee simultaneous physical audio output across devices. The
+TV-exclusive registration design also counts any time before the first REST
+registration reaches the backend as elapsed playback. Seek tests document this
+accepted accounting gap instead of asserting impossible precision.

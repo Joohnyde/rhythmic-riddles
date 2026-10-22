@@ -34,7 +34,8 @@ class WebSocketProtocolGovernanceIntegrationTest extends AbstractWebSocketIntegr
           "song_reveal",
           "pause",
           "answer",
-          "error_solved");
+          "error_solved",
+          "play");
 
   @Test
   void frameCatalogListsExactlyTheDocumentedAngularMessageTypesInApiOrder() throws Exception {

@@ -752,6 +752,11 @@ class WebSocketEventAndContractTest {
       @BeforeEach
       void setUp() {
         service = new InterruptServiceImpl();
+        ReflectionTestUtils.setField(
+            service,
+            "playbackDelayRepository",
+            org.mockito.Mockito.mock(
+                com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository.class));
         ReflectionTestUtils.setField(service, "teamService", teamService);
         ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
         ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
@@ -919,6 +924,11 @@ class WebSocketEventAndContractTest {
       @BeforeEach
       void setUp() {
         service = new InterruptServiceImpl();
+        ReflectionTestUtils.setField(
+            service,
+            "playbackDelayRepository",
+            org.mockito.Mockito.mock(
+                com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository.class));
         ReflectionTestUtils.setField(service, "teamService", teamService);
         ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
         ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
@@ -984,6 +994,9 @@ class WebSocketEventAndContractTest {
         final InterruptEntity answer = new InterruptEntity(UUID.randomUUID());
         answer.setTeamId(team);
         answer.setScheduleId(schedule);
+        final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+        category.setGameId(game);
+        schedule.setCategoryId(category);
 
         when(gameRepository.findByCode("ROOM", 2)).thenReturn(game);
         when(presenceGateway.areBothPresent("ROOM")).thenReturn(true);
@@ -1009,6 +1022,9 @@ class WebSocketEventAndContractTest {
         final UUID scheduleId = UUID.randomUUID();
         final GameEntity game = new GameEntity(gameId);
         final ScheduleEntity schedule = new ScheduleEntity(scheduleId);
+        final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+        category.setGameId(game);
+        schedule.setCategoryId(category);
 
         when(gameRepository.findByCode("ROOM", 2)).thenReturn(game);
         when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.of(schedule));
@@ -1069,7 +1085,7 @@ class WebSocketEventAndContractTest {
         when(scheduleRepository.findLastPlayed(gameId)).thenReturn(schedule);
         when(teamService.getTeamScores("ROOM")).thenReturn(scores);
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(9000L);
+            .thenReturn(9.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {null, null});
 
@@ -1099,7 +1115,7 @@ class WebSocketEventAndContractTest {
         when(scheduleRepository.findLastPlayed(gameId)).thenReturn(schedule);
         when(teamService.getTeamScores("ROOM")).thenReturn(scorePayload());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(4000L);
+            .thenReturn(4.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {answerInterrupt, null});
 
@@ -1127,7 +1143,7 @@ class WebSocketEventAndContractTest {
         when(scheduleRepository.findLastPlayed(gameId)).thenReturn(schedule);
         when(teamService.getTeamScores("ROOM")).thenReturn(scorePayload());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(4000L);
+            .thenReturn(4.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {null, systemPause});
 
@@ -1151,7 +1167,7 @@ class WebSocketEventAndContractTest {
         when(scheduleRepository.findLastPlayed(gameId)).thenReturn(schedule);
         when(teamService.getTeamScores("ROOM")).thenReturn(scorePayload());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(12000L);
+            .thenReturn(12.0);
 
         final Map<?, ?> parsed = serialize(service.contextFetch("ROOM"));
 
