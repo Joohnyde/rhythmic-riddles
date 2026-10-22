@@ -114,6 +114,20 @@ This is used only by the E2E seed endpoint to reject bad test setup before persi
 
 A fail-fast room mutation could not acquire the PostgreSQL `FOR UPDATE NOWAIT` lock because another request is already changing the same game. The client should retry against the latest state.
 
+### Playback synchronization errors (existing error codes)
+
+Playback attempt endpoints intentionally **reuse** the existing error taxonomy:
+
+- `E001` when a schedule/attempt cannot be found.
+- `E002` when an attempt belongs to another game room.
+- `E003` when an acknowledgement belongs to an earlier replay, the schedule has
+  been revealed, or the game is no longer in stage 2. Repeated ACKs are
+  idempotent `200`, not errors.
+- `E004` (`503`) when either Admin or TV is disconnected during registration
+  or acknowledgement. Recovery re-registers and acknowledges after reconnect.
+
+No single-use playback exception or new `E011` code is required.
+
 ### E999 — Internal Server Error (500)
 
 Error that endpoints return when an unexpected Exception is caught.

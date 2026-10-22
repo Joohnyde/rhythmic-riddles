@@ -14,6 +14,8 @@ package com.cevapinxile.cestereg.common.exception;
  *       <li>{@code ScheduleServiceImpl.progress(...)} when both apps are required
  *       <li>{@code ScheduleServiceImpl.replaySong(...)} / {@code revealAnswer(...)}
  *       <li>{@code InterruptServiceImpl.resolveErrors(...)} / {@code answer(...)}
+ *       <li>{@code PlaybackDelayServiceImpl.registerPlaybackDelay(...)} / {@code
+ *           acknowledgePlaybackDelay(...)} before starting Admin countdown
  *       <li>{@code CategoryServiceImpl.pickAlbum(...)} when TV must be connected
  *     </ul>
  */

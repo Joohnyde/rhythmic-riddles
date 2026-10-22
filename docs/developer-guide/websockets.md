@@ -63,6 +63,7 @@ The frontend should treat `welcome` as a state recovery message. Runtime events 
 | `album_picked`   | TV         | Admin/team picks an album/category                                                    |
 | `song_next`      | Admin + TV | Next scheduled song starts                                                            |
 | `song_repeat`    | Admin + TV | Snippet replay is triggered                                                           |
+| `play` | Admin only | TV started media playback; Admin runs visual countdown |
 | `song_reveal`    | Admin + TV | Current song answer should be revealed                                                |
 | `pause`          | Admin + TV | Team buzz or system pause happens                                                     |
 | `answer`         | Admin + TV | Admin marks a team answer as correct/incorrect                                        |
@@ -500,6 +501,26 @@ Broadcast when snippet replay is triggered.
 | ----------- | ------ | -------------------------- |
 | `type`      | string | Always `song_repeat`       |
 | `remaining` | number | Snippet duration to replay |
+
+## TV playback start acknowledgement (Admin only)
+
+`welcome`, `song_next`, and `song_repeat` cause Admin to wait before starting its
+countdown. The TV registers a loading interval through the REST API before playing,
+then acknowledges once its audio clock has advanced. After commit, backend sends:
+
+```json
+{"type":"play","scheduleId":"0aa1d4fa-2bc3-4c72-a532-3343538cda92"}
+```
+
+Only `play` for the current schedule releases Admin's waiting state. The backend
+validates current schedule/replay and requires both clients to be connected for
+registration and acknowledgement. No extra `playback_waiting` or end-of-song
+messages exist. On reconnect the TV registers again; an existing open interval is
+reused, and a stale replay interval is invalidated.
+
+The two clients finish locally on their respective clocks; sample-accurate
+completion synchronization and unexpected mid-song buffering are not supported.
+Persisted recovery seek subtracts the union of loading and interruption intervals.
 
 ## `song_reveal`
 

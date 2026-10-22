@@ -37,6 +37,7 @@ import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -64,6 +65,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -79,9 +81,9 @@ public class InterruptServiceImplTest {
 
       // Allow 1ms tolerance because calculateSeek() uses LocalDateTime.now(),
       // which may advance slightly between creating `start` and executing the method.
-      final long TOLERANCE = 1;
-      final long seek = interruptService.calculateSeek(start, scheduleId);
-      assertTrue(13000L + TOLERANCE >= seek);
+      final double TOLERANCE = 0.001;
+      final double seek = interruptService.calculateSeek(start, scheduleId);
+      assertTrue(13.0 + TOLERANCE >= seek);
     }
 
     @Test
@@ -278,6 +280,9 @@ public class InterruptServiceImplTest {
     void resolveErrorsRequiresBothApps() throws Exception {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      schedule.setCategoryId(category);
       when(gameRepository.findByCode("AKKU", 2)).thenReturn(game);
       when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
@@ -294,6 +299,9 @@ public class InterruptServiceImplTest {
     void resolveErrorsResolvesAndBroadcastsPreviousScenario() throws Exception {
       final GameEntity game = game("AKKU", 2);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      schedule.setCategoryId(category);
       when(gameRepository.findByCode("AKKU", 2)).thenReturn(game);
       when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
       when(presenceGateway.areBothPresent("AKKU")).thenReturn(true);
@@ -438,6 +446,9 @@ public class InterruptServiceImplTest {
       track.setSongId(song);
       track.setAlbumId(album);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      schedule.setCategoryId(category);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(startedSecondsAgo));
       return schedule;
@@ -464,6 +475,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -472,10 +484,10 @@ public class InterruptServiceImplTest {
 
       when(interruptRepository.findInterrupts(eq(start), any(UUID.class))).thenReturn(null);
 
-      final long seek = interruptService.calculateSeek(start, UUID.randomUUID());
+      final double seek = interruptService.calculateSeek(start, UUID.randomUUID());
 
       assertTrue(seek >= 0L);
-      assertTrue(seek <= 2500L);
+      assertTrue(seek <= 2.5);
     }
 
     @Test
@@ -731,7 +743,9 @@ public class InterruptServiceImplTest {
       track.setAlbumId(album);
       track.setSongId(song);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
-      schedule.setCategoryId(null);
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      schedule.setCategoryId(category);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(4));
       schedule.setInterruptList(new ArrayList<>());
@@ -759,6 +773,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -767,7 +782,7 @@ public class InterruptServiceImplTest {
       final UUID scheduleId = UUID.randomUUID();
       when(interruptRepository.findInterrupts(start, scheduleId)).thenReturn(null);
 
-      final long seek = interruptService.calculateSeek(start, scheduleId);
+      final double seek = interruptService.calculateSeek(start, scheduleId);
 
       assertNotNull(seek);
     }
@@ -780,12 +795,12 @@ public class InterruptServiceImplTest {
           new ArrayList<>(List.of(new InterruptFrame(start.plusSeconds(2), start.plusSeconds(5))));
       when(interruptRepository.findInterrupts(start, scheduleId)).thenReturn(frames);
 
-      final long seek = interruptService.calculateSeek(start, scheduleId);
+      final double seek = interruptService.calculateSeek(start, scheduleId);
 
       // 0-2s played before pause, then 5s-now after pause. Any positive result means synthetic tail
       // was applied.
       assertNotNull(seek);
-      org.junit.jupiter.api.Assertions.assertTrue(seek >= 2_000L);
+      org.junit.jupiter.api.Assertions.assertTrue(seek >= 2.0);
     }
 
     @Test
@@ -1299,6 +1314,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -1307,7 +1323,7 @@ public class InterruptServiceImplTest {
       final UUID scheduleId = UUID.randomUUID();
       when(interruptRepository.findInterrupts(startedAt, scheduleId)).thenReturn(null);
 
-      final long seek = interruptService.calculateSeek(startedAt, scheduleId);
+      final double seek = interruptService.calculateSeek(startedAt, scheduleId);
 
       assertTruePositive(seek);
     }
@@ -1477,8 +1493,8 @@ public class InterruptServiceImplTest {
       verify(interruptRepository).saveAndFlush(pause);
     }
 
-    private static void assertTruePositive(final long seek) {
-      org.junit.jupiter.api.Assertions.assertTrue(seek >= 1500L && seek <= 4000L);
+    private static void assertTruePositive(final double seek) {
+      org.junit.jupiter.api.Assertions.assertTrue(seek >= 1.5 && seek <= 4.0);
     }
 
     private static GameEntity game(final String code) {
@@ -1539,6 +1555,7 @@ public class InterruptServiceImplTest {
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
 
+    @Mock private PlaybackDelayRepository playbackDelayRepository;
     @InjectMocks private InterruptServiceImpl interruptService;
 
     @Test
@@ -1725,6 +1742,9 @@ public class InterruptServiceImplTest {
       track.setSongId(song);
       track.setCustomAnswer("Answer");
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      schedule.setCategoryId(category);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       schedule.setInterruptList(new ArrayList<>());

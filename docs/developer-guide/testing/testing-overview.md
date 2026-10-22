@@ -22,7 +22,7 @@ The current safety net now has three complementary integration boundaries in add
 
 The backend DB integration suite verifies query behavior that mocks cannot prove and reconstructs recovery directly from persisted rows. It covers:
 
-- outermost interrupt-frame ordering and nested-pause suppression;
+- ordered raw interrupt frames and Java-side merging of nested/overlapping pauses;
 - independent latest team/system interrupt retrieval;
 - schedule and category ordering/scoping;
 - PostgreSQL-native score projections and picker queries;
@@ -52,6 +52,36 @@ The Playwright suite under `apps/frontend/e2e` verifies the real browser/WebSock
 - schema compliance for reachable WebSocket frames.
 
 Together, the DB-backed suite protects persistence semantics, the Spring full-stack layer proves HTTP/application composition, and the browser suite proves the runtime protocol reaches real clients correctly.
+
+## Stage 2 playback timing regression coverage
+
+Playback synchronization is covered at the boundary that owns each guarantee:
+
+| Suite | Primary responsibility |
+| --- | --- |
+| `PlaybackTimelineTest` | Pure interval union: nested interrupts, disjoint and open-ended delays, clipping and mixed play/wait cycles |
+| `InterruptServiceImplClockTest` | Seek/recovery from repository intervals using the injected backend clock; no recovery writes |
+| `PlaybackDelayServiceImplTest` | TV-only delay registration, repeated pre-play requests, room ownership, stale replay IDs and idempotent ACK |
+| `PlaybackDelayRepositoryIntegrationTest` | PostgreSQL partial unique index, timestamp-only history ordering and schedule cascade |
+| `PlaybackDelayControllerTest` | Registration and ACK HTTP routes; there is no TV completion endpoint |
+| `SongRoundStore` playback tests | Admin waits for a matching `play` then finishes via its own timer; reconnects, replays, and registration-before-ACK ordering |
+| `AdminSongRoundPage` playback tests | Template actually wires timer completion to the store; timer stays absent while loading |
+| `SeekTimerComponent` tests | Deterministic countdown, restored seek, teardown snapshot and exactly-once completion |
+| `websocket-tv-playback-handshake.seeded.spec.ts` | Real REST/WS Admin+TV browser journey, with controlled TV media progress and Admin-local completion |
+| `AudioPlayerComponent` playback tests | A `playing` event requires actual media-clock progress before ACK; registration-before-playback and idempotent local completion |
+
+Test the ACK **start**, not a nonexistent TV **finish** protocol. Repeated `playInfo`
+requests before the first ACK must reuse one pending attempt. Test an open-ended
+delay and a complete timeline such as *initial loading → played seconds → nested
+interrupts → more playing → TV recovery → open-ended waiting*. Keep the pure interval
+arithmetic in its own suite rather than duplicating the same scenarios through HTTP.
+
+Run manual slow-device checks for TV initial audio loading and reconnect recovery,
+with Admin and TV visible at the same time. In the chosen protocol the Admin countdown
+may finish a little later or earlier than the TV on real hardware; the high-value
+assertions are that it never starts **before** `play`, and resets to waiting
+on replay or reconnect until a fresh ACK arrives. Synthetic DOM
+tests cannot fully reproduce browser codec buffering or network latency.
 
 ## Running backend tests
 

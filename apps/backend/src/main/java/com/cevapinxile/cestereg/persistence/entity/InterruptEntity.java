@@ -43,22 +43,13 @@ import java.util.UUID;
       name = "InterruptEntity.findInterrupts",
       query =
           """
-              SELECT   NEW com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame( i1.arrivedAt, i1.resolvedAt )
-              FROM     InterruptEntity i1
-              WHERE    i1.arrivedAt > :startTimestamp
-              AND      i1.scheduleId.id = :scheduleId
-              AND      NOT EXISTS
-                (
-                    SELECT i2
-                    FROM   InterruptEntity i2
-                    WHERE  i2.arrivedAt > :startTimestamp
-                    AND    i2.scheduleId.id = :scheduleId
-                    AND    i2.id <> i1.id
-                    AND    (
-                        i2.resolvedAt >= i1.resolvedAt
-                        OR     i2.resolvedAt IS NULL )
-                        AND    i2.arrivedAt <= i1.arrivedAt )
-              ORDER BY i1.arrivedAt ASC"""),
+          SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame(
+              i.arrivedAt, i.resolvedAt)
+          FROM InterruptEntity i
+          WHERE i.arrivedAt > :startTimestamp
+            AND i.scheduleId.id = :scheduleId
+          ORDER BY i.arrivedAt ASC
+          """),
   @NamedQuery(
       name = "InterruptEntity.findLastPause",
       query =

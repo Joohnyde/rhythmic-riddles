@@ -52,7 +52,6 @@ public class ScheduleServiceImplTest {
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
     @Mock private BroadcastGateway broadcastGateway;
-
     @InjectMocks private ScheduleServiceImpl scheduleService;
 
     @Test
@@ -211,7 +210,6 @@ public class ScheduleServiceImplTest {
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
     @Mock private BroadcastGateway broadcastGateway;
-
     @InjectMocks private ScheduleServiceImpl scheduleService;
 
     @Test
@@ -410,7 +408,6 @@ public class ScheduleServiceImplTest {
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
     @Mock private BroadcastGateway broadcastGateway;
-
     @InjectMocks private ScheduleServiceImpl scheduleService;
 
     @Test
@@ -595,7 +592,6 @@ public class ScheduleServiceImplTest {
     @Mock private InterruptRepository interruptRepository;
     @Mock private PresenceGateway presenceGateway;
     @Mock private BroadcastGateway broadcastGateway;
-
     @InjectMocks private ScheduleServiceImpl scheduleService;
 
     @Test

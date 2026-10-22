@@ -13,6 +13,7 @@ export const GAME_MESSAGE_TYPES = [
   'answer',
   'error_solved',
   'pause',
+  'play',
 ] as const;
 
 export type GameMessageType = (typeof GAME_MESSAGE_TYPES)[number];
