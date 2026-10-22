@@ -21,6 +21,7 @@ import com.cevapinxile.cestereg.core.service.impl.BuzzerServiceImpl;
 import com.cevapinxile.cestereg.core.service.impl.InterruptServiceImpl;
 import com.cevapinxile.cestereg.core.service.impl.ScheduleServiceImpl;
 import com.cevapinxile.cestereg.persistence.entity.AlbumEntity;
+import com.cevapinxile.cestereg.persistence.entity.CategoryEntity;
 import com.cevapinxile.cestereg.persistence.entity.GameEntity;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
 import com.cevapinxile.cestereg.persistence.entity.ScheduleEntity;
@@ -29,6 +30,7 @@ import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import com.cevapinxile.cestereg.persistence.repository.TeamRepository;
 import com.cevapinxile.cestereg.runtime.broadcast.WebSocketBroadcastGateway;
@@ -106,6 +108,7 @@ abstract class AbstractWebSocketIntegrationTestSupport {
   @MockitoBean protected ScheduleRepository scheduleRepository;
   @MockitoBean protected InterruptRepository interruptRepository;
   @MockitoBean protected TeamRepository teamRepository;
+  @MockitoBean protected PlaybackDelayRepository playbackDelayRepository;
 
   protected final ObjectMapper mapper = new ObjectMapper();
   protected final StandardWebSocketClient client = new StandardWebSocketClient();
@@ -211,11 +214,15 @@ abstract class AbstractWebSocketIntegrationTestSupport {
     team.setGameId(gameA);
     team.setName("Enterprise Testers");
 
+    final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+    category.setGameId(gameA);
     final ScheduleEntity current = schedule(21.5d, 7.0d, "Current question?", "Current answer");
+    current.setCategoryId(category);
     current.setStartedAt(LocalDateTime.now().minusSeconds(1));
     current.setInterruptList(new ArrayList<>());
 
     final ScheduleEntity next = schedule(13.25d, 5.5d, "Next question?", "Next answer");
+    next.setCategoryId(category);
 
     final InterruptEntity answer = new InterruptEntity(UUID.randomUUID());
     answer.setTeamId(team);

@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom, Observable, Subscription } from 'rxjs';
+import { DelayApiService } from '../data-access/delay-api.service';
 import { InterruptApiService } from '../data-access/interrupt-api.service';
 import { ScheduleApiService } from '../data-access/schedule-api.service';
 import { DefaultMessage } from '../messages/default.messages';
@@ -9,6 +10,7 @@ import {
   S2AnswerMessage,
   S2ErrorSolvedMessage,
   S2PauseMessage,
+  S2PlaybackEvent,
   S2SongRepeatMessage,
   S2WelcomeMessage,
 } from '../messages/stage2.messages';
@@ -32,6 +34,9 @@ export interface SongRoundState {
   readonly teams: readonly TeamScore[];
   readonly bravo: TeamScore | null;
   readonly inTransit: boolean;
+  readonly playbackDelayId: string | null;
+  readonly playbackWaiting: boolean;
+  readonly playbackError: string | null;
 }
 
 export interface SongRoundVm extends SongRoundState {
@@ -60,6 +65,9 @@ function createInitialSongRoundState(): SongRoundState {
     teams: [],
     bravo: null,
     inTransit: false,
+    playbackDelayId: null,
+    playbackWaiting: true,
+    playbackError: null,
   };
 }
 
@@ -67,9 +75,14 @@ function createInitialSongRoundState(): SongRoundState {
 export class SongRoundStore {
   private readonly router = inject(Router);
   private readonly interruptApi = inject(InterruptApiService);
+  private readonly delayApi = inject(DelayApiService);
   private readonly scheduleApi = inject(ScheduleApiService);
   private readonly state = signal<SongRoundState>(createInitialSongRoundState());
   private sub?: Subscription;
+  private surface: ClientSurface | null = null;
+  private playbackEpoch = 0;
+  private registration?: Promise<void>;
+  private acknowledgement: Promise<void> = Promise.resolve();
 
   readonly vm = computed<SongRoundVm>(() => {
     const state = this.state();
@@ -88,12 +101,20 @@ export class SongRoundStore {
 
   connect(messages$: Observable<GameServerMessage>, surface: ClientSurface): void {
     this.sub?.unsubscribe();
+    this.playbackEpoch++;
+    this.registration = undefined;
+    this.acknowledgement = Promise.resolve();
+    this.surface = surface;
     this.sub = messages$.subscribe((message) => void this.handleMessage(message, surface));
   }
 
   disconnect(): void {
     this.sub?.unsubscribe();
+    this.playbackEpoch++;
+    this.registration = undefined;
+    this.acknowledgement = Promise.resolve();
     this.sub = undefined;
+    this.surface = null;
   }
 
   private patchState(patch: Partial<SongRoundState>): void {
@@ -123,10 +144,15 @@ export class SongRoundStore {
       case 'welcome':
         this.handleWelcome(message as S2WelcomeMessage, surface);
         break;
+      case 'play':
+        this.handlePlaybackEvent(message as S2PlaybackEvent);
+        break;
     }
   }
 
   private handleSongNext(message: S2WelcomeMessage): void {
+    this.playbackEpoch++;
+    this.registration = undefined;
     this.patchState({
       songId: message.songId,
       question: message.question,
@@ -137,15 +163,23 @@ export class SongRoundStore {
       lastPlayedSong: message.scheduleId,
       bravo: null,
       scenario: SongScenario.Playing,
+      playbackDelayId: null,
+      playbackWaiting: true,
+      playbackError: null,
       answeringTeam: null,
       interruptId: null,
     });
   }
 
   private handleSongRepeat(message: S2SongRepeatMessage): void {
+    this.playbackEpoch++;
+    this.registration = undefined;
     this.patchState({
       seek: 0,
       remaining: message.remaining,
+      playbackDelayId: null,
+      playbackWaiting: true,
+      playbackError: null,
       scenario: SongScenario.Playing,
     });
   }
@@ -166,12 +200,19 @@ export class SongRoundStore {
       teams,
       bravo: message.correct ? answeredTeam : null,
       scenario: message.correct ? SongScenario.Revealed : SongScenario.Playing,
+      playbackDelayId: null,
+      playbackWaiting: !message.correct,
     });
   }
 
   private handleErrorSolved(message: S2ErrorSolvedMessage): void {
     if (this.state().scenario === SongScenario.SystemError) {
-      this.patchState({ scenario: coerceSongScenario(message.previousScenario) });
+      const scenario = coerceSongScenario(message.previousScenario);
+      this.patchState({
+        scenario,
+        playbackDelayId: null,
+        playbackWaiting: scenario === SongScenario.Playing,
+      });
     }
   }
 
@@ -207,6 +248,8 @@ export class SongRoundStore {
   }
 
   private handleWelcome(message: S2WelcomeMessage, surface: ClientSurface): void {
+    this.playbackEpoch++;
+    this.registration = undefined;
     if (message.stage !== 'songs') {
       this.disconnect();
       void this.router.navigate(routeForStage(surface, message.stage));
@@ -220,6 +263,9 @@ export class SongRoundStore {
       lastPlayedSong: message.scheduleId,
       teams: message.scores,
       answerDuration: message.answerDuration,
+      playbackDelayId: null,
+      playbackWaiting: true,
+      playbackError: null,
     };
 
     if (message.revealed != null) {
@@ -263,17 +309,116 @@ export class SongRoundStore {
     });
   }
 
-  onTrackFinished(): void {
-    if (this.state().scenario === SongScenario.Playing) {
-      this.patchState({ scenario: SongScenario.FinishedUnrevealed });
+  private handlePlaybackEvent(message: S2PlaybackEvent): void {
+    if (
+      this.surface === 'admin' &&
+      message.scheduleId === this.state().lastPlayedSong &&
+      this.state().scenario === SongScenario.Playing &&
+      this.state().playbackWaiting
+    ) {
+      this.patchState({ playbackWaiting: false });
     }
+  }
+
+  /** Register loading once per TV attempt; parallel requests share the same registration. */
+  requestPlayback(scheduleId: string): Promise<void> {
+    if (
+      this.surface !== 'tv' ||
+      scheduleId !== this.state().lastPlayedSong ||
+      this.state().scenario !== SongScenario.Playing ||
+      this.state().playbackDelayId !== null
+    ) {
+      return Promise.resolve();
+    }
+    if (this.registration) return this.registration;
+    const epoch = this.playbackEpoch;
+    const priorAcknowledgement = this.acknowledgement;
+    const registration = (async () => {
+      // Keep registration serialized with any outstanding acknowledgement.
+      await priorAcknowledgement.catch(() => {});
+      if (
+        this.playbackEpoch !== epoch ||
+        this.surface !== 'tv' ||
+        this.state().lastPlayedSong !== scheduleId ||
+        this.state().scenario !== SongScenario.Playing
+      )
+        return;
+      try {
+        const delayId = await firstValueFrom(this.delayApi.register(scheduleId));
+        if (
+          this.surface === 'tv' &&
+          this.playbackEpoch === epoch &&
+          this.state().lastPlayedSong === scheduleId &&
+          this.state().scenario === SongScenario.Playing
+        ) {
+          this.patchState({ playbackDelayId: delayId, playbackError: null });
+        }
+      } catch {
+        if (this.playbackEpoch === epoch) {
+          this.patchState({ playbackError: 'Could not register TV playback. Reconnect to retry.' });
+        }
+      }
+    })();
+    this.registration = registration;
+    void registration.finally(() => {
+      if (this.registration === registration) this.registration = undefined;
+    });
+    return registration;
+  }
+
+  /** Acknowledge only after registration and real audio-clock progress. */
+  async acknowledgePlayback(): Promise<void> {
+    if (this.surface !== 'tv' || this.state().scenario !== SongScenario.Playing) return;
+    const epoch = this.playbackEpoch;
+    const previous = this.acknowledgement;
+    const task = (async () => {
+      await previous.catch(() => {});
+      if (this.registration) await this.registration;
+      const delayId = this.state().playbackDelayId;
+      if (
+        this.surface !== 'tv' ||
+        this.playbackEpoch !== epoch ||
+        this.state().scenario !== SongScenario.Playing ||
+        !delayId
+      )
+        return;
+      try {
+        await firstValueFrom(this.delayApi.acknowledge(delayId));
+        if (this.playbackEpoch === epoch && this.state().playbackDelayId === delayId) {
+          this.patchState({ playbackError: null });
+        }
+      } catch {
+        if (this.playbackEpoch === epoch) {
+          this.patchState({ playbackError: 'Could not acknowledge TV playback.' });
+        }
+      }
+    })();
+    this.acknowledgement = task;
+    await task;
+  }
+
+  playbackFailed(): void {
+    this.patchState({
+      playbackError: 'Audio playback could not start. Check the TV audio device.',
+    });
+  }
+
+  /** Each client finishes its own snippet; only the TV acknowledges playback start. */
+  onTrackFinished(): void {
+    if (
+      this.state().scenario !== SongScenario.Playing ||
+      (this.surface === 'admin' && this.state().playbackWaiting)
+    )
+      return;
+    this.patchState({ scenario: SongScenario.FinishedUnrevealed });
   }
 
   onAnswerAudioFinished(): void {
     // Original TV behavior does not change stage after answer audio ends.
   }
 
-  savePlaybackState(state: { seek: number; remaining: number }): void {
+  savePlaybackState(state: { seek: number; remaining: number; scheduleId?: string | null }): void {
+    if (state.scheduleId && state.scheduleId !== this.state().lastPlayedSong) return;
     this.patchState({
       seek: state.seek,
       remaining: state.remaining,

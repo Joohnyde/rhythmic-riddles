@@ -8,6 +8,9 @@ It is not intended to list every assertion in prose. Instead, it explains where 
 
 A more detailed inventory of individual test cases is maintained in `test-catalog.csv`.
 
+The Stage 2 playback test responsibilities are described in
+[testing overview](testing-overview.md#stage-2-playback-timing-regression-coverage).
+
 ## CSV catalog format
 
 `test-catalog.csv` is the detailed machine-readable inventory of tests. Each row represents one test case or one parameterized test family.
@@ -516,3 +519,13 @@ The backend consistency test enforces only `junit` rows. The frontend source-cat
 
 Expand the catalog only when a new focused test adds confidence not already owned by the full-product,
 seeded WebSocket, backend, release or receiver layers.
+
+### Playback synchronization (stage 2) — covered regression families
+
+- Register/acknowledge API, room ownership and wrong-stage validation; no TV completion route.
+- Duplicate registration, duplicate acknowledgement and stale IDs after replay.
+- Playback timeline union: nested interrupt/loading intervals, ongoing delays and reconnect.
+- Admin waits until matching `play`, resets on new song/replay, and finishes when **its
+  own** timer completes. TV audio completion is local to the TV.
+- WebSocket catalog includes the Admin-only `play` acknowledgement, with an example
+  and strict schema; recovery re-enters waiting without extra persisted fields.

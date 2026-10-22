@@ -64,7 +64,6 @@ public class CategoryServiceImplTest {
     @Mock private TeamRepository teamRepository;
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
-
     @InjectMocks private CategoryServiceImpl categoryService;
 
     @Test
@@ -285,7 +284,6 @@ public class CategoryServiceImplTest {
     @Mock private TeamRepository teamRepository;
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
-
     @InjectMocks private CategoryServiceImpl categoryService;
 
     @Test
@@ -493,7 +491,6 @@ public class CategoryServiceImplTest {
     @Mock private TeamRepository teamRepository;
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
-
     @InjectMocks private CategoryServiceImpl categoryService;
 
     @Test
@@ -717,7 +714,6 @@ public class CategoryServiceImplTest {
     @Mock private TeamRepository teamRepository;
     @Mock private BroadcastGateway broadcastGateway;
     @Mock private PresenceGateway presenceGateway;
-
     @InjectMocks private CategoryServiceImpl categoryService;
 
     @Test

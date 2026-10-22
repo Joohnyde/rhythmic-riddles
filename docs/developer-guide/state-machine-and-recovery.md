@@ -147,6 +147,7 @@ Stage 2 is reconstructed from:
 - the last played schedule entry (`ScheduleEntity lastPlayedSong`)
 - its timestamps (`startedAt`, `revealedAt`)
 - interrupt frames (team pauses and system pauses)
+- TV loading/acknowledgement intervals (`playback_delay`)
 - derived playback timing (`seek`, `remaining`)
 
 ### When
@@ -192,7 +193,7 @@ Stage 2 always begins with:
 
 If not revealed, the backend computes the effective playback time excluding pauses:
 
-- `seek = interruptService.calculateSeek(startedAt, scheduleId) / 1000.0`
+- `seek = interruptService.calculateSeek(startedAt, scheduleId)` (seconds)
 - `remaining = snippetDuration - seek`
 
 #### Scenarion 1: Song finished but not revealed (waiting for admin action)
@@ -336,3 +337,36 @@ Replay and reveal still receive `scheduleId` from the client, but the ID is trea
 Database writes remain inside the service transaction. WebSocket broadcasts and score-cache updates are registered through `TransactionCallbacks.afterCommitOrNow(...)` and run only after a successful commit when Spring transaction synchronization is active. If the transaction rolls back, those callbacks do not run. Direct unit-test calls without an active Spring transaction run the callback immediately.
 
 This means a client is never deliberately broadcast a state that later rolls back. A WebSocket delivery failure after commit cannot roll the database transaction back; reconnect recovery must reconstruct the already committed state.
+
+### TV playback, Admin timer and recovery
+
+The backend stores the schedule start time and broadcasts the existing `song_next`,
+`song_repeat` or recovery `welcome` message. **It does not create a playback delay.**
+The Admin enters the waiting state at each expected playback boundary, independently
+of whether a delay row exists yet.
+
+The TV audio component requests registration (`POST /delays`) before playing the
+snippet. Repeated requests while an open attempt exists reuse the same UUID. The
+TV waits for `HTMLAudioElement.playing` **and** at least 30 ms of real media-clock
+progress before acknowledging that attempt (`PUT /delays/{id}/acknowledge`). The
+backend timestamps the acknowledgement and emits an after-commit `play` WebSocket
+message to Admin. Admin begins its local countdown only on `play` for the current
+schedule; there is no `playback_waiting`, `song_finished` or TV completion message.
+Admin finishes when its own countdown reaches zero.
+
+Both clients must be connected to register or acknowledge playback. A rejected ACK
+during disconnection does not close the pending attempt. On recovery the game enters
+the system-interrupt UI, and on resumption the TV remounts the player, re-registers
+(reusing an open attempt if present), and acknowledges after audio progresses.
+Stale requests from earlier replays are rejected using the current persisted
+`schedule.started_at`. The absence of mid-song buffering support is intentional:
+short snippets are fully delivered MP3s, not streams.
+
+`contextFetch` is read-only and returns `seek` and `remaining` in **seconds**.
+`InterruptServiceImpl.calculateSeek` subtracts the union of all TV loading and
+system/team interrupt intervals, including open-ended or nested intervals.
+No redundant duration aggregate is stored. Because backend timestamps begin when
+TV's HTTP registration reaches the server, a few milliseconds of pre-registration
+latency may be counted as playback. Two browser clocks also cannot guarantee
+identical sample-accurate completion; these are accepted constraints of the
+ACK-only protocol.

@@ -17,55 +17,21 @@ It is intentionally close to the code:
 
 ## Notes from Phase-2 design
 
-### Overlap detection (conceptual)
+### Seek computation
 
-The naive overlap query:
+`InterruptEntity.findInterrupts` retrieves all current-schedule interrupt frames with
+a simple chronological query. The query no longer filters out nested frames:
+`PlaybackTimeline.seekSeconds` merges every overlap once in Java, whether two
+interrupts are nested, partially overlapping, disjoint or still open.
 
-```sql
-SELECT *
-FROM interrupts i1, interrupts i2
-WHERE i1.resolved_at >= i2.resolved_at OR i2.arrived_at >= i1.arrived_at
-```
+`InterruptServiceImpl.calculateSeek` combines those frames with the TV-registered
+`playback_delay` timestamp intervals, clips them to `[started_at, now]`, subtracts
+their **union** from server elapsed time and returns seconds. The table stores
+only interval boundaries (`sent_at`, `acknowledged_at`); it has no derived `delay`
+column. The initial interval is registered by the TV before playing audio, not by
+the backend during a category/schedule transition.
 
-does not cover all cases, but with our invariants we can exclude some edge overlaps.
-
-### “Outer frame” query (latest enclosing interrupt)
-
-A useful pattern is: find interrupts that are not enclosed by a later “outer” interrupt:
-
-```sql
-SELECT i1.*
-FROM interrupts i1
-WHERE i1.start > ?
-  AND NOT EXISTS (
-        SELECT 1
-        FROM interrupts i2
-        WHERE i2.arrived_at > ?
-          AND i2.id <> i1.id
-          AND i2.arrived_at  <= i1.arrived_at
-          AND i2.resolved_at >= i1.resolved_at
-      );
-```
-
-### Seek computation sketch
-
-Pseudo logic:
-
-- `res = 0`
-- `end = starting_timestamp`
-- if no active interrupt: add a “closing frame”
-- for each interrupt:
-    - `res += interrupt.arrived_at - resolved_at`
-    - `end = interrupt.resolved_at`
-- return `res`
-
-In code, `InterruptServiceImpl.calculateSeek` is the source of truth. If you change it, update this doc and add tests.
-
-### Concrete JPQL from notes
-
-The project contains a JPQL variant of the “outer frame” selection that returns `InterruptFrame(begin,end)` for a schedule.
-
-If you change entity names/columns, rewrite these carefully and add regression tests.
+See [State machine & recovery](state-machine-and-recovery.md#tv-playback-admin-timer-and-recovery).
 
 ## What to test (high-value)
 

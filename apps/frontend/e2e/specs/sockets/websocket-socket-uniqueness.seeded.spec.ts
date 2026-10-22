@@ -1,3 +1,4 @@
+import { retryRoomBusy } from '../../utils/room-busy-retry';
 import { expect, test } from '@playwright/test';
 import {
   answerInterrupt,
@@ -51,7 +52,9 @@ test.describe('Socket uniqueness', () => {
       const clients = await connectAdminAndTv(browser, seed.roomCode);
 
       try {
-        expect(await createInterrupt(request, seed.roomCode, seed.teams[0].id)).toBeLessThan(400);
+        expect(
+          await retryRoomBusy(() => createInterrupt(request, seed.roomCode, seed.teams[0].id)),
+        ).toBeLessThan(400);
         await expectBackendWsFrameTypeAfter(clients.tv.frames, 'pause', 0);
 
         const pause = lastFrameOfType(clients.tv.frames, 'pause')?.json;
@@ -166,7 +169,9 @@ test.describe('Socket uniqueness', () => {
       const clients = await connectAdminAndTv(browser, seed.roomCode);
 
       try {
-        expect(await createInterrupt(request, seed.roomCode, seed.teams[0].id)).toBeLessThan(400);
+        expect(
+          await retryRoomBusy(() => createInterrupt(request, seed.roomCode, seed.teams[0].id)),
+        ).toBeLessThan(400);
         await expectBackendWsFrameTypeAfter(clients.admin.frames, 'pause', 0);
 
         const pause = lastFrameOfType(clients.admin.frames, 'pause')?.json;

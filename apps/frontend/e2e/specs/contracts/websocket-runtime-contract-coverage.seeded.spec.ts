@@ -1,3 +1,4 @@
+import { retryRoomBusy } from '../../utils/room-busy-retry';
 import { expect, test } from '@playwright/test';
 import {
   answerInterrupt,
@@ -44,9 +45,11 @@ test.describe('Runtime contract governance', () => {
       const clients = await connectAdminAndTv(browser, seed.roomCode);
 
       try {
-        expect(await replaySchedule(request, seed.roomCode, seed.currentScheduleId!)).toBeLessThan(
-          400,
-        );
+        expect(
+          await retryRoomBusy(() =>
+            replaySchedule(request, seed.roomCode, seed.currentScheduleId!),
+          ),
+        ).toBeLessThan(400);
         await expectBackendWsFrameTypeAfter(clients.tv.frames, 'song_repeat', 0);
 
         recordTypes(observed, clients);

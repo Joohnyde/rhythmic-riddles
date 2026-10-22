@@ -21,6 +21,7 @@ import com.cevapinxile.cestereg.persistence.entity.TeamEntity;
 import com.cevapinxile.cestereg.persistence.entity.TrackEntity;
 import com.cevapinxile.cestereg.persistence.repository.GameRepository;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import com.cevapinxile.cestereg.persistence.repository.ScheduleRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ class InterruptServiceImplWebSocketTest {
       @Mock private BroadcastGateway broadcastGateway;
       @Mock private PresenceGateway presenceGateway;
 
+      @Mock private PlaybackDelayRepository playbackDelayRepository;
       @InjectMocks private InterruptServiceImpl service;
 
       @Test
@@ -360,6 +362,11 @@ class InterruptServiceImplWebSocketTest {
     @BeforeEach
     void setUp() {
       service = new InterruptServiceImpl();
+      ReflectionTestUtils.setField(
+          service,
+          "playbackDelayRepository",
+          org.mockito.Mockito.mock(
+              com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository.class));
       ReflectionTestUtils.setField(service, "teamService", teamService);
       ReflectionTestUtils.setField(service, "interruptRepository", interruptRepository);
       ReflectionTestUtils.setField(service, "gameRepository", gameRepository);
@@ -449,6 +456,9 @@ class InterruptServiceImplWebSocketTest {
       when(answer.getResolvedAt()).thenReturn(null);
       when(team.getId()).thenReturn(teamId);
       when(answer.getScheduleId()).thenReturn(schedule);
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      when(schedule.getCategoryId()).thenReturn(category);
       when(schedule.getId()).thenReturn(scheduleId);
       when(teamService.getTeamPoints(teamId, "ROOM")).thenReturn(10);
 
@@ -470,6 +480,9 @@ class InterruptServiceImplWebSocketTest {
       final UUID scheduleId = UUID.randomUUID();
       final GameEntity game = new GameEntity(gameId);
       final ScheduleEntity schedule = new ScheduleEntity(scheduleId);
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setGameId(game);
+      schedule.setCategoryId(category);
 
       when(gameRepository.findByCode("ROOM", 2)).thenReturn(game);
       when(scheduleRepository.findById(scheduleId)).thenReturn(Optional.of(schedule));
