@@ -18,18 +18,14 @@ import org.springframework.data.jpa.repository.Modifying;
  */
 public interface InterruptRepository extends JpaRepository<InterruptEntity, UUID> {
   /**
-   * Returns outermost interrupt frames after {@code startTimestamp} for the given schedule.
+   * Returns all interrupt frames after {@code startTimestamp} for the given schedule.
    *
-   * <p>"Outermost" means the returned intervals are not strictly contained by another interrupt
-   * interval that starts earlier (or equal) and resolves later (or is unresolved). This allows seek
-   * computation to subtract paused time without double-counting nested pauses.
-   *
-   * <p><b>Requires invariant:</b> interrupt intervals are disjoint or fully nested (no partial
-   * overlap).
+   * <p>Nested and overlapping frames are not filtered here. {@code PlaybackTimeline} combines these
+   * with TV loading intervals and merges the union once when calculating playback seek.
    *
    * @param startTimestamp snippet start time; only interrupts after this timestamp are considered
    * @param scheduleId schedule identifier
-   * @return list of outermost interrupt frames ordered by arrival time ascending
+   * @return interrupt frames ordered by arrival time ascending
    */
   List<InterruptFrame> findInterrupts(LocalDateTime startTimestamp, UUID scheduleId);
 

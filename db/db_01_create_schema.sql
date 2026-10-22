@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS public.schedule (
     revealed_at timestamp without time zone,
     category_id uuid
 );
+
 CREATE TABLE IF NOT EXISTS public.interrupt (
     id uuid NOT NULL,
     schedule_id uuid,
@@ -85,6 +86,13 @@ CREATE TABLE IF NOT EXISTS public.interrupt (
     is_correct boolean,
     score_or_scenario_id integer,
     team_id uuid
+);
+
+CREATE TABLE IF NOT EXISTS public.playback_delay (
+    id uuid NOT NULL,
+    schedule_id uuid NOT NULL,
+    sent_at timestamp without time zone NOT NULL,
+    acknowledged_at timestamp without time zone
 );
 
 -- ------------------------------------------------------------
@@ -128,6 +136,12 @@ BEGIN
     ALTER TABLE ONLY public.interrupt
       ADD CONSTRAINT interrupt_pkey PRIMARY KEY (id);
   END IF;
+
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'playback_delay_pkey') THEN
+    ALTER TABLE ONLY public.playback_delay
+      ADD CONSTRAINT playback_delay_pkey PRIMARY KEY (id);
+  END IF;
 END $$;
 -- ------------------------------------------------------------
 -- Indexes (idempotent on modern Postgres)
@@ -151,6 +165,13 @@ CREATE INDEX IF NOT EXISTS idx_game_active_date
 
 CREATE INDEX IF NOT EXISTS interrupt_index_arrived_desc
   ON public.interrupt USING btree (arrived_at DESC) WITH (deduplicate_items='true');
+
+CREATE INDEX IF NOT EXISTS idx_playback_delay_schedule
+    ON public.playback_delay USING btree (schedule_id, sent_at);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_playback_delay_open
+    ON public.playback_delay USING btree (schedule_id)
+    WHERE acknowledged_at IS NULL;
 
 -- ------------------------------------------------------------
 -- Foreign keys (guarded by constraint name)
@@ -204,6 +225,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_interrupt_team') THEN
     ALTER TABLE ONLY public.interrupt
       ADD CONSTRAINT fk_interrupt_team FOREIGN KEY (team_id) REFERENCES public.team(id) ON DELETE CASCADE;
+  END IF;
+  -- playback_delay -> schedule
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_playback_delay_schedule') THEN
+    ALTER TABLE ONLY public.playback_delay
+      ADD CONSTRAINT fk_playback_delay_schedule FOREIGN KEY (schedule_id) REFERENCES public.schedule(id) ON DELETE CASCADE;
   END IF;
 END $$;
 
