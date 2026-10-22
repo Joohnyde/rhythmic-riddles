@@ -51,7 +51,6 @@ class ScheduleServiceImplWebSocketTest {
       @Mock private InterruptRepository interruptRepository;
       @Mock private PresenceGateway presenceGateway;
       @Mock private BroadcastGateway broadcastGateway;
-
       @InjectMocks private ScheduleServiceImpl service;
 
       @Test

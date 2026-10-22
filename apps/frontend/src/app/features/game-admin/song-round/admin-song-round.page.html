@@ -87,13 +87,17 @@
 
         @case (SongScenario.Playing) {
           @if (vm.remaining !== null) {
-            <rr-seek-timer
-              [duration]="(vm.seek ?? 0) + vm.remaining"
-              [seek]="vm.seek ?? 0"
-              [showDebug]="true"
-              (completed)="store.onTrackFinished()"
-              (stateOut)="store.savePlaybackState($event)"
-            />
+            @if (vm.playbackWaiting) {
+              <rr-song-loading-panel />
+            } @else {
+              <rr-seek-timer
+                [duration]="(vm.seek ?? 0) + vm.remaining"
+                [seek]="vm.seek ?? 0"
+                [showDebug]="true"
+                (completed)="store.onTrackFinished()"
+                (stateOut)="store.savePlaybackState($event)"
+              />
+            }
           }
         }
 

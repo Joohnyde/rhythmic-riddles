@@ -5,11 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.cevapinxile.cestereg.api.quiz.dto.response.InterruptFrame;
+import com.cevapinxile.cestereg.core.service.support.PlaybackTimeline;
 import com.cevapinxile.cestereg.persistence.entity.InterruptEntity;
+import com.cevapinxile.cestereg.persistence.entity.PlaybackDelayEntity;
 import com.cevapinxile.cestereg.persistence.integration.support.PostgresJpaIntegrationTest;
 import com.cevapinxile.cestereg.persistence.integration.support.QuizPersistenceFixture;
 import com.cevapinxile.cestereg.persistence.repository.InterruptRepository;
+import com.cevapinxile.cestereg.persistence.repository.PlaybackDelayRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +26,7 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   private static final LocalDateTime START = LocalDateTime.of(2026, 2, 1, 20, 0, 0);
 
   @Autowired private InterruptRepository interruptRepository;
+  @Autowired private PlaybackDelayRepository playbackDelayRepository;
   @Autowired private JdbcTemplate jdbc;
 
   private QuizPersistenceFixture fixture;
@@ -56,7 +61,7 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
   }
 
   @Test
-  void findInterruptsCollapsesNestedFramesToOutermostIntervals() {
+  void findInterruptsRetainsNestedFramesForTimelineMerge() {
     fixture.interrupt(scheduleId, null, START.plusSeconds(2), START.plusSeconds(9), null, 1);
     fixture.interrupt(scheduleId, teamId, START.plusSeconds(4), START.plusSeconds(6), false, -10);
     fixture.interrupt(
@@ -69,21 +74,27 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
     final List<InterruptFrame> frames = interruptRepository.findInterrupts(START, scheduleId);
 
-    assertEquals(1, frames.size());
-    assertEquals(START.plusSeconds(2), frames.getFirst().getStart());
-    assertEquals(START.plusSeconds(9), frames.getFirst().getEnd());
+    assertEquals(3, frames.size());
+    assertEquals(START.plusSeconds(2), frames.get(0).getStart());
+    assertEquals(START.plusSeconds(9), frames.get(0).getEnd());
+    assertEquals(START.plusSeconds(4), frames.get(1).getStart());
+    assertEquals(START.plusSeconds(6), frames.get(1).getEnd());
+    assertEquals(START.plusSeconds(5), frames.get(2).getStart());
+    assertEquals(START.plusSeconds(5).plusNanos(500_000_000), frames.get(2).getEnd());
   }
 
   @Test
-  void findInterruptsKeepsOngoingOutermostFrameAndSuppressesNestedFrames() {
+  void findInterruptsRetainsOngoingAndNestedFramesForTimelineMerge() {
     fixture.interrupt(scheduleId, null, START.plusSeconds(2), null, null, 1);
     fixture.interrupt(scheduleId, teamId, START.plusSeconds(4), START.plusSeconds(5), false, -10);
 
     final List<InterruptFrame> frames = interruptRepository.findInterrupts(START, scheduleId);
 
-    assertEquals(1, frames.size());
-    assertEquals(START.plusSeconds(2), frames.getFirst().getStart());
-    assertNull(frames.getFirst().getEnd());
+    assertEquals(2, frames.size());
+    assertEquals(START.plusSeconds(2), frames.get(0).getStart());
+    assertNull(frames.get(0).getEnd());
+    assertEquals(START.plusSeconds(4), frames.get(1).getStart());
+    assertEquals(START.plusSeconds(5), frames.get(1).getEnd());
   }
 
   @Test
@@ -103,6 +114,68 @@ class InterruptRepositoryIntegrationTest extends PostgresJpaIntegrationTest {
 
     assertEquals(1, frames.size());
     assertEquals(START.plusSeconds(2), frames.getFirst().getStart());
+  }
+
+  @Test
+  void repositoryFramesAndDelaysProduceCorrectSeekAcrossReconnectAndOpenLoading() {
+    // T+0..6 loading, T+0.9..5 disconnected, T+6..10 played,
+    // T+10..12 pause/reload, T+12..16 played, T+16..20 open loading.
+    // The nested pauses must reach Java unchanged and be counted only once.
+    insertPlaybackDelay(START, START.plusSeconds(6));
+    insertPlaybackDelay(START.plusSeconds(10), START.plusSeconds(12));
+    insertPlaybackDelay(START.plusSeconds(16), null);
+    fixture.interrupt(
+        scheduleId, null, START.plusNanos(900_000_000), START.plusSeconds(5), null, 1);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(10), START.plusSeconds(12), null, 1);
+    fixture.interrupt(
+        scheduleId,
+        teamId,
+        START.plusSeconds(11),
+        START.plusSeconds(11).plusNanos(500_000_000),
+        false,
+        -10);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(17), null, null, 3);
+
+    final List<InterruptFrame> pauses = interruptRepository.findInterrupts(START, scheduleId);
+    final List<PlaybackDelayEntity> delays = playbackDelayRepository.findBySchedule(scheduleId);
+    assertEquals(4, pauses.size());
+    assertEquals(3, delays.size());
+    assertEquals(START.plusSeconds(16), delays.get(2).getSentAt());
+
+    final List<InterruptFrame> blocked = new ArrayList<>();
+    for (InterruptFrame pause : pauses) {
+      blocked.add(new InterruptFrame(pause.getStart(), pause.getEnd()));
+    }
+    for (PlaybackDelayEntity delay : delays) {
+      blocked.add(new InterruptFrame(delay.getSentAt(), delay.getAcknowledgedAt()));
+    }
+    assertEquals(8.0, PlaybackTimeline.seekSeconds(START, START.plusSeconds(20), blocked), 0.001);
+  }
+
+  @Test
+  void rawOpenInitialDelayProducesZeroSeekWhenReadThroughBothRepositories() {
+    insertPlaybackDelay(START, null);
+    fixture.interrupt(scheduleId, null, START.plusSeconds(1), START.plusSeconds(5), null, 1);
+    final List<InterruptFrame> blocked = new ArrayList<>();
+    for (InterruptFrame pause : interruptRepository.findInterrupts(START, scheduleId)) {
+      blocked.add(new InterruptFrame(pause.getStart(), pause.getEnd()));
+    }
+    for (PlaybackDelayEntity delay : playbackDelayRepository.findBySchedule(scheduleId)) {
+      blocked.add(new InterruptFrame(delay.getSentAt(), delay.getAcknowledgedAt()));
+    }
+    assertEquals(0.0, PlaybackTimeline.seekSeconds(START, START.plusSeconds(9), blocked), 0.001);
+  }
+
+  private void insertPlaybackDelay(final LocalDateTime sentAt, final LocalDateTime acknowledgedAt) {
+    jdbc.update(
+        """
+        INSERT INTO playback_delay (id, schedule_id, sent_at, acknowledged_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        UUID.randomUUID(),
+        scheduleId,
+        sentAt,
+        acknowledgedAt);
   }
 
   @Test

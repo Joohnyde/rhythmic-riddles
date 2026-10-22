@@ -40,7 +40,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
           "song_reveal",
           "pause",
           "answer",
-          "error_solved");
+          "error_solved",
+          "play");
 
   private final ObjectMapper json = new ObjectMapper();
   private final SchemaRegistry schemaRegistry =
@@ -103,6 +104,8 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
             List.of("tv"),
             recipients,
             type + " should stay TV-only unless Angular/admin handling changes");
+      } else if (Set.of("play").contains(type)) {
+        assertEquals(List.of("admin"), recipients);
       } else if ("button_clicked".equals(type)) {
         assertEquals(
             List.of("admin"),

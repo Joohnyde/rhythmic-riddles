@@ -202,7 +202,7 @@ class GameServiceImplWebSocketTest {
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(teamService.getTeamScores("AKKU")).thenReturn(scores);
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(4000L);
+            .thenReturn(4.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {null, null});
 
@@ -236,7 +236,7 @@ class GameServiceImplWebSocketTest {
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(teamService.getTeamScores("AKKU")).thenReturn(List.of());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(2000L);
+            .thenReturn(2.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {answer, systemPause});
 
@@ -270,7 +270,7 @@ class GameServiceImplWebSocketTest {
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(teamService.getTeamScores("AKKU")).thenReturn(List.of());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(9000L);
+            .thenReturn(9.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {resolvedAnswer, resolvedSystemPause});
 
@@ -296,7 +296,7 @@ class GameServiceImplWebSocketTest {
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(teamService.getTeamScores("AKKU")).thenReturn(List.of());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(3000L);
+            .thenReturn(3.0);
         when(interruptService.getLastTwoInterrupts(schedule.getStartedAt(), schedule.getId()))
             .thenReturn(new InterruptEntity[] {null, systemPause});
 
@@ -319,7 +319,7 @@ class GameServiceImplWebSocketTest {
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(schedule);
         when(teamService.getTeamScores("AKKU")).thenReturn(List.of());
         when(interruptService.calculateSeek(schedule.getStartedAt(), schedule.getId()))
-            .thenReturn(7000L);
+            .thenReturn(7.0);
 
         final HashMap<String, Object> payload = service.contextFetch("AKKU");
 
@@ -360,7 +360,7 @@ class GameServiceImplWebSocketTest {
         when(scheduleRepository.findLastPlayed(game.getId())).thenReturn(nextSong);
         when(teamService.getTeamScores("AKKU")).thenReturn(scores);
         when(interruptService.calculateSeek(nextSong.getStartedAt(), nextSong.getId()))
-            .thenReturn(0L);
+            .thenReturn(0.0);
         when(interruptService.getLastTwoInterrupts(nextSong.getStartedAt(), nextSong.getId()))
             .thenReturn(new InterruptEntity[] {null, null});
 
@@ -1142,7 +1142,7 @@ class GameServiceImplWebSocketTest {
     @Test
     void contextFetchStageTwoFinishedButNotRevealedScenarioOmitsRecoveryPlaybackFields()
         throws Exception {
-      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(26000L);
+      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(26.0);
 
       final HashMap<String, Object> json = gameService.contextFetch(ROOM);
 
@@ -1169,7 +1169,7 @@ class GameServiceImplWebSocketTest {
       when(teamInterrupt.getTeamId()).thenReturn(team);
       when(teamInterrupt.getId()).thenReturn(interruptId);
       when(teamInterrupt.isCorrect()).thenReturn(null);
-      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(4000L);
+      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(4.0);
       when(interruptService.getLastTwoInterrupts(startedAt, scheduleId))
           .thenReturn(new InterruptEntity[] {teamInterrupt, null});
 
@@ -1193,7 +1193,7 @@ class GameServiceImplWebSocketTest {
         throws Exception {
       final InterruptEntity systemPause = mock(InterruptEntity.class);
       when(systemPause.getResolvedAt()).thenReturn(null);
-      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(3000L);
+      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(3.0);
       when(interruptService.getLastTwoInterrupts(startedAt, scheduleId))
           .thenReturn(new InterruptEntity[] {null, systemPause});
 
@@ -1211,7 +1211,7 @@ class GameServiceImplWebSocketTest {
 
     @Test
     void contextFetchStageTwoNormalPlaybackScenarioContainsSeekAndRemainingOnly() throws Exception {
-      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(2500L);
+      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(2.5);
       when(interruptService.getLastTwoInterrupts(startedAt, scheduleId))
           .thenReturn(new InterruptEntity[] {null, null});
 
@@ -1231,7 +1231,7 @@ class GameServiceImplWebSocketTest {
     void contextFetchStageTwoBoundaryAtZeroRemainingStillReturnsPlaybackRecoveryFields()
         throws Exception {
       when(schedule.getTrackId().getSongId().getSnippetDuration()).thenReturn(4.0);
-      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(4000L);
+      when(interruptService.calculateSeek(startedAt, scheduleId)).thenReturn(4.0);
       when(interruptService.getLastTwoInterrupts(startedAt, scheduleId))
           .thenReturn(new InterruptEntity[] {null, null});
 

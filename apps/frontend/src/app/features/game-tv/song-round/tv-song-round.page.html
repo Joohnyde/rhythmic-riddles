@@ -9,9 +9,7 @@
     aria-hidden="true"
   ></div>
   <div class="song-round__backdrop pointer-events-none absolute inset-0" aria-hidden="true"></div>
-
   @let vm = store.vm();
-
   <header class="song-round__header relative z-10 flex flex-col items-center text-center">
     <div class="song-round__album-perspective absolute left-0 top-0" data-testid="tv-selected-album">
       <div class="song-round__album">
@@ -38,7 +36,6 @@
         }
       </div>
     </div>
-
     <p class="song-round__room text-sm font-semibold uppercase tracking-[0.18em] text-primary-500">
       ROOM: <span class="text-primary-200">{{ session.code }}</span>
     </p>
@@ -46,7 +43,9 @@
       GUESS THE SONG
     </h1>
   </header>
-
+  @if (vm.playbackError) {
+    <p role="alert">{{ vm.playbackError }}</p>
+  }
   <section class="song-round__stage relative z-10" aria-label="Current music round" data-testid="scoreboard">
     <div class="song-round__teams song-round__teams--left" aria-label="Left team scores"
       [style.--team-count]="leftTeams(vm.teams).length">
@@ -75,7 +74,6 @@
         </article>
       }
     </div>
-
     <div class="song-round__center" aria-live="polite">
       @if (vm.scenario === SongScenario.Revealed) {
         <div class="song-round__answer" data-testid="tv-song-answer">
@@ -125,7 +123,6 @@
         }
       }
     </div>
-
     <div class="song-round__teams song-round__teams--right" aria-label="Right team scores"
       [style.--team-count]="rightTeams(vm.teams).length">
       @for (team of rightTeams(vm.teams); track team.teamId) {
@@ -154,12 +151,16 @@
       }
     </div>
   </section>
-
   <div class="song-round__audio-hidden" aria-hidden="true">
     @if (vm.scenario === SongScenario.Playing && vm.songId && vm.remaining !== null) {
       <rr-audio-player
         data-testid="tv-snippet-audio"
         [src]="audioUrls.snippetUrl(vm.songId)"
+        [scheduleId]="vm.lastPlayedSong"
+        [playbackDelayId]="vm.playbackDelayId"
+        (playbackRequested)="store.requestPlayback($event)"
+        (playbackStarted)="store.acknowledgePlayback()"
+        (playbackFailed)="store.playbackFailed()"
         [seek]="vm.seek ?? 0"
         [remaining]="vm.remaining"
         (completed)="store.onTrackFinished()"

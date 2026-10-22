@@ -50,4 +50,10 @@ export type Stage2Message =
   | S2ErrorSolvedMessage
   | S2AnswerMessage
   | S2SongRepeatMessage
-  | S2SongRevealMessage;
+  | S2SongRevealMessage
+  | S2PlaybackEvent;
+
+/** Admin-only acknowledgement that the TV has started the current song. */
+export interface S2PlaybackEvent extends DefaultMessage<'play'> {
+  scheduleId: string;
+}
