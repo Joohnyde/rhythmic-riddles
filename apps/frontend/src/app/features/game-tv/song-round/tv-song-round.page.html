@@ -1,63 +1,179 @@
-<main class="page shell" data-testid="tv-song-round-page">
+<main
+  class="song-round relative isolate min-h-dvh overflow-visible bg-cosmic-975 text-foreground"
+  [attr.data-team-density]="teamDensity(store.vm().teams)"
+  data-testid="tv-song-round-page"
+>
+  <div
+    class="pointer-events-none absolute inset-0 bg-center bg-no-repeat [background-size:100%_100%]"
+    style="background-image: url('/images/background_admin_lobby.jpg')"
+    aria-hidden="true"
+  ></div>
+  <div class="song-round__backdrop pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
   @let vm = store.vm();
 
-  <header>
-    <p class="kicker">Stage 2</p>
-    @if (vm.question) {
-      <h1 class="title" data-testid="tv-song-question">{{ vm.question }}</h1>
-    }
-  </header>
-
-  <section class="grid two">
-    <div>
-      @switch (vm.scenario) {
-        @case (SongScenario.Revealed) {
-          <rr-song-revealed-panel
-            [answer]="vm.answer"
-            [bravo]="vm.bravo"
-            [answerAudioSrc]="vm.songId ? audioUrls.answerUrl(vm.songId) : null"
-            [answerDuration]="vm.answerDuration"
-            (answerCompleted)="store.onAnswerAudioFinished()"
-          />
-        }
-
-        @case (SongScenario.FinishedUnrevealed) {
-          <rr-song-finished-panel />
-        }
-
-        @case (SongScenario.TeamAnswering) {
-          <rr-team-answering-panel [team]="vm.answeringTeam" />
-        }
-
-        @case (SongScenario.SystemError) {
-          <rr-system-error-panel />
-        }
-
-        @case (SongScenario.Playing) {
-          @if (vm.songId && vm.remaining !== null) {
-            <rr-audio-player
-              data-testid="tv-snippet-audio"
-              [src]="audioUrls.snippetUrl(vm.songId)"
-              [seek]="vm.seek ?? 0"
-              [remaining]="vm.remaining"
-              (completed)="store.onTrackFinished()"
-              (stateOut)="store.savePlaybackState($event)"
+  <header class="song-round__header relative z-10 flex flex-col items-center text-center">
+    <div class="song-round__album-perspective absolute left-0 top-0" data-testid="tv-selected-album">
+      <div class="song-round__album">
+        @if (artwork.album(); as selectedAlbum) {
+          @if (!albumImageFailed()) {
+            <img
+              class="song-round__album-image"
+              [src]="artwork.imageUrl()"
+              [alt]="selectedAlbum.name"
+              (error)="albumImageFailed.set(true)"
+            />
+          } @else {
+            <span class="song-round__album-placeholder" aria-label="Album image unavailable">ALBUM</span>
+          }
+          @if (selectedAlbum.pickedByTeamImage) {
+            <img
+              class="song-round__album-team-icon"
+              [src]="selectedAlbum.pickedByTeamImage"
+              [alt]="selectedAlbum.pickedByTeamName ? selectedAlbum.pickedByTeamName + ' selected this category' : 'Category selecting team'"
             />
           }
+        } @else {
+          <span class="song-round__album-placeholder" aria-label="Album artwork unavailable">ALBUM</span>
         }
+      </div>
+    </div>
 
-        @default {
-          <rr-song-loading-panel />
+    <p class="song-round__room text-sm font-semibold uppercase tracking-[0.18em] text-primary-500">
+      ROOM: <span class="text-primary-200">{{ session.code }}</span>
+    </p>
+    <h1 class="song-round__heading" data-testid="tv-song-question">
+      GUESS THE SONG
+    </h1>
+  </header>
+
+  <section class="song-round__stage relative z-10" aria-label="Current music round" data-testid="scoreboard">
+    <div class="song-round__teams song-round__teams--left" aria-label="Left team scores"
+      [style.--team-count]="leftTeams(vm.teams).length">
+      @for (team of leftTeams(vm.teams); track team.teamId) {
+        <article
+          class="song-round__team"
+          [class.song-round__team--answering]="isAnswering(team, vm)"
+          [class.song-round__team--wrong]="isWrong(team, vm)"
+          [class.song-round__team--correct]="isCorrect(team, vm)"
+          [class.song-round__team--celebrating]="celebratedTeamId() === team.teamId"
+          [style.--team-color]="teamColor(team)"
+          [attr.data-testid]="'scoreboard-team-row-' + team.teamId"
+        >
+          <div class="song-round__team-inner">
+            <img class="song-round__team-icon" [src]="team.image" [alt]="team.name + ' icon'" />
+            <strong class="song-round__team-name" [attr.data-testid]="'scoreboard-team-name-' + team.teamId">{{ team.name }}</strong>
+            <strong class="song-round__team-score"
+              [class.song-round__team-score--four-digits]="hasFourDigitScore(team)"
+              [attr.data-testid]="'scoreboard-team-score-' + team.teamId">{{ displayedScore(team) }}</strong>
+            @if (scoreChange()?.teamId === team.teamId) {
+              <span class="song-round__score-delta" [class.song-round__score-delta--negative]="scoreChange()!.amount < 0">
+                {{ scoreChange()!.amount > 0 ? '+' : '' }}{{ scoreChange()!.amount }}
+              </span>
+            }
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="song-round__center" aria-live="polite">
+      @if (vm.scenario === SongScenario.Revealed) {
+        <div class="song-round__answer" data-testid="tv-song-answer">
+          <p class="song-round__answer-title">{{ vm.answer }}</p>
+          @if (vm.bravo) {
+            <p class="song-round__answer-subtitle">Correct answer!</p>
+          }
+        </div>
+      } @else {
+        <div class="song-round__clock" [class.song-round__clock--paused]="vm.scenario === SongScenario.TeamAnswering">
+          <svg class="song-round__clock-ring" viewBox="0 0 320 320" aria-hidden="true">
+            <defs>
+              <linearGradient id="song-round-ring-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffdd24" />
+                <stop offset="42%" stop-color="#ff8529" />
+                <stop offset="100%" stop-color="#f000a6" />
+              </linearGradient>
+            </defs>
+            <circle class="song-round__clock-track" cx="160" cy="160" r="139" />
+            <circle
+              class="song-round__clock-progress"
+              cx="160"
+              cy="160"
+              r="139"
+              pathLength="100"
+              stroke="url(#song-round-ring-gradient)"
+              [attr.stroke-dashoffset]="100 * (1 - countdownFraction())"
+            />
+          </svg>
+          <strong class="song-round__clock-number" data-testid="song-audio-remaining">
+            <span class="song-round__clock-digits">{{ secondsRemaining() }}</span>
+          </strong>
+        </div>
+        @switch (vm.scenario) {
+          @case (SongScenario.TeamAnswering) {
+            <p class="song-round__center-caption">{{ vm.answeringTeam?.name }} is answering</p>
+          }
+          @case (SongScenario.SystemError) {
+            <p class="song-round__center-caption">Playback paused</p>
+          }
+          @case (SongScenario.FinishedUnrevealed) {
+            <p class="song-round__center-caption">Time's up!</p>
+          }
+          @case (SongScenario.Loading) {
+            <p class="song-round__center-caption">Preparing the next song…</p>
+          }
         }
       }
     </div>
 
-    @if (vm.teams.length && vm.lastPlayedSong && vm.scenario !== SongScenario.Revealed) {
-      <rr-team-scoreboard
-        [teams]="vm.teams"
-        [bravo]="vm.bravo"
-        [currentScheduleId]="vm.lastPlayedSong"
+    <div class="song-round__teams song-round__teams--right" aria-label="Right team scores"
+      [style.--team-count]="rightTeams(vm.teams).length">
+      @for (team of rightTeams(vm.teams); track team.teamId) {
+        <article
+          class="song-round__team"
+          [class.song-round__team--answering]="isAnswering(team, vm)"
+          [class.song-round__team--wrong]="isWrong(team, vm)"
+          [class.song-round__team--correct]="isCorrect(team, vm)"
+          [class.song-round__team--celebrating]="celebratedTeamId() === team.teamId"
+          [style.--team-color]="teamColor(team)"
+          [attr.data-testid]="'scoreboard-team-row-' + team.teamId"
+        >
+          <div class="song-round__team-inner">
+            <img class="song-round__team-icon" [src]="team.image" [alt]="team.name + ' icon'" />
+            <strong class="song-round__team-name" [attr.data-testid]="'scoreboard-team-name-' + team.teamId">{{ team.name }}</strong>
+            <strong class="song-round__team-score"
+              [class.song-round__team-score--four-digits]="hasFourDigitScore(team)"
+              [attr.data-testid]="'scoreboard-team-score-' + team.teamId">{{ displayedScore(team) }}</strong>
+            @if (scoreChange()?.teamId === team.teamId) {
+              <span class="song-round__score-delta" [class.song-round__score-delta--negative]="scoreChange()!.amount < 0">
+                {{ scoreChange()!.amount > 0 ? '+' : '' }}{{ scoreChange()!.amount }}
+              </span>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <div class="song-round__audio-hidden" aria-hidden="true">
+    @if (vm.scenario === SongScenario.Playing && vm.songId && vm.remaining !== null) {
+      <rr-audio-player
+        data-testid="tv-snippet-audio"
+        [src]="audioUrls.snippetUrl(vm.songId)"
+        [seek]="vm.seek ?? 0"
+        [remaining]="vm.remaining"
+        (completed)="store.onTrackFinished()"
+        (stateOut)="store.savePlaybackState($event)"
       />
     }
-  </section>
+    @if (vm.scenario === SongScenario.Revealed) {
+      <rr-song-revealed-panel
+        [answer]="vm.answer"
+        [bravo]="vm.bravo"
+        [answerAudioSrc]="vm.songId ? audioUrls.answerUrl(vm.songId) : null"
+        [answerDuration]="vm.answerDuration"
+        (answerCompleted)="store.onAnswerAudioFinished()"
+      />
+    }
+  </div>
 </main>

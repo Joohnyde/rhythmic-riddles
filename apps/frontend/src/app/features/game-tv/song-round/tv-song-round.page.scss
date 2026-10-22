@@ -1,0 +1,604 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.song-round {
+  /* Team density is chosen from the fuller column by the TV component.
+     Tweak these tokens to adjust frame sizing globally. */
+  --team-row-gap: clamp(9px, 1.55vh, 20px);
+  --team-card-max-height: 98px;
+  --team-card-width: 100%;
+  --team-icon-size: clamp(36px, 3.8vw, 57px);
+  --team-name-font-size: clamp(18px, 1.75vw, 29px);
+  --team-score-font-size: clamp(29px, 2.9vw, 48px);
+  --team-inline-padding: clamp(12px, 1.5vw, 22px);
+  --team-inner-gap: clamp(8px, 1vw, 17px);
+  --team-frame-radius: var(--radius-card);
+  --team-answer-extension: clamp(22px, 3.8vw, 52px);
+  --score-four-digit-scale: 0.81;
+  --round-gold: #ffe12f;
+  --round-orange: #ff8c21;
+  --round-magenta: #f0009a;
+
+  font-family: var(--font-sans);
+  background-color: var(--color-cosmic-975);
+  padding: clamp(26px, 3.5vh, 45px) clamp(22px, 4vw, 64px) 5vh;
+}
+
+/* With four or fewer teams, frames should not dominate the empty columns.
+   Width and height are both roughly 30% smaller than normal-density cards. */
+.song-round[data-team-density='sparse'] {
+  --team-card-width: 70%;
+  --team-card-max-height: 69px;
+  --team-icon-size: clamp(27px, 2.8vw, 40px);
+  --team-name-font-size: clamp(15px, 1.35vw, 22px);
+  --team-score-font-size: clamp(23px, 2.3vw, 35px);
+  --team-inline-padding: clamp(8px, 1vw, 15px);
+  --team-inner-gap: clamp(5px, 0.65vw, 10px);
+  --team-frame-radius: 14px;
+  --team-answer-extension: clamp(16px, 2.8vw, 36px);
+}
+
+.song-round[data-team-density='medium'] {
+  --team-row-gap: clamp(7px, 1.15vh, 13px);
+  --team-card-max-height: 84px;
+  --team-icon-size: clamp(28px, 3vw, 44px);
+  --team-name-font-size: clamp(16px, 1.5vw, 24px);
+  --team-score-font-size: clamp(26px, 2.45vw, 39px);
+  --team-inline-padding: clamp(10px, 1.2vw, 19px);
+  --team-inner-gap: clamp(7px, 0.9vw, 13px);
+}
+
+.song-round[data-team-density='compact'] {
+  --team-row-gap: clamp(4px, 0.75vh, 9px);
+  --team-card-max-height: 73px;
+  --team-icon-size: clamp(22px, 2.5vw, 37px);
+  --team-name-font-size: clamp(13px, 1.25vw, 21px);
+  --team-score-font-size: clamp(21px, 2vw, 34px);
+  --team-inline-padding: clamp(7px, 0.9vw, 15px);
+  --team-inner-gap: clamp(6px, 0.6vw, 10px);
+  --team-frame-radius: 12px;
+  --team-answer-extension: clamp(13px, 2.2vw, 34px);
+}
+
+.song-round__backdrop {
+  background:
+    radial-gradient(ellipse 30% 28% at 50% 49%, rgb(0 0 0 / 72%), transparent 100%),
+    linear-gradient(180deg, rgb(0 0 10 / 40%), rgb(0 0 10 / 7%) 38%, rgb(0 0 10 / 32%));
+}
+
+.song-round__header {
+  height: clamp(205px, 23vh, 255px);
+  padding-top: clamp(15px, 3vh, 34px);
+}
+
+.song-round__room {
+  /* Use the same text-primary-500 / text-primary-200 Tailwind colors and
+     tracking as the Stage 1 category header. */
+  line-height: 1.25;
+}
+
+.song-round__heading {
+  max-width: 72%;
+  margin-top: 5px;
+  font-size: clamp(40px, 5.4vw, 88px);
+  font-weight: 950;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffe131 0%, #ffaf27 30%, #ff6727 63%, #ec087c 92%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 1px rgb(106 5 52 / 32%)) drop-shadow(0 0 13px rgb(238 0 106 / 36%));
+}
+
+.song-round__album-perspective {
+  width: clamp(112px, 11.2vw, 165px);
+  perspective: 250px;
+  perspective-origin: center;
+  overflow: visible;
+  z-index: 2;
+}
+
+.song-round__album {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 15px;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--primary), var(--secondary) 37%, var(--accent) 68%, var(--warm)) border-box;
+  box-shadow:
+    0 0 0.4rem color-mix(in srgb, var(--primary) 44%, transparent),
+    0 0 1.3rem color-mix(in srgb, var(--primary) 35%, transparent);
+  transform: rotateY(30deg);
+  transform-style: preserve-3d;
+  overflow: visible; /* The team icon extends beyond the cover. */
+}
+
+.song-round__album-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.song-round__album-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface), var(--color-cosmic-800));
+  color: var(--color-primary-200);
+  font-size: clamp(13px, 1.3vw, 18px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.song-round__album-team-icon {
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  z-index: 4;
+  width: clamp(29px, 3.1vw, 45px);
+  height: clamp(29px, 3.1vw, 45px);
+  object-fit: contain;
+  pointer-events: none;
+  transform: translateZ(12px);
+  filter: drop-shadow(0 0 7px rgb(0 0 0 / 94%));
+}
+
+.song-round__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, 0.9fr) minmax(0, 1fr);
+  column-gap: clamp(22px, 4.5vw, 84px);
+  align-items: center;
+  width: min(100%, 1380px);
+  /* A fixed stage height gives rows a predictable share of the available
+     screen. The grid automatically squeezes all rows to fit: 10 per side. */
+  height: min(calc(100dvh - 285px), 690px);
+  min-height: 320px;
+  margin: 0 auto;
+}
+
+.song-round__teams {
+  display: grid;
+  grid-template-rows: repeat(var(--team-count, 5), minmax(0, 1fr));
+  gap: var(--team-row-gap);
+  align-content: center;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.song-round__team {
+  position: relative;
+  z-index: 0;
+  justify-self: start;
+  width: var(--team-card-width);
+  height: 100%;
+  max-height: var(--team-card-max-height);
+  align-self: center;
+  min-width: 0;
+  border: 1.5px solid transparent;
+  border-radius: var(--team-frame-radius);
+  color: var(--team-color, #ac3df5);
+  background:
+    linear-gradient(110deg, rgb(8 4 22 / 94%), rgb(4 1 12 / 91%)) padding-box,
+    linear-gradient(110deg, var(--team-color, var(--primary)), color-mix(in srgb, var(--team-color, var(--primary)) 65%, var(--primary)) 110%) border-box;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 5%),
+    0 0 17px color-mix(in srgb, var(--team-color, #ac3df5) 42%, transparent),
+    inset 0 0 23px rgb(10 4 18 / 54%);
+  transition:
+    width 370ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 280ms ease,
+    opacity 280ms ease,
+    filter 280ms ease,
+    box-shadow 350ms ease,
+    border-color 350ms ease,
+    background 350ms ease;
+}
+
+/* Keep scores, labels and icons in front of the rising green liquid. */
+.song-round__team-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: var(--team-inner-gap);
+  height: 100%;
+  align-items: center;
+  padding: 0 var(--team-inline-padding);
+}
+
+.song-round__team-icon {
+  flex: none;
+  width: min(var(--team-icon-size), 78%);
+  height: min(var(--team-icon-size), 78%);
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--team-color, #ac3df5) 46%, transparent));
+}
+
+.song-round__team-name {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+  font-size: var(--team-name-font-size);
+  font-weight: 900;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: -0.03em;
+}
+
+.song-round__team-score {
+  flex: none;
+  min-width: 4ch;
+  text-align: right;
+  font-size: var(--team-score-font-size);
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+/* 4-digit totals fit without overflowing the frame or shrinking the team icon. */
+.song-round__team-score--four-digits {
+  font-size: calc(var(--team-score-font-size) * var(--score-four-digit-scale));
+}
+
+.song-round__team--answering {
+  z-index: 3;
+  width: calc(var(--team-card-width) + var(--team-answer-extension));
+  box-shadow:
+    0 0 8px var(--team-color),
+    0 0 26px color-mix(in srgb, var(--team-color) 74%, transparent),
+    0 0 43px color-mix(in srgb, var(--team-color) 31%, transparent),
+    inset 0 0 21px color-mix(in srgb, var(--team-color) 12%, transparent);
+  animation: song-round-answering 1.65s ease-in-out infinite alternate;
+}
+
+.song-round__teams--right .song-round__team {
+  justify-self: end;
+}
+
+.song-round__team--wrong:not(.song-round__team--answering) {
+  color: #929292;
+  border-color: #727272;
+  background: linear-gradient(110deg, rgb(69 69 69 / 93%), rgb(48 48 48 / 93%));
+  box-shadow: inset 0 0 23px rgb(255 255 255 / 5%), 0 0 10px rgb(0 0 0 / 43%);
+  opacity: 0.72;
+
+  .song-round__team-icon {
+    filter: grayscale(1);
+    opacity: 0.48;
+  }
+}
+
+.song-round__team--celebrating.song-round__team--correct {
+  z-index: 5;
+  width: calc(var(--team-card-width) + var(--team-answer-extension));
+  border-color: var(--color-success-300);
+  box-shadow:
+    0 0 9px var(--success),
+    0 0 21px color-mix(in srgb, var(--success) 85%, transparent),
+    0 0 43px color-mix(in srgb, var(--success) 55%, transparent),
+    inset 0 0 24px color-mix(in srgb, var(--success) 18%, transparent);
+  animation: song-round-correct 700ms ease-in-out infinite alternate;
+}
+
+/* Diagonal green flood from bottom-left to top-right, below the icon/text.
+   Hold the fully filled frame throughout the celebration. The frame itself
+   keeps visible overflow so its glow and diagonal shine can extend outward. */
+.song-round__team--celebrating.song-round__team--correct::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 2px;
+  border-radius: calc(var(--team-frame-radius) - 2px);
+  pointer-events: none;
+  background: linear-gradient(35deg,
+    color-mix(in srgb, var(--success) 88%, #073815),
+    color-mix(in srgb, var(--color-success-300) 88%, #095522));
+  box-shadow: inset 0 0 19px rgb(199 255 207 / 24%);
+  animation: song-round-success-wipe 3200ms cubic-bezier(0.2, 0.75, 0.26, 1) both;
+}
+
+.song-round__team--celebrating.song-round__team--correct::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -12%;
+  bottom: -12%;
+  left: -25%;
+  width: 35%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(208 255 226 / 55%), transparent);
+  filter: blur(5px);
+  transform: translateX(-100%) skewX(-26deg);
+  animation: song-round-success-shine 3200ms ease-out both;
+}
+
+.song-round__team--celebrating.song-round__team--correct .song-round__team-name,
+.song-round__team--celebrating.song-round__team--correct .song-round__team-score {
+  text-shadow: 0 1px 4px rgb(0 0 0 / 75%);
+}
+
+.song-round__score-delta {
+  position: absolute;
+  z-index: 6;
+  right: 18px;
+  top: -17px;
+  padding: 3px 11px;
+  border: 1px solid var(--color-success-300);
+  border-radius: 999px;
+  background: var(--color-success-950);
+  color: var(--color-success-200);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--success) 44%, transparent);
+  font-family: Arial, sans-serif;
+  font-weight: 850;
+  font-size: clamp(14px, 1.5vw, 23px);
+  line-height: 1.2;
+  pointer-events: none;
+  animation: song-round-score-popup 2.25s ease-out both;
+}
+
+.song-round__score-delta--negative {
+  border-color: var(--danger);
+  background: var(--color-danger-950);
+  color: var(--color-danger-200);
+  box-shadow: 0 0 14px rgb(255 45 77 / 35%);
+}
+
+.song-round__center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.song-round__clock {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 15px rgb(244 12 150 / 34%));
+}
+
+.song-round__clock-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.song-round__clock-track,
+.song-round__clock-progress {
+  fill: none;
+  stroke-width: 3;
+}
+
+.song-round__clock-track {
+  stroke: rgb(222 26 150 / 35%);
+}
+
+.song-round__clock-progress {
+  stroke-width: 10;
+  stroke-linecap: butt;
+  stroke-dasharray: 100;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 120ms linear;
+}
+
+/* Full circle overlay ensures numbers stay geometrically centered.
+   Put the gradient on the text itself to keep its original color range. */
+.song-round__clock-number {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.song-round__clock-digits {
+  display: block;
+  font-size: clamp(104px, 11.5vw, 166px);
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  background: linear-gradient(180deg, var(--round-gold), var(--round-orange) 45%, #ff4c43 72%, #eb0098 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 5px 8px rgb(197 0 97 / 24%));
+}
+
+.song-round__clock--paused .song-round__clock-progress {
+  animation: song-round-paused 2s ease-in-out infinite alternate;
+}
+
+.song-round__center-caption {
+  margin-top: 12px;
+  max-width: 100%;
+  font-size: clamp(18px, 2vw, 28px);
+  font-weight: 800;
+  color: #efc4fa;
+  text-align: center;
+  text-shadow: 0 0 18px #8e1dea;
+}
+
+.song-round__answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 115%;
+  text-align: center;
+  animation: song-round-reveal 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.song-round__answer-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(34px, 3.7vw, 66px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  /* The original reveal caption's plain purple, without gradient lettering. */
+  color: #f2c1fe;
+}
+
+.song-round__answer-subtitle {
+  margin-top: 16px;
+  font-size: clamp(17px, 1.55vw, 23px);
+  color: var(--color-success-200);
+  font-weight: 900;
+  text-shadow: 0 0 14px rgb(110 255 34 / 45%);
+}
+
+/* Mount the existing game audio/answer components, but let this TV design own the visuals. */
+.song-round__audio-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes song-round-answering {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.22); }
+}
+
+@keyframes song-round-correct {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.28); }
+}
+
+@keyframes song-round-success-wipe {
+  0% {
+    clip-path: polygon(0 100%, 0 100%, 0 100%, 0 100%);
+    opacity: 0;
+  }
+  5% { opacity: 1; }
+  15% { clip-path: polygon(0 68%, 0 100%, 25% 100%, 0 68%); }
+  27% { clip-path: polygon(0 0, 0 100%, 78% 100%, 34% 0); }
+  39%, 100% {
+    clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+    opacity: 1;
+  }
+}
+
+@keyframes song-round-success-shine {
+  0% { transform: translateX(-100%) skewX(-26deg); opacity: 0; }
+  12% { opacity: 0.8; }
+  38%, 100% { transform: translateX(500%) skewX(-26deg); opacity: 0; }
+}
+
+@keyframes song-round-score-popup {
+  0% { opacity: 0; transform: translateY(17px) scale(0.75); }
+  14%, 74% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(1.08); }
+}
+
+@keyframes song-round-paused {
+  from { opacity: 1; }
+  to { opacity: 0.55; }
+}
+
+@keyframes song-round-reveal {
+  from { opacity: 0; transform: translateY(14px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 1100px) {
+  .song-round__stage {
+    column-gap: clamp(14px, 2.4vw, 38px);
+    grid-template-columns: minmax(0, 1fr) minmax(185px, 0.78fr) minmax(0, 1fr);
+  }
+
+  .song-round {
+    --team-inline-padding: 11px;
+    --team-inner-gap: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .song-round {
+    padding: 22px 14px 35px;
+    --team-answer-extension: 12px;
+    --team-card-max-height: 60px;
+    --team-icon-size: clamp(22px, 3vw, 30px);
+    --team-name-font-size: clamp(11px, 2.3vw, 17px);
+    --team-score-font-size: clamp(20px, 3.4vw, 30px);
+    --team-inline-padding: 7px;
+    --team-inner-gap: 5px;
+    --team-frame-radius: 12px;
+  }
+
+  /* On narrow screens, readability takes precedence over the desktop 30% width reduction. */
+  .song-round[data-team-density='sparse'] {
+    --team-card-width: 100%;
+    --team-icon-size: clamp(22px, 3vw, 30px);
+    --team-name-font-size: clamp(11px, 2.3vw, 17px);
+    --team-score-font-size: clamp(20px, 3.4vw, 30px);
+    --team-inline-padding: 7px;
+    --team-inner-gap: 5px;
+    --team-frame-radius: 12px;
+  }
+  .song-round__header { height: 150px; padding-top: 24px; }
+  .song-round__album-perspective { width: clamp(65px, 11vw, 85px); top: 0; left: 0; right: auto; }
+  .song-round__album-team-icon { width: 26px; height: 26px; right: -7px; bottom: -7px; }
+  .song-round__heading { margin-top: 14px; font-size: clamp(27px, 6vw, 53px); }
+  .song-round__stage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 15px;
+    height: auto;
+    min-height: 0;
+    align-items: start;
+  }
+  .song-round__center {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 185px;
+  }
+  .song-round__clock { width: min(50vw, 205px); }
+  .song-round__clock-digits { font-size: clamp(72px, 15vw, 102px); }
+  .song-round__teams {
+    height: auto;
+    grid-template-rows: repeat(var(--team-count, 5), minmax(0, 60px));
+    gap: 7px;
+  }
+  .song-round__team { min-height: 0; height: 60px; }
+  .song-round__answer { width: 90%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .song-round__team,
+  .song-round__clock-progress { transition-duration: 0.01ms; }
+  .song-round__team--answering,
+  .song-round__team--celebrating.song-round__team--correct,
+  .song-round__clock--paused .song-round__clock-progress,
+  .song-round__score-delta,
+  .song-round__answer { animation-duration: 0.01ms; animation-iteration-count: 1; }
+  .song-round__team--celebrating.song-round__team--correct::before {
+    animation: none;
+    clip-path: none;
+    opacity: 0.32;
+  }
+  .song-round__team--celebrating.song-round__team--correct::after { animation: none; opacity: 0; }
+}

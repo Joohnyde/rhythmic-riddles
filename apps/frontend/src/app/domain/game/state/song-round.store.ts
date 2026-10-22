@@ -17,7 +17,6 @@ import { routeForStage } from '../models/game-stage.model';
 import { TeamScore } from '../models/team-score.model';
 import { Team, teamFromScore } from '../models/team.model';
 import { coerceSongScenario, SongScenario } from './song-scenario';
-
 export interface SongRoundState {
   readonly songId: string | null;
   readonly question: string | null;
@@ -33,7 +32,6 @@ export interface SongRoundState {
   readonly bravo: TeamScore | null;
   readonly inTransit: boolean;
 }
-
 export interface SongRoundVm extends SongRoundState {
   readonly isPlaying: boolean;
   readonly isRevealed: boolean;
@@ -44,7 +42,6 @@ export interface SongRoundVm extends SongRoundState {
   readonly canRevealAnswer: boolean;
   readonly canResolveError: boolean;
 }
-
 function createInitialSongRoundState(): SongRoundState {
   return {
     songId: null,
@@ -62,7 +59,6 @@ function createInitialSongRoundState(): SongRoundState {
     inTransit: false,
   };
 }
-
 @Injectable({ providedIn: 'root' })
 export class SongRoundStore {
   private readonly router = inject(Router);
@@ -70,7 +66,6 @@ export class SongRoundStore {
   private readonly scheduleApi = inject(ScheduleApiService);
   private readonly state = signal<SongRoundState>(createInitialSongRoundState());
   private sub?: Subscription;
-
   readonly vm = computed<SongRoundVm>(() => {
     const state = this.state();
     return {
@@ -85,7 +80,6 @@ export class SongRoundStore {
       canResolveError: state.scenario === SongScenario.SystemError && !state.inTransit,
     };
   });
-
   connect(messages$: Observable<GameServerMessage>, surface: ClientSurface): void {
     this.sub?.unsubscribe();
     this.sub = messages$.subscribe((message) => void this.handleMessage(message, surface));
@@ -99,7 +93,6 @@ export class SongRoundStore {
   private patchState(patch: Partial<SongRoundState>): void {
     this.state.update((state) => ({ ...state, ...patch }));
   }
-
   private async handleMessage(message: DefaultMessage, surface: ClientSurface): Promise<void> {
     switch (message.type) {
       case 'song_next':
@@ -125,7 +118,6 @@ export class SongRoundStore {
         break;
     }
   }
-
   private handleSongNext(message: S2WelcomeMessage): void {
     this.patchState({
       songId: message.songId,
@@ -135,13 +127,13 @@ export class SongRoundStore {
       remaining: message.remaining ?? null,
       answerDuration: message.answerDuration,
       lastPlayedSong: message.scheduleId,
+      teams: message.scores,
       bravo: null,
       scenario: SongScenario.Playing,
       answeringTeam: null,
       interruptId: null,
     });
   }
-
   private handleSongRepeat(message: S2SongRepeatMessage): void {
     this.patchState({
       seek: 0,
@@ -149,7 +141,6 @@ export class SongRoundStore {
       scenario: SongScenario.Playing,
     });
   }
-
   private handleAnswer(message: S2AnswerMessage): void {
     const teams = this.state().teams.map((team) =>
       team.teamId === message.teamId
@@ -161,7 +152,6 @@ export class SongRoundStore {
         : team,
     );
     const answeredTeam = teams.find((team) => team.teamId === message.teamId) ?? null;
-
     this.patchState({
       teams,
       bravo: message.correct ? answeredTeam : null,
@@ -174,7 +164,6 @@ export class SongRoundStore {
       this.patchState({ scenario: coerceSongScenario(message.previousScenario) });
     }
   }
-
   private async handlePause(message: S2PauseMessage): Promise<void> {
     if (this.state().scenario === SongScenario.TeamAnswering) {
       return;
@@ -184,7 +173,6 @@ export class SongRoundStore {
       await this.handleSystemPause();
       return;
     }
-
     const item = this.state().teams.find((team) => team.teamId === message.answeringTeamId);
     this.patchState({
       answeringTeam: item ? teamFromScore(item) : null,
@@ -192,7 +180,6 @@ export class SongRoundStore {
       scenario: SongScenario.TeamAnswering,
     });
   }
-
   private async handleSystemPause(): Promise<void> {
     const previous = this.state().scenario;
     if (previous !== SongScenario.SystemError) {
@@ -205,7 +192,6 @@ export class SongRoundStore {
 
     this.patchState({ scenario: SongScenario.SystemError });
   }
-
   private handleWelcome(message: S2WelcomeMessage, surface: ClientSurface): void {
     if (message.stage !== 'songs') {
       this.disconnect();
@@ -221,7 +207,6 @@ export class SongRoundStore {
       teams: message.scores,
       answerDuration: message.answerDuration,
     };
-
     if (message.revealed != null) {
       this.patchState({
         ...base,
@@ -232,7 +217,6 @@ export class SongRoundStore {
       });
       return;
     }
-
     if (message.answeringTeam != null) {
       this.patchState({
         ...base,
@@ -244,7 +228,6 @@ export class SongRoundStore {
       });
       return;
     }
-
     if (message.error != null) {
       this.patchState({
         ...base,
@@ -262,7 +245,6 @@ export class SongRoundStore {
       scenario: SongScenario.Playing,
     });
   }
-
   onTrackFinished(): void {
     if (this.state().scenario === SongScenario.Playing) {
       this.patchState({ scenario: SongScenario.FinishedUnrevealed });
@@ -279,7 +261,6 @@ export class SongRoundStore {
       remaining: state.remaining,
     });
   }
-
   async resolveError(): Promise<void> {
     const scheduleId = this.state().lastPlayedSong;
     if (!scheduleId || this.state().inTransit) {
@@ -293,7 +274,6 @@ export class SongRoundStore {
       this.patchState({ inTransit: false });
     }
   }
-
   async teamAnswered(correct: boolean): Promise<void> {
     const interruptId = this.state().interruptId;
     if (!interruptId || this.state().inTransit) {
@@ -307,7 +287,6 @@ export class SongRoundStore {
       this.patchState({ inTransit: false });
     }
   }
-
   async advanceGame(repeatSong: boolean): Promise<void> {
     const scheduleId = this.state().lastPlayedSong;
     if (
@@ -317,7 +296,6 @@ export class SongRoundStore {
     ) {
       return;
     }
-
     this.patchState({ inTransit: true });
     try {
       if (repeatSong) {
@@ -334,7 +312,6 @@ export class SongRoundStore {
     if (this.state().inTransit) {
       return;
     }
-
     this.patchState({ inTransit: true });
     try {
       await firstValueFrom(this.scheduleApi.next());

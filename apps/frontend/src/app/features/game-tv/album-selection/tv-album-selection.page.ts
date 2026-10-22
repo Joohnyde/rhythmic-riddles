@@ -12,6 +12,7 @@ import {
 import { Router } from '@angular/router';
 import { GameSession } from '../../../core/session/game-session.service';
 import { AlbumSelectionStore } from '../../../domain/game/state/album-selection.store';
+import { SelectedAlbumArtworkService } from '../../../shared/ui/song-round-presentation/selected-album-artwork.service';
 import { Stage1AlbumFocusComponent } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.component';
 import { Stage1FocusPresentationCoordinator } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-coordinator';
 import type { Stage1FocusRequest } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-focus-coordinator';
@@ -23,7 +24,6 @@ import {
 import { Stage1CategoryHeaderComponent } from '../../../shared/ui/stage1-album-selection/category-header/stage1-category-header.component';
 import { getStage1AlbumImageUrl } from '../../../shared/ui/stage1-album-selection/stage1-album-image-url';
 import { Stage1TvAlbumMarqueeComponent } from '../../../shared/ui/stage1-album-selection/tv-album-marquee/stage1-tv-album-marquee.component';
-
 @Component({
   selector: 'rr-tv-album-selection-page',
   imports: [
@@ -37,9 +37,9 @@ import { Stage1TvAlbumMarqueeComponent } from '../../../shared/ui/stage1-album-s
 export class TvAlbumSelectionPage implements OnInit, OnDestroy {
   @ViewChild(Stage1TvAlbumMarqueeComponent)
   private readonly marquee?: Stage1TvAlbumMarqueeComponent;
-
   readonly session = inject(GameSession);
   readonly store = inject(AlbumSelectionStore);
+  readonly artwork = inject(SelectedAlbumArtworkService);
   readonly focus = new Stage1FocusPresentationCoordinator();
   readonly focusLayout = this.focus.layout;
   readonly focusPhase = this.focus.phase;
@@ -59,7 +59,6 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
     const phase = this.focusPhase();
     return !!this.store.vm().selectedAlbum && (phase === 'animating' || phase === 'settled');
   });
-
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly changeDetector = inject(ChangeDetectorRef);
@@ -68,6 +67,22 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
     effect(() => {
       const vm = this.store.vm();
       const selectedId = vm.selectedAlbum?.categoryId ?? null;
+      if (vm.loaded) {
+        if (selectedId) {
+          const selectedCard = vm.albums.find((album) => album.id === selectedId);
+          if (selectedCard) {
+            this.artwork.capture({
+              id: selectedCard.id,
+              name: selectedCard.name,
+              image: selectedCard.image,
+              pickedByTeamImage: vm.selectedAlbum?.pickedByTeam?.image ?? null,
+              pickedByTeamName: vm.selectedAlbum?.pickedByTeam?.name ?? null,
+            });
+          }
+        } else {
+          this.artwork.clear();
+        }
+      }
       if (!vm.loaded) {
         return;
       }
@@ -77,7 +92,6 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
         this.focus.reset();
         return;
       }
-
       if (selectedId !== this.focus.requestedAlbumId) {
         this.requestAlbumFocus(selectedId);
       }
@@ -95,10 +109,22 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    const exitVm = this.store.vm();
+    const selectedCardOnExit = exitVm.selectedAlbum
+      ? exitVm.albums.find((album) => album.id === exitVm.selectedAlbum?.categoryId)
+      : null;
+    if (selectedCardOnExit) {
+      this.artwork.capture({
+        id: selectedCardOnExit.id,
+        name: selectedCardOnExit.name,
+        image: selectedCardOnExit.image,
+        pickedByTeamImage: exitVm.selectedAlbum?.pickedByTeam?.image ?? null,
+        pickedByTeamName: exitVm.selectedAlbum?.pickedByTeam?.name ?? null,
+      });
+    }
     this.focus.destroy();
     this.store.disconnect();
   }
-
   readonly getAlbumImageUrl = (image: string): string => getStage1AlbumImageUrl(image);
 
   onFocusReady(): void {
@@ -115,7 +141,6 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
     this.marquee?.resetFocusPositioning();
     this.focus.markFailed();
   }
-
   private requestAlbumFocus(albumId: string): void {
     const request = this.focus.begin(albumId);
     void this.prepareAlbumFocus(request).catch((error: unknown) => {
@@ -127,7 +152,6 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
       console.error('Stage 1 TV focus preparation failed.', error);
     });
   }
-
   private async prepareAlbumFocus(request: Stage1FocusRequest): Promise<void> {
     await waitForStage1AnimationFrame(request.signal);
     await waitForStage1AnimationFrame(request.signal);
@@ -140,7 +164,6 @@ export class TvAlbumSelectionPage implements OnInit, OnDestroy {
     if (!layout || !this.focus.commitLayout(request, layout)) {
       return;
     }
-
     this.changeDetector.detectChanges();
   }
 }
