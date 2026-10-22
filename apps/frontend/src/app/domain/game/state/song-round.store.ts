@@ -81,6 +81,8 @@ export class SongRoundStore {
   private sub?: Subscription;
   private surface: ClientSurface | null = null;
   private playbackEpoch = 0;
+  private activeAttemptAt: number | null = null;
+  private lastAttemptAt = 0;
   private registration?: Promise<void>;
   private acknowledgement: Promise<void> = Promise.resolve();
 
@@ -99,10 +101,15 @@ export class SongRoundStore {
     };
   });
 
+  private invalidatePlayback(): void {
+    this.playbackEpoch++;
+    this.activeAttemptAt = null;
+    this.registration = undefined;
+  }
+
   connect(messages$: Observable<GameServerMessage>, surface: ClientSurface): void {
     this.sub?.unsubscribe();
-    this.playbackEpoch++;
-    this.registration = undefined;
+    this.invalidatePlayback();
     this.acknowledgement = Promise.resolve();
     this.surface = surface;
     this.sub = messages$.subscribe((message) => void this.handleMessage(message, surface));
@@ -110,8 +117,7 @@ export class SongRoundStore {
 
   disconnect(): void {
     this.sub?.unsubscribe();
-    this.playbackEpoch++;
-    this.registration = undefined;
+    this.invalidatePlayback();
     this.acknowledgement = Promise.resolve();
     this.sub = undefined;
     this.surface = null;
@@ -151,8 +157,7 @@ export class SongRoundStore {
   }
 
   private handleSongNext(message: S2WelcomeMessage): void {
-    this.playbackEpoch++;
-    this.registration = undefined;
+    this.invalidatePlayback();
     this.patchState({
       songId: message.songId,
       question: message.question,
@@ -172,8 +177,7 @@ export class SongRoundStore {
   }
 
   private handleSongRepeat(message: S2SongRepeatMessage): void {
-    this.playbackEpoch++;
-    this.registration = undefined;
+    this.invalidatePlayback();
     this.patchState({
       seek: 0,
       remaining: message.remaining,
@@ -195,6 +199,7 @@ export class SongRoundStore {
         : team,
     );
     const answeredTeam = teams.find((team) => team.teamId === message.teamId) ?? null;
+    this.invalidatePlayback();
 
     this.patchState({
       teams,
@@ -207,6 +212,7 @@ export class SongRoundStore {
 
   private handleErrorSolved(message: S2ErrorSolvedMessage): void {
     if (this.state().scenario === SongScenario.SystemError) {
+      this.invalidatePlayback();
       const scenario = coerceSongScenario(message.previousScenario);
       this.patchState({
         scenario,
@@ -226,6 +232,7 @@ export class SongRoundStore {
       return;
     }
 
+    this.invalidatePlayback();
     const item = this.state().teams.find((team) => team.teamId === message.answeringTeamId);
     this.patchState({
       answeringTeam: item ? teamFromScore(item) : null,
@@ -236,20 +243,18 @@ export class SongRoundStore {
 
   private async handleSystemPause(): Promise<void> {
     const previous = this.state().scenario;
-    if (previous !== SongScenario.SystemError) {
-      try {
-        await firstValueFrom(this.interruptApi.savePrevScenario(previous));
-      } catch {
-        // TODO: replace with user-facing toast/error state when backend error handling is standardized.
-      }
-    }
-
+    if (previous === SongScenario.SystemError) return;
+    this.invalidatePlayback();
     this.patchState({ scenario: SongScenario.SystemError });
+    try {
+      await firstValueFrom(this.interruptApi.savePrevScenario(previous));
+    } catch {
+      // TODO: replace with user-facing toast/error state when backend error handling is standardized.
+    }
   }
 
   private handleWelcome(message: S2WelcomeMessage, surface: ClientSurface): void {
-    this.playbackEpoch++;
-    this.registration = undefined;
+    this.invalidatePlayback();
     if (message.stage !== 'songs') {
       this.disconnect();
       void this.router.navigate(routeForStage(surface, message.stage));
@@ -331,6 +336,11 @@ export class SongRoundStore {
       return Promise.resolve();
     }
     if (this.registration) return this.registration;
+    if (this.activeAttemptAt === null) {
+      this.lastAttemptAt = Math.max(Date.now(), this.lastAttemptAt + 1);
+      this.activeAttemptAt = this.lastAttemptAt;
+    }
+    const attemptAt = this.activeAttemptAt;
     const epoch = this.playbackEpoch;
     const priorAcknowledgement = this.acknowledgement;
     const registration = (async () => {
@@ -344,17 +354,19 @@ export class SongRoundStore {
       )
         return;
       try {
-        const delayId = await firstValueFrom(this.delayApi.register(scheduleId));
+        const registration = await firstValueFrom(this.delayApi.register(scheduleId, attemptAt));
         if (
           this.surface === 'tv' &&
           this.playbackEpoch === epoch &&
+          this.activeAttemptAt === attemptAt &&
+          registration.clientAttemptAt === attemptAt &&
           this.state().lastPlayedSong === scheduleId &&
           this.state().scenario === SongScenario.Playing
         ) {
-          this.patchState({ playbackDelayId: delayId, playbackError: null });
+          this.patchState({ playbackDelayId: registration.delayId, playbackError: null });
         }
       } catch {
-        if (this.playbackEpoch === epoch) {
+        if (this.playbackEpoch === epoch && this.activeAttemptAt === attemptAt) {
           this.patchState({ playbackError: 'Could not register TV playback. Reconnect to retry.' });
         }
       }
@@ -370,6 +382,7 @@ export class SongRoundStore {
   async acknowledgePlayback(): Promise<void> {
     if (this.surface !== 'tv' || this.state().scenario !== SongScenario.Playing) return;
     const epoch = this.playbackEpoch;
+    const attemptAt = this.activeAttemptAt;
     const previous = this.acknowledgement;
     const task = (async () => {
       await previous.catch(() => {});
@@ -378,12 +391,14 @@ export class SongRoundStore {
       if (
         this.surface !== 'tv' ||
         this.playbackEpoch !== epoch ||
+        this.activeAttemptAt !== attemptAt ||
         this.state().scenario !== SongScenario.Playing ||
-        !delayId
+        !delayId ||
+        attemptAt === null
       )
         return;
       try {
-        await firstValueFrom(this.delayApi.acknowledge(delayId));
+        await firstValueFrom(this.delayApi.acknowledge(delayId, attemptAt));
         if (this.playbackEpoch === epoch && this.state().playbackDelayId === delayId) {
           this.patchState({ playbackError: null });
         }

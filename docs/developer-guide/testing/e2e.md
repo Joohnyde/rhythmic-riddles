@@ -547,7 +547,10 @@ real TV REST registration and acknowledgement endpoints, backend WebSocket routi
 and the Admin countdown in two Chromium clients. It controls only the TV browser's
 media clock, so it is deterministic without requiring an audio device or an MP3
 fixture. The test deliberately delays the registration request and verifies that
-Admin stays in its loading state until the TV ACK produces `play`. Admin then
+Admin stays in its loading state until the TV ACK (with the current attempt
+timestamp) produces `play`. The TV clock is held stationary after `playing` before
+being advanced explicitly to test that media progress, not the event itself,
+releases Admin. Admin then
 finishes on its local timer, without a TV completion message.
 
 This contract does **not** cover unexpected mid-song buffering (unsupported in

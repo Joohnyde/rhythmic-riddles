@@ -62,12 +62,19 @@ class DatabaseSchemaIntegrationTest extends PostgresJpaIntegrationTest {
   @Test
   void playbackDelayIndexesAndForeignKeyAreInstalled() {
     assertEquals(
-        2,
+        1,
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM information_schema.columns "
+                + "WHERE table_schema = 'public' AND table_name = 'playback_delay' "
+                + "AND column_name = 'client_attempt_at' AND data_type = 'bigint'",
+            Integer.class));
+    assertEquals(
+        3,
         jdbc.queryForObject(
             """
         SELECT COUNT(*) FROM pg_indexes
         WHERE schemaname = 'public'
-          AND indexname IN ('idx_playback_delay_schedule', 'uq_playback_delay_open')
+          AND indexname IN ('idx_playback_delay_schedule', 'idx_playback_delay_attempt', 'uq_playback_delay_open')
         """,
             Integer.class));
     assertEquals(

@@ -1,7 +1,7 @@
 <main class="page shell" data-testid="tv-song-round-page">
   @let vm = store.vm();
 
-  <header>
+  <header class="header">
     <p class="kicker">Stage 2</p>
     @if (vm.question) {
       <h1 class="title" data-testid="tv-song-question">{{ vm.question }}</h1>
@@ -61,7 +61,7 @@
       }
     </div>
 
-    @if (vm.teams.length && vm.lastPlayedSong && vm.scenario !== SongScenario.Revealed) {
+    @if (vm.teams.length && vm.lastPlayedSong) {
       <rr-team-scoreboard
         [teams]="vm.teams"
         [bravo]="vm.bravo"
