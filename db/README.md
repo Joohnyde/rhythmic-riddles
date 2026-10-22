@@ -12,7 +12,10 @@ Execution order:
 
 ## Current script ownership
 
-The scripts intentionally do not duplicate the same invariant in multiple files.
+Base structural constraints belong in `db_01`; upgrade-only runtime rules belong in
+`db_04`. The idempotent partial `uq_playback_delay_open` index is the deliberate
+exception: bootstrap creates it for fresh databases, while `db_04` also supplies it
+for older databases that have the table but not the invariant.
 
 `db_01_create_schema.sql` owns the base schema. Rules that are intrinsic to the base identity/shape of a table belong there. In particular, `game.code` is unique in `db_01`; `db_04` must not create a second room-code uniqueness index/constraint.
 
@@ -33,6 +36,22 @@ Once a script has shipped in the first customer release, treat it as frozen hist
 The current packaged embedded-database bootstrap is intentionally still a **run-once initializer**. It writes `.cestereg_sql_done` and skips SQL on later starts. Therefore a future packaged application version that requires a database change will need a migration mechanism before that upgrade can be supported safely. That work is deferred until after the first release; it is not implemented or tested by the current DB integration layer.
 
 When upgrade support is introduced, evaluate a small plain-SQL migration tool rather than building a custom framework first. `Flyway Community` is the natural first candidate for the Java/Spring application because it tracks applied SQL migrations and checksums in a schema-history table. `dbmate` is a lightweight alternative if a standalone, framework-agnostic single binary is preferred. No tool choice is committed yet.
+
+## Playback-delay column compatibility
+
+The current pre-release schema stores playback-delay timestamps only, without the
+old derived `delay` number. `CREATE TABLE IF NOT EXISTS` does not remove a column
+from a previously initialized database. If upgrading a local developer database
+created with the earlier definition, inspect the state and run:
+
+```sql
+ALTER TABLE public.playback_delay
+  DROP CONSTRAINT IF EXISTS ck_playback_delay_nonnegative;
+ALTER TABLE public.playback_delay DROP COLUMN IF EXISTS delay;
+```
+
+Do not silently delete playback history. This manual correction is appropriate
+for the evolving pre-release database, not a packaged production migration.
 
 ## Test bootstrap
 

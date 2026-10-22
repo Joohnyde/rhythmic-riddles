@@ -60,6 +60,28 @@ class DatabaseSchemaIntegrationTest extends PostgresJpaIntegrationTest {
   }
 
   @Test
+  void playbackDelayIndexesAndForeignKeyAreInstalled() {
+    assertEquals(
+        2,
+        jdbc.queryForObject(
+            """
+        SELECT COUNT(*) FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND indexname IN ('idx_playback_delay_schedule', 'uq_playback_delay_open')
+        """,
+            Integer.class));
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            """
+        SELECT COUNT(*) FROM pg_constraint
+        WHERE conname = 'fk_playback_delay_schedule'
+          AND contype = 'f'
+        """,
+            Integer.class));
+  }
+
+  @Test
   void schemaBootstrapCanBeReappliedWithoutDestroyingExistingData() {
     final UUID gameId = fixture.game("IDEM", 2, 2, 1);
     final UUID teamId = fixture.team(gameId, "Persistent Team", "team.png");
