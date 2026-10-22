@@ -38,7 +38,17 @@ import java.util.UUID;
           FROM PlaybackDelayEntity p
           WHERE p.scheduleId.id = :scheduleId
             AND p.acknowledgedAt IS NULL
-          """)
+          """),
+  @NamedQuery(
+      name = "PlaybackDelayEntity.findLatestBySchedule",
+      query =
+          """
+                  SELECT p
+                  FROM PlaybackDelayEntity p
+                  WHERE p.scheduleId.id = :scheduleId
+                  ORDER BY p.clientAttemptAt DESC NULLS LAST, p.sentAt DESC
+                  LIMIT 1
+              """)
 })
 public class PlaybackDelayEntity implements Serializable {
 
@@ -62,6 +72,9 @@ public class PlaybackDelayEntity implements Serializable {
 
   @Column(name = "acknowledged_at")
   private LocalDateTime acknowledgedAt;
+
+  @Column(name = "client_attempt_at")
+  private Long clientAttemptAt;
 
   public PlaybackDelayEntity() {}
 
@@ -105,6 +118,14 @@ public class PlaybackDelayEntity implements Serializable {
 
   public void setAcknowledgedAt(LocalDateTime acknowledgedAt) {
     this.acknowledgedAt = acknowledgedAt;
+  }
+
+  public Long getClientAttemptAt() {
+    return clientAttemptAt;
+  }
+
+  public void setClientAttemptAt(Long clientAttemptAt) {
+    this.clientAttemptAt = clientAttemptAt;
   }
 
   @Override

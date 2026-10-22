@@ -9,6 +9,8 @@ public interface PlaybackDelayRepository extends JpaRepository<PlaybackDelayEnti
 
   PlaybackDelayEntity findOpenBySchedule(UUID scheduleId);
 
+  PlaybackDelayEntity findLatestBySchedule(UUID scheduleId);
+
   /**
    * Returns playback attempts in chronological order, including an unfinished attempt.
    *

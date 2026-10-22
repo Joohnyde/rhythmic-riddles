@@ -4,6 +4,11 @@ import { Observable } from 'rxjs';
 import { GameSession } from '../../../core/session/game-session.service';
 import { environment } from '../../../../environments/environment';
 
+export interface PlaybackRegistration {
+  delayId: string;
+  clientAttemptAt: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DelayApiService {
   private readonly http = inject(HttpClient);
@@ -16,11 +21,11 @@ export class DelayApiService {
     return `${environment.apiUrl}/api/v1/games/${this.session.code}/delays`;
   }
 
-  register(scheduleId: string): Observable<string> {
-    return this.http.post<string>(this.apiUrl(), { scheduleId });
+  register(scheduleId: string, clientAttemptAt: number): Observable<PlaybackRegistration> {
+    return this.http.post<PlaybackRegistration>(this.apiUrl(), { scheduleId, clientAttemptAt });
   }
 
-  acknowledge(delayId: string): Observable<void> {
-    return this.http.put<void>(`${this.apiUrl()}/${delayId}/acknowledge`, null);
+  acknowledge(delayId: string, clientAttemptAt: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl()}/${delayId}/acknowledge`, { clientAttemptAt });
   }
 }
