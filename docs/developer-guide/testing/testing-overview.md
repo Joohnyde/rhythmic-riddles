@@ -61,7 +61,7 @@ Playback synchronization is covered at the boundary that owns each guarantee:
 | --- | --- |
 | `PlaybackTimelineTest` | Pure interval union: nested interrupts, disjoint and open-ended delays, clipping and mixed play/wait cycles |
 | `InterruptServiceImplClockTest` | Seek/recovery from repository intervals using the injected backend clock; no recovery writes |
-| `PlaybackDelayServiceImplTest` | TV-only delay registration, repeated pre-play requests, room ownership, stale replay IDs and idempotent ACK |
+| `PlaybackDelayServiceImplTest` | TV attempt timestamp ordering, deduplication, room ownership, stale replay IDs and idempotent ACK |
 | `PlaybackDelayRepositoryIntegrationTest` | PostgreSQL partial unique index, timestamp-only history ordering and schedule cascade |
 | `PlaybackDelayControllerTest` | Registration and ACK HTTP routes; there is no TV completion endpoint |
 | `SongRoundStore` playback tests | Admin waits for a matching `play` then finishes via its own timer; reconnects, replays, and registration-before-ACK ordering |

@@ -523,7 +523,7 @@ seeded WebSocket, backend, release or receiver layers.
 ### Playback synchronization (stage 2) — covered regression families
 
 - Register/acknowledge API, room ownership and wrong-stage validation; no TV completion route.
-- Duplicate registration, duplicate acknowledgement and stale IDs after replay.
+- Duplicate registration, duplicate acknowledgement, client timestamp ordering and stale IDs after replay.
 - Playback timeline union: nested interrupt/loading intervals, ongoing delays and reconnect.
 - Admin waits until matching `play`, resets on new song/replay, and finishes when **its
   own** timer completes. TV audio completion is local to the TV.

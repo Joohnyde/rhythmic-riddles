@@ -73,6 +73,19 @@ class PlaybackDelayRepositoryIntegrationTest extends PostgresJpaIntegrationTest 
   }
 
   @Test
+  void latestAttemptQueryIncludesAcknowledgedRowsAndOrdersByClientTimestamp() {
+    final UUID legacy = insert(START, START.plusSeconds(1));
+    final UUID newer = insert(START.plusSeconds(4), START.plusSeconds(5));
+    final UUID older = insert(START.plusSeconds(7), START.plusSeconds(8));
+    jdbc.update("UPDATE playback_delay SET client_attempt_at = ? WHERE id = ?", 200L, newer);
+    jdbc.update("UPDATE playback_delay SET client_attempt_at = ? WHERE id = ?", 100L, older);
+
+    assertEquals(newer, repository.findLatestBySchedule(scheduleId).getId());
+    assertEquals(3, repository.findBySchedule(scheduleId).size());
+    assertEquals(legacy, repository.findBySchedule(scheduleId).get(0).getId());
+  }
+
+  @Test
   void openDelayUniquenessIsScopedToScheduleRatherThanRoom() {
     final QuizPersistenceFixture fixture = new QuizPersistenceFixture(jdbc);
     final UUID otherAlbum = fixture.album("Second delay album");

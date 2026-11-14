@@ -162,6 +162,7 @@ erDiagram
     uuid schedule_id FK
     timestamp sent_at
     timestamp acknowledged_at
+    bigint client_attempt_at
   }
 
   INTERRUPT {
@@ -201,9 +202,13 @@ as a side effect of starting a song or reconstructing a disconnected session.
 The interval-union seek calculation subtracts waiting and interrupt time once.
 
 Columns: `id (uuid, PK)`, `schedule_id (uuid, FK schedule.id ON DELETE CASCADE)`,
-`sent_at (timestamp, required)`, `acknowledged_at (timestamp, nullable)`.
+`sent_at (timestamp, required)`, `acknowledged_at (timestamp, nullable)`,
+`client_attempt_at (bigint, nullable for historical rows)` — TV-generated Unix
+milliseconds ordering registrations independently of backend timeline timestamps.
 
-Indexes: `(schedule_id, sent_at)` for history and partial unique `(schedule_id)`
+Indexes: `(schedule_id, sent_at)` for history,
+`(schedule_id, client_attempt_at DESC NULLS LAST, sent_at DESC)` for the latest
+accepted attempt (including acknowledged rows), and partial unique `(schedule_id)`
 where `acknowledged_at IS NULL` for pending-attempt integrity. See
 [State machine & recovery](state-machine-and-recovery.md#tv-playback-admin-timer-and-recovery).
 

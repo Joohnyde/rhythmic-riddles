@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,6 +45,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class PlaybackDelayServiceImplTest {
 
   private static final LocalDateTime NOW = LocalDateTime.of(2026, 10, 20, 12, 0);
+  private static final long ATTEMPT_AT = NOW.toInstant(ZoneOffset.UTC).toEpochMilli() - 1000;
   @Mock private GameRepository gameRepository;
   @Mock private ScheduleRepository scheduleRepository;
   @Mock private PlaybackDelayRepository playbackDelayRepository;
@@ -77,12 +80,14 @@ class PlaybackDelayServiceImplTest {
   void registersPendingAttemptOnlyOnce() throws Exception {
     currentSong();
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
-    final UUID first = service.registerPlaybackDelay(schedule.getId(), "AKKU");
+    final UUID first =
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId();
     assertNotNull(first);
     final ArgumentCaptor<PlaybackDelayEntity> captured =
         ArgumentCaptor.forClass(PlaybackDelayEntity.class);
     verify(playbackDelayRepository).saveAndFlush(captured.capture());
     assertEquals(NOW, captured.getValue().getSentAt());
+    assertEquals(Long.valueOf(ATTEMPT_AT), captured.getValue().getClientAttemptAt());
     verify(broadcastGateway, never()).toAdmin(any(), any());
   }
 
@@ -91,8 +96,11 @@ class PlaybackDelayServiceImplTest {
     currentSong();
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
     final PlaybackDelayEntity delay = new PlaybackDelayEntity(schedule, NOW.minusSeconds(2));
-    when(playbackDelayRepository.findOpenBySchedule(schedule.getId())).thenReturn(delay);
-    assertEquals(delay.getId(), service.registerPlaybackDelay(schedule.getId(), "AKKU"));
+    delay.setClientAttemptAt(ATTEMPT_AT);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(delay);
+    assertEquals(
+        delay.getId(),
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId());
     verify(playbackDelayRepository, never()).saveAndFlush(any());
   }
 
@@ -100,10 +108,14 @@ class PlaybackDelayServiceImplTest {
   void acknowledgementIsIdempotentAndSendsPlayOnlyOnFirstAttempt() throws Exception {
     currentSong();
     final PlaybackDelayEntity delay = new PlaybackDelayEntity(schedule, NOW.minusSeconds(2));
+    delay.setClientAttemptAt(ATTEMPT_AT);
     when(playbackDelayRepository.findById(delay.getId())).thenReturn(Optional.of(delay));
-    service.acknowledgePlaybackDelay(delay.getId(), "AKKU");
+    lenient()
+        .when(playbackDelayRepository.findLatestBySchedule(schedule.getId()))
+        .thenReturn(delay);
+    service.acknowledgePlaybackDelay(delay.getId(), "AKKU", ATTEMPT_AT);
     assertEquals(NOW, delay.getAcknowledgedAt());
-    service.acknowledgePlaybackDelay(delay.getId(), "AKKU");
+    service.acknowledgePlaybackDelay(delay.getId(), "AKKU", ATTEMPT_AT);
     verify(broadcastGateway).toAdmin(eq("AKKU"), any(String.class));
   }
 
@@ -111,9 +123,12 @@ class PlaybackDelayServiceImplTest {
   void staleReplayAcknowledgementDoesNotStartAdmin() throws Exception {
     currentSong();
     final PlaybackDelayEntity old = new PlaybackDelayEntity(schedule, NOW.minusSeconds(8));
+    old.setClientAttemptAt(ATTEMPT_AT);
     when(playbackDelayRepository.findById(old.getId())).thenReturn(Optional.of(old));
+    lenient().when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(old);
     assertThrows(
-        WrongGameStateException.class, () -> service.acknowledgePlaybackDelay(old.getId(), "AKKU"));
+        WrongGameStateException.class,
+        () -> service.acknowledgePlaybackDelay(old.getId(), "AKKU", ATTEMPT_AT));
     verify(broadcastGateway, never()).toAdmin(any(), any());
   }
 
@@ -125,7 +140,7 @@ class PlaybackDelayServiceImplTest {
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
     assertThrows(
         InvalidArgumentException.class,
-        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU"));
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT));
   }
 
   @Test
@@ -133,9 +148,12 @@ class PlaybackDelayServiceImplTest {
     currentSong();
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
     final PlaybackDelayEntity pending = new PlaybackDelayEntity(schedule, schedule.getStartedAt());
-    when(playbackDelayRepository.findOpenBySchedule(schedule.getId())).thenReturn(pending);
+    pending.setClientAttemptAt(ATTEMPT_AT);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(pending);
     for (int i = 0; i < 5; i++) {
-      assertEquals(pending.getId(), service.registerPlaybackDelay(schedule.getId(), "AKKU"));
+      assertEquals(
+          pending.getId(),
+          service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId());
     }
     verify(playbackDelayRepository, never()).saveAndFlush(any());
     verify(broadcastGateway, never()).toAdmin(any(), any());
@@ -145,7 +163,8 @@ class PlaybackDelayServiceImplTest {
   void registrationStartsAtTvRequestNotAtBackendScheduleStart() throws Exception {
     currentSong();
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
-    final UUID attempt = service.registerPlaybackDelay(schedule.getId(), "AKKU");
+    final UUID attempt =
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId();
     final ArgumentCaptor<PlaybackDelayEntity> captured =
         ArgumentCaptor.forClass(PlaybackDelayEntity.class);
     verify(playbackDelayRepository).saveAndFlush(captured.capture());
@@ -160,7 +179,7 @@ class PlaybackDelayServiceImplTest {
     when(presenceGateway.areBothPresent("AKKU")).thenReturn(false);
     assertThrows(
         AppNotRegisteredException.class,
-        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU"));
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT));
     verify(playbackDelayRepository, never()).saveAndFlush(any());
   }
 
@@ -168,13 +187,15 @@ class PlaybackDelayServiceImplTest {
   void acknowledgementRejectedDuringDisconnectCanSucceedAfterReconnect() throws Exception {
     currentSong();
     final PlaybackDelayEntity open = new PlaybackDelayEntity(schedule, NOW.minusSeconds(1));
+    open.setClientAttemptAt(ATTEMPT_AT);
     when(playbackDelayRepository.findById(open.getId())).thenReturn(Optional.of(open));
+    lenient().when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(open);
     when(presenceGateway.areBothPresent("AKKU")).thenReturn(false, true);
     assertThrows(
         AppNotRegisteredException.class,
-        () -> service.acknowledgePlaybackDelay(open.getId(), "AKKU"));
+        () -> service.acknowledgePlaybackDelay(open.getId(), "AKKU", ATTEMPT_AT));
     assertNull(open.getAcknowledgedAt());
-    service.acknowledgePlaybackDelay(open.getId(), "AKKU");
+    service.acknowledgePlaybackDelay(open.getId(), "AKKU", ATTEMPT_AT);
     assertEquals(NOW, open.getAcknowledgedAt());
     verify(broadcastGateway)
         .toAdmin(eq("AKKU"), org.mockito.ArgumentMatchers.contains("\"type\":\"play\""));
@@ -185,10 +206,15 @@ class PlaybackDelayServiceImplTest {
     currentSong();
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
     final PlaybackDelayEntity previous = new PlaybackDelayEntity(schedule, NOW.minusSeconds(2));
+    previous.setClientAttemptAt(ATTEMPT_AT - 1);
     when(playbackDelayRepository.findById(previous.getId())).thenReturn(Optional.of(previous));
+    lenient()
+        .when(playbackDelayRepository.findLatestBySchedule(schedule.getId()))
+        .thenReturn(previous);
 
-    service.acknowledgePlaybackDelay(previous.getId(), "AKKU");
-    final UUID resumedAttempt = service.registerPlaybackDelay(schedule.getId(), "AKKU");
+    service.acknowledgePlaybackDelay(previous.getId(), "AKKU", ATTEMPT_AT - 1);
+    final UUID resumedAttempt =
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId();
 
     assertEquals(NOW, previous.getAcknowledgedAt());
     assertNotNull(resumedAttempt);
@@ -203,11 +229,15 @@ class PlaybackDelayServiceImplTest {
     otherGame.setCode("AKKU");
     when(gameRepository.findByCode("AKKU", 2)).thenReturn(otherGame);
     final PlaybackDelayEntity delay = new PlaybackDelayEntity(schedule, NOW.minusSeconds(1));
+    delay.setClientAttemptAt(ATTEMPT_AT);
     when(playbackDelayRepository.findById(delay.getId())).thenReturn(Optional.of(delay));
+    lenient()
+        .when(playbackDelayRepository.findLatestBySchedule(schedule.getId()))
+        .thenReturn(delay);
 
     assertThrows(
         InvalidArgumentException.class,
-        () -> service.acknowledgePlaybackDelay(delay.getId(), "AKKU"));
+        () -> service.acknowledgePlaybackDelay(delay.getId(), "AKKU", ATTEMPT_AT));
     assertNull(delay.getAcknowledgedAt());
     verify(broadcastGateway, never()).toAdmin(any(), any());
   }
@@ -221,7 +251,7 @@ class PlaybackDelayServiceImplTest {
 
     assertThrows(
         WrongGameStateException.class,
-        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU"));
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT));
     verify(playbackDelayRepository, never()).saveAndFlush(any());
   }
 
@@ -229,10 +259,14 @@ class PlaybackDelayServiceImplTest {
   void repeatedAckOnlyBroadcastsPlayOnceAcrossHttpRetries() throws Exception {
     currentSong();
     final PlaybackDelayEntity delay = new PlaybackDelayEntity(schedule, NOW.minusSeconds(2));
+    delay.setClientAttemptAt(ATTEMPT_AT);
     when(playbackDelayRepository.findById(delay.getId())).thenReturn(Optional.of(delay));
+    lenient()
+        .when(playbackDelayRepository.findLatestBySchedule(schedule.getId()))
+        .thenReturn(delay);
 
     for (int attempt = 0; attempt < 4; attempt++) {
-      service.acknowledgePlaybackDelay(delay.getId(), "AKKU");
+      service.acknowledgePlaybackDelay(delay.getId(), "AKKU", ATTEMPT_AT);
     }
 
     assertEquals(NOW, delay.getAcknowledgedAt());
@@ -246,13 +280,106 @@ class PlaybackDelayServiceImplTest {
     currentSong();
     when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
     final PlaybackDelayEntity stale = new PlaybackDelayEntity(schedule, NOW.minusSeconds(9));
+    stale.setClientAttemptAt(ATTEMPT_AT);
     when(playbackDelayRepository.findOpenBySchedule(schedule.getId())).thenReturn(stale);
-    final UUID newId = service.registerPlaybackDelay(schedule.getId(), "AKKU");
-    verify(playbackDelayRepository).delete(stale);
+    final UUID newId =
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId();
+    // Flush the deleted open attempt before inserting its replacement; otherwise the
+    // partial unique index can reject the insert if Hibernate flushes it first.
+    final InOrder writes = inOrder(playbackDelayRepository);
+    writes.verify(playbackDelayRepository).delete(stale);
+    writes.verify(playbackDelayRepository).flush();
     final ArgumentCaptor<PlaybackDelayEntity> captured =
         ArgumentCaptor.forClass(PlaybackDelayEntity.class);
-    verify(playbackDelayRepository).saveAndFlush(captured.capture());
+    writes.verify(playbackDelayRepository).saveAndFlush(captured.capture());
     assertEquals(newId, captured.getValue().getId());
     assertEquals(NOW, captured.getValue().getSentAt());
+  }
+
+  @Test
+  void lateRegistrationCannotReplaceANewerOpenAttempt() throws Exception {
+    currentSong();
+    when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+    final PlaybackDelayEntity newer = new PlaybackDelayEntity(schedule, NOW.minusSeconds(1));
+    newer.setClientAttemptAt(ATTEMPT_AT);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(newer);
+    assertThrows(
+        WrongGameStateException.class,
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT - 1));
+    assertEquals(Long.valueOf(ATTEMPT_AT), newer.getClientAttemptAt());
+    verify(playbackDelayRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void lateRegistrationCannotReopenAnAlreadyAcknowledgedAttempt() throws Exception {
+    currentSong();
+    when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+    final PlaybackDelayEntity newer = new PlaybackDelayEntity(schedule, NOW.minusSeconds(1));
+    newer.setClientAttemptAt(ATTEMPT_AT);
+    newer.setAcknowledgedAt(NOW);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(newer);
+    assertThrows(
+        WrongGameStateException.class,
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT - 1));
+    verify(playbackDelayRepository, never()).findOpenBySchedule(any());
+    verify(playbackDelayRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void replacingAnOpenAttemptKeepsItsLoadingStartAndInvalidatesOldAcknowledgement()
+      throws Exception {
+    currentSong();
+    when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+    final PlaybackDelayEntity open = new PlaybackDelayEntity(schedule, NOW.minusSeconds(2));
+    open.setClientAttemptAt(ATTEMPT_AT - 1);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(open);
+    when(playbackDelayRepository.findOpenBySchedule(schedule.getId())).thenReturn(open);
+    when(playbackDelayRepository.findById(open.getId())).thenReturn(Optional.of(open));
+
+    assertEquals(
+        open.getId(),
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId());
+    assertEquals(NOW.minusSeconds(2), open.getSentAt());
+    assertEquals(Long.valueOf(ATTEMPT_AT), open.getClientAttemptAt());
+    assertThrows(
+        WrongGameStateException.class,
+        () -> service.acknowledgePlaybackDelay(open.getId(), "AKKU", ATTEMPT_AT - 1));
+    service.acknowledgePlaybackDelay(open.getId(), "AKKU", ATTEMPT_AT);
+    verify(broadcastGateway, times(1)).toAdmin(eq("AKKU"), any());
+  }
+
+  @Test
+  void repeatedRegistrationAfterAcknowledgementDoesNotCreateAnotherDelay() throws Exception {
+    currentSong();
+    when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+    final PlaybackDelayEntity closed = new PlaybackDelayEntity(schedule, NOW.minusSeconds(2));
+    closed.setClientAttemptAt(ATTEMPT_AT);
+    closed.setAcknowledgedAt(NOW);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(closed);
+    assertEquals(
+        closed.getId(),
+        service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT).delayId());
+    verify(playbackDelayRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void rejectsAttemptTimestampTooFarInFuture() throws Exception {
+    assertThrows(
+        InvalidArgumentException.class,
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT + 120_000));
+    verify(playbackDelayRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void retryForPreviousReplayIsRejectedEvenWithMatchingTimestamp() throws Exception {
+    currentSong();
+    when(scheduleRepository.findById(schedule.getId())).thenReturn(Optional.of(schedule));
+    final PlaybackDelayEntity previous = new PlaybackDelayEntity(schedule, NOW.minusSeconds(8));
+    previous.setClientAttemptAt(ATTEMPT_AT);
+    when(playbackDelayRepository.findLatestBySchedule(schedule.getId())).thenReturn(previous);
+    assertThrows(
+        WrongGameStateException.class,
+        () -> service.registerPlaybackDelay(schedule.getId(), "AKKU", ATTEMPT_AT));
+    verify(playbackDelayRepository, never()).saveAndFlush(any());
   }
 }

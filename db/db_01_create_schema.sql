@@ -92,7 +92,8 @@ CREATE TABLE IF NOT EXISTS public.playback_delay (
     id uuid NOT NULL,
     schedule_id uuid NOT NULL,
     sent_at timestamp without time zone NOT NULL,
-    acknowledged_at timestamp without time zone
+    acknowledged_at timestamp without time zone,
+    client_attempt_at bigint
 );
 
 -- ------------------------------------------------------------
@@ -168,6 +169,9 @@ CREATE INDEX IF NOT EXISTS interrupt_index_arrived_desc
 
 CREATE INDEX IF NOT EXISTS idx_playback_delay_schedule
     ON public.playback_delay USING btree (schedule_id, sent_at);
+
+CREATE INDEX IF NOT EXISTS idx_playback_delay_attempt
+    ON public.playback_delay USING btree (schedule_id, client_attempt_at DESC NULLS LAST, sent_at DESC);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_playback_delay_open
     ON public.playback_delay USING btree (schedule_id)

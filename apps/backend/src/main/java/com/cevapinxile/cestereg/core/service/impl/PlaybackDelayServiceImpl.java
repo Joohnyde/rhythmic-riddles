@@ -2,6 +2,7 @@ package com.cevapinxile.cestereg.core.service.impl;
 
 import static com.cevapinxile.cestereg.core.service.support.ScheduleOwnership.validate;
 
+import com.cevapinxile.cestereg.api.quiz.dto.response.PlaybackRegistrationResponse;
 import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
 import com.cevapinxile.cestereg.common.exception.InvalidArgumentException;
@@ -46,9 +47,11 @@ public class PlaybackDelayServiceImpl implements PlaybackDelayService {
 
   @Override
   @Transactional(rollbackOn = DerivedException.class)
-  public UUID registerPlaybackDelay(final UUID scheduleId, final String roomCode)
+  public PlaybackRegistrationResponse registerPlaybackDelay(
+      final UUID scheduleId, final String roomCode, final Long clientAttemptAt)
       throws DerivedException {
     validateArguments(scheduleId, roomCode);
+    validateClientAttemptAt(clientAttemptAt);
     // Serialize registration, replays and acknowledgements against the room row.
     RoomLocks.lock(gameRepository, roomCode);
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
@@ -62,30 +65,57 @@ public class PlaybackDelayServiceImpl implements PlaybackDelayService {
                         "Schedule with id " + scheduleId + " does not exist"));
     validateCurrentSchedule(schedule, game, roomCode);
 
+    // Include acknowledged attempts: a delayed older registration must not reopen a delay.
+    final PlaybackDelayEntity latest = playbackDelayRepository.findLatestBySchedule(scheduleId);
+    if (latest != null && latest.getClientAttemptAt() != null) {
+      if (clientAttemptAt < latest.getClientAttemptAt()) {
+        throw new WrongGameStateException("Playback registration was superseded");
+      }
+      if (clientAttemptAt.equals(latest.getClientAttemptAt())) {
+        if (latest.getSentAt().isBefore(schedule.getStartedAt())) {
+          throw new WrongGameStateException("Playback registration belongs to an earlier replay");
+        }
+        return new PlaybackRegistrationResponse(latest.getId(), clientAttemptAt);
+      }
+    }
+
     final PlaybackDelayEntity open = playbackDelayRepository.findOpenBySchedule(scheduleId);
     if (open != null) {
       if (!open.getSentAt().isBefore(schedule.getStartedAt())) {
-        return open.getId();
+        open.setClientAttemptAt(clientAttemptAt);
+        playbackDelayRepository.saveAndFlush(open);
+        return new PlaybackRegistrationResponse(open.getId(), clientAttemptAt);
       }
       // A previous replay never acknowledged; it must not block a new attempt.
       playbackDelayRepository.delete(open);
+      playbackDelayRepository.flush();
     }
 
     final PlaybackDelayEntity delay = new PlaybackDelayEntity(schedule, LocalDateTime.now(clock));
+    delay.setClientAttemptAt(clientAttemptAt);
     playbackDelayRepository.saveAndFlush(delay);
     LOG.debug("Playback attempt {} registered for schedule {}", delay.getId(), scheduleId);
-    return delay.getId();
+    return new PlaybackRegistrationResponse(delay.getId(), clientAttemptAt);
   }
 
   @Override
   @Transactional(rollbackOn = DerivedException.class)
-  public void acknowledgePlaybackDelay(final UUID delayId, final String roomCode)
+  public void acknowledgePlaybackDelay(
+      final UUID delayId, final String roomCode, final Long clientAttemptAt)
       throws DerivedException {
     validateArguments(delayId, roomCode);
+    validateClientAttemptAt(clientAttemptAt);
     RoomLocks.lock(gameRepository, roomCode);
     final GameEntity game = gameRepository.findByCode(roomCode, 2);
     requireBothApps(roomCode);
     final PlaybackDelayEntity delay = findCurrentDelay(delayId, game, roomCode);
+    final PlaybackDelayEntity latest =
+        playbackDelayRepository.findLatestBySchedule(delay.getScheduleId().getId());
+    if (latest == null
+        || !latest.getId().equals(delayId)
+        || !clientAttemptAt.equals(delay.getClientAttemptAt())) {
+      throw new WrongGameStateException("Playback acknowledgement was superseded");
+    }
     if (delay.getAcknowledgedAt() != null) {
       // A repeated HTTP request must not restart the Admin timer.
       return;
@@ -133,6 +163,13 @@ public class PlaybackDelayServiceImpl implements PlaybackDelayService {
   private void requireBothApps(final String roomCode) throws AppNotRegisteredException {
     if (!presenceGateway.areBothPresent(roomCode)) {
       throw new AppNotRegisteredException("Both apps need to be present in order to continue");
+    }
+  }
+
+  private void validateClientAttemptAt(final Long clientAttemptAt) throws InvalidArgumentException {
+    // Allow small clock differences without accepting a far-future marker that blocks recovery.
+    if (clientAttemptAt == null || clientAttemptAt <= 0 || clientAttemptAt > clock.millis()) {
+      throw new InvalidArgumentException("Invalid TV playback attempt timestamp");
     }
   }
 

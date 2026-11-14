@@ -372,26 +372,32 @@ are seconds on the wire and all stored intervals use backend timestamps.
 
 ### POST /api/v1/games/{roomCode}/delays
 
-TV-only workflow. Body: `{"scheduleId":"uuid"}`. Returns the attempt UUID as a JSON
-string (`200`). TV calls registration **before attempting playback**. Repeated requests
-reuse an existing open interval on the current schedule; a previous replay's open
-interval is replaced when TV next registers. Song start/replay does not insert delays.
+TV-only workflow. Body: `{"scheduleId":"uuid","clientAttemptAt":1790000000000}`
+(`clientAttemptAt` is TV-generated Unix milliseconds). Returns
+`{"delayId":"uuid","clientAttemptAt":1790000000000}` (`200`). TV registers
+**before attempting playback**. Retries with the same timestamp return the same delay;
+a newer timestamp updates an open interval without resetting its backend `sent_at`,
+or creates a new interval after acknowledgement. Older timestamps are rejected even
+if the latest delay has already been acknowledged. Timestamps more than 60 seconds
+ahead of the backend clock are rejected (`422`), allowing small clock differences. Song start/replay does not insert delays.
 
 - `404` — schedule or room not found (`E001`)
-- `409` — wrong stage, stale or revealed schedule (`E003`)
+- `409` — wrong stage, stale/revealed schedule, or superseded attempt (`E003`)
 - `503` — Admin or TV disconnected (`E004`)
 - `422` — schedule belongs to a different room (`E002`)
 - Room-row locking and the unique open-delay index prevent concurrent duplicate attempts.
 
 ### PUT /api/v1/games/{roomCode}/delays/{delayId}/acknowledge
 
-Body: none. Idempotent (`200`): duplicate requests do not rebroadcast `play`.
-Both clients must be present. After commit, the backend emits `play` to Admin
+Body: `{"clientAttemptAt":1790000000000}` matching the registered attempt.
+Idempotent (`200`): duplicate requests with the current timestamp do not rebroadcast `play`.
+A superseded attempt returns `409`. Both clients must be present.
+After commit, the backend emits `play` to Admin
 with `scheduleId`; Admin's countdown begins. Only timestamps are stored, not a
 derived duration column.
 
 - `404` — attempt or room not found (`E001`)
-- `409` — stale replay or wrong stage (`E003`)
+- `409` — stale/superseded attempt or wrong stage (`E003`)
 - `503` — Admin or TV disconnected (`E004`)
 - `422` — attempt belongs to a different room (`E002`)
 

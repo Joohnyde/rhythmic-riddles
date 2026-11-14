@@ -37,6 +37,16 @@ The current packaged embedded-database bootstrap is intentionally still a **run-
 
 When upgrade support is introduced, evaluate a small plain-SQL migration tool rather than building a custom framework first. `Flyway Community` is the natural first candidate for the Java/Spring application because it tracks applied SQL migrations and checksums in a schema-history table. `dbmate` is a lightweight alternative if a standalone, framework-agnostic single binary is preferred. No tool choice is committed yet.
 
+## Playback attempt ordering
+
+The nullable `playback_delay.client_attempt_at` column holds the TV's Unix-millisecond
+registration timestamp. The backend compares the maximum accepted timestamp across
+**open and acknowledged** delay rows, so an older request cannot reopen a closed interval.
+The composite `idx_playback_delay_attempt` index supports latest-attempt lookup. Both
+`db_01` and `db_04` install the column/index idempotently for fresh and existing
+pre-release databases. If an existing packaged database has the run-once initialization
+marker, apply `db_04` manually before starting a backend expecting the new column. Keep `sent_at` as backend receipt time; it is not the client clock.
+
 ## Playback-delay column compatibility
 
 The current pre-release schema stores playback-delay timestamps only, without the

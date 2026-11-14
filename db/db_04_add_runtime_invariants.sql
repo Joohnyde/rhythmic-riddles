@@ -41,3 +41,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_playback_delay_open
   ON public.playback_delay USING btree (schedule_id)
   WHERE acknowledged_at IS NULL;
 
+
+-- Client-generated millisecond timestamp orders TV playback registrations.
+-- Nullable for playback history created before this field existed.
+CREATE INDEX IF NOT EXISTS idx_playback_delay_attempt
+  ON public.playback_delay USING btree (schedule_id, client_attempt_at DESC NULLS LAST, sent_at DESC);

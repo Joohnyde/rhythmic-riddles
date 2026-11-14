@@ -1,1 +1,10 @@
-<section class="card" data-testid="song-loading-panel"><p>Pesma se ucitava...</p></section>
+<section class="song-loading" data-testid="song-loading-panel" role="status" aria-live="polite" aria-label="The song is being loaded">
+  <div class="loading-halo" aria-hidden="true">
+    <div class="loading-ring"></div>
+    <div class="loading-center"><span class="music-note">♫</span></div>
+  </div>
+  <p class="loading-eyebrow">GET READY</p>
+  <h2>The song is being loaded</h2>
+  <p class="loading-caption">Preparing audio for playback…</p>
+  <div class="loading-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+</section>

@@ -1,0 +1,43 @@
+:host { display:block; min-height:100%; }
+.round-page { position:relative; isolation:isolate; min-height:100dvh; overflow:hidden; background:#0b0712; color:#f2e9ff; font-family:'Novecento Sans',sans-serif; }
+.round-background {position:absolute;inset:0;z-index:-2;background:url('/images/background_admin_lobby.jpg') center/100% 100% no-repeat;}
+.round-overlay {position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(11,7,18,.48),rgba(11,7,18,.75)),radial-gradient(ellipse at 50% 25%,rgba(181,61,214,.12),transparent 65%);}
+.round-content {width:min(1180px,100%);margin:auto;padding:clamp(1.5rem,4vw,3.5rem) clamp(1rem,4vw,3rem) 4rem;}
+.round-header {text-align:center;margin:0 auto 2.5rem;max-width:900px;}
+.round-kicker {margin:0 0 .8rem;color:#c862e4;font-size:.78rem;font-weight:600;letter-spacing:.22em;}
+.kicker-divider {color:#746783;padding:0 .7rem;}
+.round-header h1 {font-size:clamp(1.8rem,4vw,3.4rem);font-weight:600;line-height:1.16;margin:0;overflow-wrap:anywhere;text-shadow:0 4px 24px rgba(0,0,0,.45);}
+.round-subtitle {color:#bdb3cc;font-size:.88rem;margin:1rem 0 0;}
+.round-grid {display:grid;grid-template-columns:minmax(0,1.7fr) minmax(250px,1fr);align-items:start;gap:1.3rem;}
+.round-grid-single {grid-template-columns:minmax(0,1fr);max-width:780px;margin:auto;}
+.round-main,.round-scoreboard {min-width:0;}
+.round-actions {display:flex;flex-wrap:wrap;justify-content:center;gap:.8rem;margin-top:1rem;}
+.round-button {cursor:pointer;min-width:155px;padding:.9rem 1.5rem;border-radius:.75rem;font:600 .82rem 'Novecento Sans',sans-serif;letter-spacing:.12em;transition:filter .15s,transform .15s;border:1px solid rgba(242,233,255,.2);color:#fff;}
+.round-button:hover:not(:disabled) {filter:brightness(1.13);transform:translateY(-1px)}
+.round-button:disabled {opacity:.45;cursor:not-allowed;}
+.round-button.primary {background:#b53dd6;border-color:#c862e4;}
+.round-button.secondary {background:#392c50;border-color:#6b1d81;}
+.round-button.correct {background:#147b62;border-color:#35bb98;}
+.round-button.wrong {background:#a3302b;border-color:#ff6a5f;}
+.playing-panel {border:1px solid rgba(181,61,214,.5);border-radius:1.5rem;padding:clamp(1.5rem,4vw,3rem);text-align:center;background:radial-gradient(ellipse at 50% 25%,rgba(181,61,214,.16),transparent 70%),rgba(16,11,27,.84);box-shadow:0 20px 65px rgba(0,0,0,.25);}
+.playing-eyebrow {font-size:.76rem;letter-spacing:.24em;font-weight:600;color:#c862e4;margin:0 0 1.6rem;}
+.playing-visual {display:flex;align-items:center;justify-content:center;gap:7px;height:90px;margin:0 auto 1.5rem;}
+.playing-visual span {width:8px;height:28%;border-radius:10px;background:linear-gradient(#3eb8f0,#b53dd6);animation:rr-eq .95s ease-in-out infinite alternate;}
+.playing-visual span:nth-child(2),.playing-visual span:nth-child(6) {animation-delay:-.5s;height:65%;}
+.playing-visual span:nth-child(3),.playing-visual span:nth-child(5) {animation-delay:-.2s;height:90%;}
+.playing-visual span:nth-child(4) {animation-delay:-.7s;height:50%;}
+.playing-visual span:nth-child(7) {animation-delay:-.35s;}
+.playing-panel h2 {font-size:clamp(1.3rem,2.4vw,1.8rem);font-weight:600;margin:0;}
+.playing-caption {font-size:.83rem;color:#bdb3cc;margin:.7rem 0 1.8rem;}
+.playing-panel rr-seek-timer {display:block;text-align:left;}
+:host ::ng-deep .round-main > rr-song-revealed-panel .card,
+:host ::ng-deep .round-main > rr-song-finished-panel .card,
+:host ::ng-deep .round-main > rr-team-answering-panel .card,
+:host ::ng-deep .round-main > rr-system-error-panel .card,
+:host ::ng-deep .round-scoreboard .card {background:rgba(16,11,27,.84);border:1px solid rgba(181,61,214,.5);border-radius:1.25rem;padding:1.5rem;color:#f2e9ff;box-shadow:0 20px 65px rgba(0,0,0,.22);}
+:host ::ng-deep .round-main .kicker,:host ::ng-deep .round-scoreboard .kicker {color:#c862e4;letter-spacing:.13em;}
+:host ::ng-deep .playing-panel .seek-timer {background:rgba(11,7,18,.65);border:1px solid rgba(181,61,214,.3);border-radius:1rem;padding:1.25rem;}
+:host ::ng-deep .playing-panel progress {accent-color:#b53dd6;}
+@keyframes rr-eq {from {transform:scaleY(.45);opacity:.65}to {transform:scaleY(1.12);opacity:1}}
+@media(max-width:780px){.round-grid{grid-template-columns:1fr}.round-header{margin-bottom:1.6rem}.round-content{padding-bottom:2rem}}
+@media(prefers-reduced-motion:reduce){.playing-visual span{animation:none}}

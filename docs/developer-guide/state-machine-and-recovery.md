@@ -346,9 +346,14 @@ The Admin enters the waiting state at each expected playback boundary, independe
 of whether a delay row exists yet.
 
 The TV audio component requests registration (`POST /delays`) before playing the
-snippet. Repeated requests while an open attempt exists reuse the same UUID. The
-TV waits for `HTMLAudioElement.playing` **and** at least 30 ms of real media-clock
-progress before acknowledging that attempt (`PUT /delays/{id}/acknowledge`). The
+snippet. The TV generates a millisecond attempt timestamp and reuses it for duplicate
+registration calls or retries of the same playback attempt. New attempts use greater
+timestamps, and older HTTP responses are ignored. The backend persists the latest
+accepted timestamp across open and acknowledged delays; newer attempts reuse an
+open delay ID, while obsolete requests cannot create new rows. The TV waits for
+`HTMLAudioElement.playing` **and** at least 30 ms of real media-clock progress
+before acknowledging the delay ID **with its attempt timestamp**
+(`PUT /delays/{id}/acknowledge`). The
 backend timestamps the acknowledgement and emits an after-commit `play` WebSocket
 message to Admin. Admin begins its local countdown only on `play` for the current
 schedule; there is no `playback_waiting`, `song_finished` or TV completion message.
@@ -359,7 +364,8 @@ during disconnection does not close the pending attempt. On recovery the game en
 the system-interrupt UI, and on resumption the TV remounts the player, re-registers
 (reusing an open attempt if present), and acknowledges after audio progresses.
 Stale requests from earlier replays are rejected using the current persisted
-`schedule.started_at`. The absence of mid-song buffering support is intentional:
+`schedule.started_at` and the last accepted `client_attempt_at`. System pause immediately
+transitions the TV to the error state before its previous-scenario HTTP call completes. The absence of mid-song buffering support is intentional:
 short snippets are fully delivered MP3s, not streams.
 
 `contextFetch` is read-only and returns `seek` and `remaining` in **seconds**.

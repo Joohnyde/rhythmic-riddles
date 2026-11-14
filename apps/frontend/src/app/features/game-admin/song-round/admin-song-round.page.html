@@ -1,118 +1,66 @@
-<main class="page shell" data-testid="admin-song-round-page">
+<main class="round-page" data-testid="admin-song-round-page">
   @let vm = store.vm();
-
-  <header class="header">
-    <div>
-      <p class="kicker">Stage 2</p>
-      <h1 class="title" data-testid="admin-song-question">{{ vm.question || 'Song round' }}</h1>
-    </div>
-  </header>
-
-  <section class="grid two">
-    <div>
-      @switch (vm.scenario) {
-        @case (SongScenario.Revealed) {
-          <rr-song-revealed-panel [answer]="vm.answer" [bravo]="vm.bravo" />
-
-          <div class="card actions">
-            <button
-              data-testid="admin-next-song-after-reveal-button"
-              [disabled]="vm.inTransit"
-              (click)="store.nextSong()"
-            >
-              Dalje
-            </button>
-          </div>
+  <div class="round-background" aria-hidden="true"></div>
+  <div class="round-overlay" aria-hidden="true"></div>
+  <div class="round-content">
+    <header class="round-header">
+      <p class="round-kicker">STAGE 2 <span class="kicker-divider">/</span> SONG ROUND</p>
+      <h1 data-testid="admin-song-question">{{ vm.question || 'Song round' }}</h1>
+      <p class="round-subtitle">
+        @if (vm.scenario === SongScenario.Playing && (vm.playbackWaiting || vm.remaining === null)) {
+          Preparing the next song
+        } @else if (vm.scenario === SongScenario.Playing) {
+          Song playback in progress
+        } @else {
+          Manage the round and team answers
         }
+      </p>
+    </header>
 
-        @case (SongScenario.FinishedUnrevealed) {
-          <rr-song-finished-panel />
-
-          <div class="card actions">
-            <button
-              data-testid="admin-repeat-song-button"
-              [disabled]="vm.inTransit"
-              (click)="store.advanceGame(true)"
-            >
-              Refresh
-            </button>
-
-            <button
-              data-testid="admin-reveal-answer-button"
-              [disabled]="vm.inTransit"
-              (click)="store.advanceGame(false)"
-            >
-              Reveal
-            </button>
-          </div>
-        }
-
-        @case (SongScenario.TeamAnswering) {
-          <rr-team-answering-panel [team]="vm.answeringTeam" />
-
-          <div class="card actions">
-            <button
-              class="success"
-              data-testid="admin-answer-correct-button"
-              [disabled]="vm.inTransit"
-              (click)="store.teamAnswered(true)"
-            >
-              Tacno
-            </button>
-
-            <button
-              class="danger"
-              data-testid="admin-answer-wrong-button"
-              [disabled]="vm.inTransit"
-              (click)="store.teamAnswered(false)"
-            >
-              Netacno
-            </button>
-          </div>
-        }
-
-        @case (SongScenario.SystemError) {
-          <rr-system-error-panel />
-
-          <div class="card actions">
-            <button
-              data-testid="admin-resolve-error-button"
-              [disabled]="vm.inTransit"
-              (click)="store.resolveError()"
-            >
-              Nastavi
-            </button>
-          </div>
-        }
-
-        @case (SongScenario.Playing) {
-          @if (vm.remaining !== null) {
-            @if (vm.playbackWaiting) {
+    <section class="round-grid" [class.round-grid-single]="!vm.teams.length || !vm.lastPlayedSong">
+      <div class="round-main">
+        @switch (vm.scenario) {
+          @case (SongScenario.Revealed) {
+            <rr-song-revealed-panel [answer]="vm.answer" [bravo]="vm.bravo" />
+            <div class="round-actions"><button class="round-button primary" data-testid="admin-next-song-after-reveal-button" [disabled]="vm.inTransit" (click)="store.nextSong()">NEXT SONG</button></div>
+          }
+          @case (SongScenario.FinishedUnrevealed) {
+            <rr-song-finished-panel />
+            <div class="round-actions">
+              <button class="round-button secondary" data-testid="admin-repeat-song-button" [disabled]="vm.inTransit" (click)="store.advanceGame(true)">REPLAY</button>
+              <button class="round-button primary" data-testid="admin-reveal-answer-button" [disabled]="vm.inTransit" (click)="store.advanceGame(false)">REVEAL ANSWER</button>
+            </div>
+          }
+          @case (SongScenario.TeamAnswering) {
+            <rr-team-answering-panel [team]="vm.answeringTeam" />
+            <div class="round-actions">
+              <button class="round-button correct" data-testid="admin-answer-correct-button" [disabled]="vm.inTransit" (click)="store.teamAnswered(true)">CORRECT</button>
+              <button class="round-button wrong" data-testid="admin-answer-wrong-button" [disabled]="vm.inTransit" (click)="store.teamAnswered(false)">INCORRECT</button>
+            </div>
+          }
+          @case (SongScenario.SystemError) {
+            <rr-system-error-panel />
+            <div class="round-actions"><button class="round-button primary" data-testid="admin-resolve-error-button" [disabled]="vm.inTransit" (click)="store.resolveError()">CONTINUE</button></div>
+          }
+          @case (SongScenario.Playing) {
+            @if (vm.playbackWaiting || vm.remaining === null) {
               <rr-song-loading-panel />
             } @else {
-              <rr-seek-timer
-                [duration]="(vm.seek ?? 0) + vm.remaining"
-                [seek]="vm.seek ?? 0"
-                [showDebug]="true"
-                (completed)="store.onTrackFinished()"
-                (stateOut)="store.savePlaybackState($event)"
-              />
+              <div class="playing-panel">
+                <p class="playing-eyebrow">NOW PLAYING</p>
+                <div class="playing-visual" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                <h2>Listen to the song</h2>
+                <p class="playing-caption">The snippet is playing on the TV screen</p>
+                <rr-seek-timer [duration]="(vm.seek ?? 0) + vm.remaining" [seek]="vm.seek ?? 0" [showDebug]="true" (completed)="store.onTrackFinished()" (stateOut)="store.savePlaybackState($event)" />
+              </div>
             }
           }
+          @default { <rr-song-loading-panel /> }
         }
-
-        @default {
-          <rr-song-loading-panel />
-        }
+      </div>
+      @if (vm.teams.length && vm.lastPlayedSong) {
+        <aside class="round-scoreboard"><rr-team-scoreboard [teams]="vm.teams" [bravo]="vm.bravo" [currentScheduleId]="vm.lastPlayedSong" /></aside>
       }
-    </div>
-
-    @if (vm.teams.length && vm.lastPlayedSong) {
-      <rr-team-scoreboard
-        [teams]="vm.teams"
-        [bravo]="vm.bravo"
-        [currentScheduleId]="vm.lastPlayedSong"
-      />
-    }
-  </section>
+    </section>
+  </div>
 </main>

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DelayApiService } from '../data-access/delay-api.service';
+import { DelayApiService, PlaybackRegistration } from '../data-access/delay-api.service';
 import { InterruptApiService } from '../data-access/interrupt-api.service';
 import { ScheduleApiService } from '../data-access/schedule-api.service';
 import { GameServerMessage } from '../messages/game-server-message.types';
@@ -15,6 +15,7 @@ describe('SongRoundStore playback synchronization', () => {
   let messages$: Subject<GameServerMessage>;
   let register: ReturnType<typeof vi.fn>;
   let acknowledge: ReturnType<typeof vi.fn>;
+  let savePrevScenario: ReturnType<typeof vi.fn>;
 
   const nextSong = (id = 'schedule-one') =>
     ({
@@ -30,13 +31,18 @@ describe('SongRoundStore playback synchronization', () => {
     }) as GameServerMessage;
 
   beforeEach(() => {
-    register = vi.fn().mockReturnValue(of('attempt-one'));
+    register = vi
+      .fn()
+      .mockImplementation((_: string, at: number) =>
+        of({ delayId: 'attempt-one', clientAttemptAt: at }),
+      );
     acknowledge = vi.fn().mockReturnValue(of(undefined));
+    savePrevScenario = vi.fn().mockReturnValue(of(undefined));
     TestBed.configureTestingModule({
       providers: [
         SongRoundStore,
         { provide: Router, useValue: { navigate: vi.fn() } },
-        { provide: InterruptApiService, useValue: {} },
+        { provide: InterruptApiService, useValue: { savePrevScenario } },
         { provide: ScheduleApiService, useValue: {} },
         { provide: DelayApiService, useValue: { register, acknowledge } },
       ],
@@ -53,34 +59,38 @@ describe('SongRoundStore playback synchronization', () => {
   });
 
   it('coalesces overlapping registrations before playback', async () => {
-    const pending = new Subject<string>();
+    const pending = new Subject<PlaybackRegistration>();
     register.mockReturnValue(pending);
     const first = store.requestPlayback('schedule-one');
     const second = store.requestPlayback('schedule-one');
     await vi.waitFor(() => expect(register).toHaveBeenCalledTimes(1));
-    pending.next('attempt-one');
+    pending.next({ delayId: 'attempt-one', clientAttemptAt: register.mock.calls[0][1] });
     pending.complete();
     await Promise.all([first, second]);
     expect(store.vm().playbackDelayId).toBe('attempt-one');
   });
 
   it('does not send ACK until registration finishes', async () => {
-    const pending = new Subject<string>();
+    const pending = new Subject<PlaybackRegistration>();
     register.mockReturnValue(pending);
     const registering = store.requestPlayback('schedule-one');
     const started = store.acknowledgePlayback();
     await vi.waitFor(() => expect(register).toHaveBeenCalledTimes(1));
     expect(acknowledge).not.toHaveBeenCalled();
-    pending.next('attempt-one');
+    pending.next({ delayId: 'attempt-one', clientAttemptAt: register.mock.calls[0][1] });
     pending.complete();
     await Promise.all([registering, started]);
     expect(acknowledge).toHaveBeenCalledTimes(1);
-    expect(acknowledge).toHaveBeenCalledWith('attempt-one');
+    expect(acknowledge).toHaveBeenCalledWith('attempt-one', register.mock.calls.at(-1)?.[1]);
   });
 
   it('ignores a late registration after disconnect and accepts the reconnect', async () => {
-    const pending = new Subject<string>();
-    register.mockReturnValueOnce(pending).mockReturnValueOnce(of('attempt-reconnected'));
+    const pending = new Subject<PlaybackRegistration>();
+    register
+      .mockReturnValueOnce(pending)
+      .mockImplementationOnce((_: string, at: number) =>
+        of({ delayId: 'attempt-reconnected', clientAttemptAt: at }),
+      );
     const first = store.requestPlayback('schedule-one');
     await vi.waitFor(() => expect(register).toHaveBeenCalledTimes(1));
     store.disconnect();
@@ -88,7 +98,7 @@ describe('SongRoundStore playback synchronization', () => {
     store.connect(reconnect, 'tv');
     reconnect.next(nextSong());
     await store.requestPlayback('schedule-one');
-    pending.next('old-attempt');
+    pending.next({ delayId: 'old-attempt', clientAttemptAt: register.mock.calls[0][1] });
     pending.complete();
     await first;
     expect(store.vm().playbackDelayId).toBe('attempt-reconnected');
@@ -106,7 +116,7 @@ describe('SongRoundStore playback synchronization', () => {
     expect(acknowledge).not.toHaveBeenCalled();
     await store.acknowledgePlayback();
     expect(acknowledge).toHaveBeenCalledTimes(1);
-    expect(acknowledge).toHaveBeenCalledWith('attempt-one');
+    expect(acknowledge).toHaveBeenCalledWith('attempt-one', register.mock.calls.at(-1)?.[1]);
   });
 
   it('a pending ACK from the previous TV connection does not block registration', async () => {
@@ -161,7 +171,9 @@ describe('SongRoundStore playback synchronization', () => {
   it('a wrong answer triggers a fresh TV registration and Admin waits for its ACK', async () => {
     await store.requestPlayback('schedule-one');
     await store.acknowledgePlayback();
-    register.mockReturnValueOnce(of('attempt-after-answer'));
+    register.mockImplementationOnce((_: string, at: number) =>
+      of({ delayId: 'attempt-after-answer', clientAttemptAt: at }),
+    );
     messages$.next({
       type: 'answer',
       teamId: 'team-one',
@@ -173,7 +185,10 @@ describe('SongRoundStore playback synchronization', () => {
     await store.requestPlayback('schedule-one');
     expect(store.vm().playbackDelayId).toBe('attempt-after-answer');
     await store.acknowledgePlayback();
-    expect(acknowledge).toHaveBeenLastCalledWith('attempt-after-answer');
+    expect(acknowledge).toHaveBeenLastCalledWith(
+      'attempt-after-answer',
+      register.mock.calls.at(-1)?.[1],
+    );
   });
 
   it('an Admin ignores play while paused or after the round has finished', () => {
@@ -227,5 +242,69 @@ describe('SongRoundStore playback synchronization', () => {
     expect(store.vm().scenario).toBe(SongScenario.FinishedUnrevealed);
     expect(register).toHaveBeenCalledTimes(1);
     expect(acknowledge).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores registration A when its response arrives after a newer playback attempt B', async () => {
+    const oldResponse = new Subject<PlaybackRegistration>();
+    const newResponse = new Subject<PlaybackRegistration>();
+    register.mockReturnValueOnce(oldResponse).mockReturnValueOnce(newResponse);
+    const oldRequest = store.requestPlayback('schedule-one');
+    await vi.waitFor(() => expect(register).toHaveBeenCalledTimes(1));
+    const oldAt = register.mock.calls[0][1];
+    messages$.next({
+      type: 'pause',
+      answeringTeamId: 'team-one',
+      interruptId: 'interrupt-one',
+    } as GameServerMessage);
+    messages$.next({
+      type: 'answer',
+      teamId: 'team-one',
+      scheduleId: 'schedule-one',
+      correct: false,
+    } as GameServerMessage);
+    const newRequest = store.requestPlayback('schedule-one');
+    await vi.waitFor(() => expect(register).toHaveBeenCalledTimes(2));
+    const newAt = register.mock.calls[1][1];
+    expect(newAt).toBeGreaterThan(oldAt);
+    newResponse.next({ delayId: 'new-delay', clientAttemptAt: newAt });
+    newResponse.complete();
+    await newRequest;
+    oldResponse.next({ delayId: 'old-delay', clientAttemptAt: oldAt });
+    oldResponse.complete();
+    await oldRequest;
+    expect(store.vm().playbackDelayId).toBe('new-delay');
+    await store.acknowledgePlayback();
+    expect(acknowledge).toHaveBeenCalledTimes(1);
+    expect(acknowledge).toHaveBeenCalledWith('new-delay', newAt);
+  });
+
+  it('does not accept a registration response with a mismatched echoed timestamp', async () => {
+    register.mockImplementationOnce((_: string, at: number) =>
+      of({ delayId: 'wrong-response', clientAttemptAt: at - 1 }),
+    );
+    await store.requestPlayback('schedule-one');
+    expect(store.vm().playbackDelayId).toBeNull();
+    await store.acknowledgePlayback();
+    expect(acknowledge).not.toHaveBeenCalled();
+  });
+
+  it('stops immediately on system pause and can recover before the HTTP call completes', async () => {
+    const pending = new Subject<void>();
+    savePrevScenario.mockReturnValueOnce(pending);
+    messages$.next({
+      type: 'pause',
+      answeringTeamId: 'null',
+      interruptId: 'system-one',
+    } as GameServerMessage);
+    expect(store.vm().scenario).toBe(SongScenario.SystemError);
+    messages$.next({
+      type: 'error_solved',
+      previousScenario: SongScenario.Playing,
+    } as GameServerMessage);
+    expect(store.vm().scenario).toBe(SongScenario.Playing);
+    pending.next();
+    pending.complete();
+    await Promise.resolve();
+    expect(store.vm().scenario).toBe(SongScenario.Playing);
   });
 });
