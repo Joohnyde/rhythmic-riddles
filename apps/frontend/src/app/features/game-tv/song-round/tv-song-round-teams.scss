@@ -118,6 +118,21 @@
   }
 }
 
+/* The winner remains identifiable after the one-shot celebration and after reconnect. */
+.song-round__team--correct {
+  z-index: 4;
+  color: var(--color-success-200);
+  border-color: var(--color-success-300);
+  background: linear-gradient(110deg, rgb(21 83 49 / 96%), rgb(9 46 30 / 96%));
+  box-shadow:
+    0 0 9px color-mix(in srgb, var(--success) 54%, transparent),
+    0 0 20px color-mix(in srgb, var(--success) 30%, transparent),
+    inset 0 0 24px color-mix(in srgb, var(--success) 15%, transparent);
+}
+.song-round__team--correct .song-round__team-name,
+.song-round__team--correct .song-round__team-score {
+  text-shadow: 0 1px 4px rgb(0 0 0 / 75%);
+}
 .song-round__team--celebrating.song-round__team--correct {
   z-index: 5;
   width: calc(var(--team-card-width) + var(--team-answer-extension));

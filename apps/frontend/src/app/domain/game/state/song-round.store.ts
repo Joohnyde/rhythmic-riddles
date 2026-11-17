@@ -45,7 +45,6 @@ export interface SongRoundVm extends SongRoundState {
   readonly isFinishedUnrevealed: boolean;
   readonly isTeamAnswering: boolean;
   readonly isSystemError: boolean;
-  readonly canShowScoreboard: boolean;
   readonly canRevealAnswer: boolean;
   readonly canResolveError: boolean;
 }
@@ -95,7 +94,6 @@ export class SongRoundStore {
       isFinishedUnrevealed: state.scenario === SongScenario.FinishedUnrevealed,
       isTeamAnswering: state.scenario === SongScenario.TeamAnswering,
       isSystemError: state.scenario === SongScenario.SystemError,
-      canShowScoreboard: state.teams.length > 0 && state.lastPlayedSong !== null,
       canRevealAnswer: state.scenario === SongScenario.FinishedUnrevealed && !state.inTransit,
       canResolveError: state.scenario === SongScenario.SystemError && !state.inTransit,
     };

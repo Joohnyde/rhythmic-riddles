@@ -52,7 +52,9 @@ describe('AudioPlayerComponent playback progress', () => {
 
   it('does not acknowledge the playing event until the media clock actually advances', () => {
     const acknowledged = vi.fn();
+    const progress = vi.fn();
     component.playbackStarted.subscribe(acknowledged);
+    component.progress.subscribe(progress);
     playing$.next();
     vi.advanceTimersByTime(200);
     expect(acknowledged).not.toHaveBeenCalled();
@@ -63,6 +65,13 @@ describe('AudioPlayerComponent playback progress', () => {
     position = 0.09;
     vi.advanceTimersByTime(20);
     expect(acknowledged).toHaveBeenCalledTimes(1);
+    position = 1.25;
+    vi.advanceTimersByTime(100);
+    expect(progress).toHaveBeenLastCalledWith({
+      scheduleId: 'schedule-one',
+      duration: 10,
+      remaining: 8.75,
+    });
   });
 
   it('requests a TV delay before calling audio.play()', () => {

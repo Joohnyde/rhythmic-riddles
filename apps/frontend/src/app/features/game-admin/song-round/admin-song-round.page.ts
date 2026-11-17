@@ -7,11 +7,10 @@ import { SongScenario } from '../../../domain/game/state/song-scenario';
 import { SeekTimerComponent } from '../../../shared/ui/seek-timer/seek-timer.component';
 import { SongLoadingPanelComponent } from '../../../shared/ui/song-round-panels/song-loading-panel/song-loading-panel.component';
 import { createAnswerFeedback } from '../../../shared/ui/song-round-presentation/song-round-presentation';
-import { TeamScoreboardComponent } from '../../../shared/ui/team-scoreboard/team-scoreboard.component';
 
 @Component({
   selector: 'rr-admin-song-round-page',
-  imports: [SeekTimerComponent, SongLoadingPanelComponent, TeamScoreboardComponent],
+  imports: [SeekTimerComponent, SongLoadingPanelComponent],
   templateUrl: './admin-song-round.page.html',
   styleUrl: './admin-song-round.page.scss',
 })

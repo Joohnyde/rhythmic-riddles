@@ -17,7 +17,7 @@ const welcome = {
   stage: 'songs',
   scheduleId: 'one',
   songId: 'song-one',
-  question: 'Prepoznaj ovu pjesmu!',
+  question: 'GUESS THE SONG',
   answer: 'First song',
   answerDuration: 5,
   scores: [team, otherTeam],
@@ -89,6 +89,16 @@ describe('TvSongRoundPage playback', () => {
   it('preserves both score columns and starts the next snippet from a song_next frame', async () => {
     receive({ ...welcome, bravo: team.teamId, revealed: true });
     expect(audio.load).toHaveBeenLastCalledWith(expect.stringContaining('/answers/song-one'));
+    expect(element('tv-song-answer')?.textContent).toContain('First song');
+    expect(element('tv-song-bravo-team')?.textContent).toContain(team.name);
+    expect(
+      element('scoreboard-team-row-sun')?.classList.contains('song-round__team--correct'),
+    ).toBe(true);
+    await advance(3300);
+    expect(element('tv-song-bravo-team')?.textContent).toContain(team.name);
+    expect(
+      element('scoreboard-team-row-sun')?.classList.contains('song-round__team--correct'),
+    ).toBe(true);
 
     receive({
       type: 'song_next',
@@ -105,6 +115,10 @@ describe('TvSongRoundPage playback', () => {
     expect(element('scoreboard-team-score-sun')?.textContent?.trim()).toBe('30');
     expect(element('scoreboard-team-score-moon')?.textContent?.trim()).toBe('0');
     expect(element('tv-song-question')?.textContent?.trim()).toBe('Name the artist');
+    expect(element('tv-song-bravo-team')).toBeNull();
+    expect(
+      element('scoreboard-team-row-sun')?.classList.contains('song-round__team--correct'),
+    ).toBe(false);
     expect(element('tv-snippet-audio')).not.toBeNull();
     expect(audio.load).toHaveBeenLastCalledWith(expect.stringContaining('/snippets/song-two'));
     expect(audio.play).toHaveBeenCalledTimes(2);
@@ -145,5 +159,18 @@ describe('TvSongRoundPage playback', () => {
     expect(element('tv-song-clock')?.textContent?.trim()).toBe('13');
     expect(element('scoreboard-team-score-sun')?.textContent?.trim()).toBe('20');
     expect(element('scoreboard-team-row-sun')?.textContent).not.toContain('-10');
+    receive({ type: 'answer', scheduleId: 'one', teamId: otherTeam.teamId, correct: true });
+    expect(element('tv-song-bravo-team')?.textContent).toContain(otherTeam.name);
+    expect(
+      element('scoreboard-team-row-moon')?.classList.contains('song-round__team--celebrating'),
+    ).toBe(true);
+    await advance(3300);
+    expect(element('tv-song-bravo-team')?.textContent).toContain(otherTeam.name);
+    expect(
+      element('scoreboard-team-row-moon')?.classList.contains('song-round__team--correct'),
+    ).toBe(true);
+    expect(
+      element('scoreboard-team-row-moon')?.classList.contains('song-round__team--celebrating'),
+    ).toBe(false);
   });
 });

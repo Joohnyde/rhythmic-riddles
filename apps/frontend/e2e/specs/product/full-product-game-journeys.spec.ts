@@ -27,8 +27,8 @@ test.describe.serial('Full product journeys', () => {
 
       await buzz(request, teamA, session.admin, session.tv.page);
       await session.admin.getByTestId('admin-answer-correct-button').click();
-      await expectScore(session.admin, teamA, 30);
-      await expect(session.tv.page.getByTestId('song-bravo-team')).toContainText('Team Aurora: 30');
+      await expectScore(session.tv.page, teamA, 30);
+      await expect(session.tv.page.getByTestId('tv-song-bravo-team')).toContainText(teamA.name);
       await next(session.admin);
 
       await expectWinner(session, teamA, 30, teamB, 0);
@@ -46,15 +46,13 @@ test.describe.serial('Full product journeys', () => {
 
       await buzz(request, teamA, session.admin, session.tv.page);
       await session.admin.getByTestId('admin-answer-wrong-button').click();
-      await expectScore(session.admin, teamA, -10);
+      await expectScore(session.tv.page, teamA, -10);
       await expect(session.admin.getByTestId('admin-answer-correct-button')).toBeHidden();
 
       await buzz(request, teamB, session.admin, session.tv.page);
       await session.admin.getByTestId('admin-answer-correct-button').click();
-      await expectScore(session.admin, teamB, 30);
-      await expect(session.tv.page.getByTestId('song-bravo-team')).toContainText(
-        'Team Borealis: 30',
-      );
+      await expectScore(session.tv.page, teamB, 30);
+      await expect(session.tv.page.getByTestId('tv-song-bravo-team')).toContainText(teamB.name);
       await next(session.admin);
 
       await expectWinner(session, teamB, 30, teamA, -10);
@@ -77,7 +75,7 @@ test.describe.serial('Full product journeys', () => {
 
       await answerCorrectAndNext(request, session, teamA, 30, true);
       await expect(session.admin.getByTestId('admin-song-round-page')).toBeVisible();
-      await expectScore(session.admin, teamA, 30);
+      await expectScore(session.tv.page, teamA, 30);
       await answerCorrectAndNext(request, session, teamA, 60, false);
       await expect(session.admin.getByTestId('admin-albums-page')).toBeVisible();
       await expect(
@@ -87,15 +85,15 @@ test.describe.serial('Full product journeys', () => {
       const secondPicker = await pickerText(session.admin);
       expect(secondPicker).not.toBe(firstPicker);
       await pickAndStartAlbum(session.admin, session.tv.page, session.catalog[1]);
-      await expectScore(session.admin, teamA, 60);
+      await expectScore(session.tv.page, teamA, 60);
       await answerCorrectAndNext(request, session, teamB, 30, true);
       await answerCorrectAndNext(request, session, teamB, 60, false);
 
       await expect(session.admin.getByTestId('admin-albums-page')).toBeVisible();
       await expect(session.admin.getByText('Admin', { exact: true })).toBeVisible();
       await pickAndStartAlbum(session.admin, session.tv.page, session.catalog[2]);
-      await expectScore(session.admin, teamA, 60);
-      await expectScore(session.admin, teamB, 60);
+      await expectScore(session.tv.page, teamA, 60);
+      await expectScore(session.tv.page, teamB, 60);
       await expectScore(session.tv.page, teamA, 60);
     } finally {
       await session.close();
@@ -120,18 +118,16 @@ test.describe.serial('Full product journeys', () => {
       );
       await session.admin.getByTestId('admin-answer-correct-button').click();
       expect((await failedAnswer).status()).toBe(503);
-      await expectScore(session.admin, teamA, 0);
 
       recoveredTv = await connectRole(browser, 'tv', session.roomCode, {
         viewport: { width: 1440, height: 900 },
       });
       await expect(recoveredTv.page.getByTestId('answering-team-name')).toHaveText(teamA.name);
+      await expectScore(recoveredTv.page, teamA, 0);
       await expect(session.admin.getByTestId('answering-team-name')).toHaveText(teamA.name);
       await session.admin.getByTestId('admin-answer-correct-button').click();
-      await expectScore(session.admin, teamA, 30);
-      await expect(recoveredTv.page.getByTestId('song-bravo-team')).toContainText(
-        'Team Aurora: 30',
-      );
+      await expectScore(recoveredTv.page, teamA, 30);
+      await expect(recoveredTv.page.getByTestId('tv-song-bravo-team')).toContainText(teamA.name);
       await next(session.admin);
       await expect(session.admin.getByTestId(`admin-winner-team-row-${teamA.id}`)).toContainText(
         '30',
@@ -168,10 +164,8 @@ test.describe.serial('Full product journeys', () => {
 
       await buzz(request, teamA, session.admin, recoveredTv.page);
       await session.admin.getByTestId('admin-answer-correct-button').click();
-      await expectScore(session.admin, teamA, 30);
-      await expect(recoveredTv.page.getByTestId('song-bravo-team')).toContainText(
-        'Team Aurora: 30',
-      );
+      await expectScore(recoveredTv.page, teamA, 30);
+      await expect(recoveredTv.page.getByTestId('tv-song-bravo-team')).toContainText(teamA.name);
     } finally {
       await recoveredTv?.close().catch(() => undefined);
       await session.close();
@@ -250,7 +244,7 @@ async function answerCorrectAndNext(
 ): Promise<void> {
   await buzz(request, team, session.admin, session.tv.page);
   await session.admin.getByTestId('admin-answer-correct-button').click();
-  await expectScore(session.admin, team, expectedScore);
+  await expectScore(session.tv.page, team, expectedScore);
   if (!expectsNextSong) {
     await next(session.admin);
     return;

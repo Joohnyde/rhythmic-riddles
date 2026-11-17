@@ -7,6 +7,7 @@ import { SongRoundVm } from '../../../domain/game/state/song-round.store';
 
 const ANSWER_FEEDBACK_MS = 2700;
 
+/** Display the server's answer event without adding presentation state to the round store. */
 export function createAnswerFeedback(
   messages$: Observable<GameServerMessage> | undefined,
   vm: Signal<SongRoundVm>,
