@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  ViewChild,
   OnDestroy,
   OnInit,
   computed,
@@ -12,6 +13,7 @@ import {
 import { Router } from '@angular/router';
 import { GameSession } from '../../../core/session/game-session.service';
 import { AlbumSelectionStore } from '../../../domain/game/state/album-selection.store';
+import { SelectedAlbumArtworkService } from '../../../shared/ui/song-round-presentation/selected-album-artwork.service';
 import { Stage1AlbumCardComponent } from '../../../shared/ui/stage1-album-selection/album-card/stage1-album-card.component';
 import { Stage1AlbumFocusComponent } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.component';
 import type { AlbumFocusLayout } from '../../../shared/ui/stage1-album-selection/album-focus/stage1-album-focus.types';
@@ -42,11 +44,14 @@ import { ConfirmDialogComponent } from '../../../shared/ui/confirm-dialog/confir
 export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
   readonly session = inject(GameSession);
   readonly store = inject(AlbumSelectionStore);
+  readonly artwork = inject(SelectedAlbumArtworkService);
   readonly focus = new Stage1FocusPresentationCoordinator();
   readonly focusLayout = this.focus.layout;
   readonly focusPhase = this.focus.phase;
   readonly focusSceneReady = this.focus.sceneReady;
   readonly pickPreparing = signal(false);
+  readonly startError = signal<'tv-not-ready' | 'start-failed' | null>(null);
+  readonly startPending = signal(false);
   readonly showNormalAlbums = computed(() => {
     const vm = this.store.vm();
     const phase = this.focusPhase();
@@ -63,6 +68,8 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
     return !!this.store.vm().selectedAlbum && (phase === 'animating' || phase === 'settled');
   });
 
+  @ViewChild('startFeedbackDialog') private readonly startFeedbackDialog?: ElementRef<HTMLDialogElement>;
+
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly changeDetector = inject(ChangeDetectorRef);
@@ -77,6 +84,13 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
     effect(() => {
       const vm = this.store.vm();
       const selectedId = vm.selectedAlbum?.categoryId ?? null;
+      if (vm.loaded) {
+        if (selectedId) {
+          this.captureArtwork();
+        } else {
+          this.artwork.clear();
+        }
+      }
       if (!vm.loaded) {
         return;
       }
@@ -108,10 +122,28 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Preserve the artwork when the album page disconnects its store on navigation.
+    this.captureArtwork();
     this.pageAbort.abort();
     this.focus.destroy();
     this.store.disconnect();
     this.cancelScrollFrame();
+  }
+
+  private captureArtwork(): void {
+    const vm = this.store.vm();
+    const selected = vm.selectedAlbum;
+    const card = selected
+      ? vm.albums.find((album) => album.id === selected.categoryId)
+      : null;
+    if (!card) return;
+    this.artwork.capture({
+      id: card.id,
+      name: card.name,
+      image: card.image,
+      pickedByTeamImage: selected?.pickedByTeam?.image ?? null,
+      pickedByTeamName: selected?.pickedByTeam?.name ?? null,
+    });
   }
 
   pickAlbum(categoryId: string): void {
@@ -140,7 +172,43 @@ export class AdminAlbumSelectionPage implements OnInit, OnDestroy {
   }
 
   start(): void {
-    void this.store.start().catch((error: unknown) => this.handleAsyncError('start', error));
+    if (this.pageAbort.signal.aborted || this.startPending()) return;
+    this.startError.set(null);
+    this.startPending.set(true);
+    void this.store.start().catch((error: unknown) => {
+      if (this.pageAbort.signal.aborted) return;
+      this.startError.set(this.isTvNotReady(error) ? 'tv-not-ready' : 'start-failed');
+      // The confirmation dialog has already closed. Show a NEW real modal at
+      // the same interaction point: unlike a banner behind the focus scene,
+      // it cannot be hidden by the album transition or another stacking context.
+      this.changeDetector.detectChanges();
+      const dialog = this.startFeedbackDialog?.nativeElement;
+      if (dialog && !dialog.open) dialog.showModal();
+      this.handleAsyncError('start', error);
+    }).finally(() => {
+      if (!this.pageAbort.signal.aborted) this.startPending.set(false);
+    });
+  }
+
+  dismissStartError(): void {
+    this.startFeedbackDialog?.nativeElement.close();
+    this.startError.set(null);
+  }
+
+  private isTvNotReady(error: unknown): boolean {
+    // Match HTTP error bodies, text bodies, and the server's E004 JSON error
+    // object; do not rely on any specific HTTP status code.
+    const visited = new Set<unknown>();
+    const inspect = (value: unknown): boolean => {
+      if (typeof value === 'string') return /E004|App not reachable|TV app has to be connected to proceed/i.test(value);
+      if (!value || typeof value !== 'object' || visited.has(value)) return false;
+      visited.add(value);
+      const info = value as { error?: unknown; message?: unknown; details?: unknown;
+        text?: unknown; code?: unknown };
+      return inspect(info.error) || inspect(info.message) || inspect(info.details) ||
+        inspect(info.text) || inspect(info.code);
+    };
+    return inspect(error);
   }
 
   readonly getAlbumImageUrl = (image: string): string => getStage1AlbumImageUrl(image);

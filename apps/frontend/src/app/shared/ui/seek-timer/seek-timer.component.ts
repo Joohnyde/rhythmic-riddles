@@ -33,6 +33,9 @@ export class SeekTimerComponent implements OnChanges, OnDestroy {
   /** Optional debug display for admin. */
   @Input() showDebug = false;
 
+  /** High-frequency Admin display; 100ms remains the default for other consumers. */
+  @Input() tickIntervalMs = 100;
+
   @Output() completed = new EventEmitter<void>();
   @Output() timeChange = new EventEmitter<number>();
   @Output() stateOut = new EventEmitter<{ seek: number; remaining: number }>();
@@ -96,9 +99,10 @@ export class SeekTimerComponent implements OnChanges, OnDestroy {
 
     this.startedAtMs = performance.now();
 
-    // Use a wall-clock based interval. The displayed value updates every 100ms,
-    // but the actual time calculation does not drift because it is based on performance.now().
-    this.intervalId = window.setInterval(() => this.tick(), 100);
+    // A wall-clock based interval does not drift. Admin opts into 25ms updates
+    // so the milliseconds readout changes smoothly without extra clocks.
+    this.intervalId = window.setInterval(() => this.tick(),
+      Math.min(1000, Math.max(16, this.tickIntervalMs)));
   }
 
   private tick(): void {

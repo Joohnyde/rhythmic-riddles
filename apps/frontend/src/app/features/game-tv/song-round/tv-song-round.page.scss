@@ -602,3 +602,45 @@
   }
   .song-round__team--celebrating.song-round__team--correct::after { animation: none; opacity: 0; }
 }
+
+/* Shared answer verdict: appears only after the backend confirms the attempt.
+   Existing green success-wipe and score animations remain unchanged. */
+.song-round__verdict {
+  position: fixed;
+  z-index: 35;
+  left: 50%;
+  bottom: clamp(5vh, 40px, 70px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.4vw, 19px);
+  width: max-content;
+  max-width: calc(100vw - 30px);
+  border: 2px solid;
+  border-radius: 20px;
+  padding: 15px 29px;
+  background: rgb(14 7 27 / 94%);
+  box-shadow: 0 14px 55px rgb(0 0 0 / 54%);
+  pointer-events: none;
+  animation: song-round-verdict-pop 2.7s ease-out both;
+}
+.song-round__verdict--correct { border-color: #70f2a4; box-shadow: 0 0 36px rgb(16 227 116 / 34%); }
+.song-round__verdict--wrong { border-color: #ff657c; box-shadow: 0 0 36px rgb(255 45 89 / 36%); }
+.song-round__verdict-symbol { display: grid; place-items: center; flex: none; width: 45px; height: 45px; border-radius: 50%; font-size: 29px; font-weight: 950; }
+.song-round__verdict--correct .song-round__verdict-symbol { background: #207950; color: #c6ffdc; }
+.song-round__verdict--wrong .song-round__verdict-symbol { background: #852443; color: #ffced8; }
+.song-round__verdict-label { font-size: clamp(21px, 2.5vw, 36px); font-weight: 950; letter-spacing: .04em; }
+.song-round__verdict--correct .song-round__verdict-label { color: #afffc5; }
+.song-round__verdict--wrong .song-round__verdict-label { color: #ff97b0; }
+.song-round__verdict-team { font-weight: 750; font-size: clamp(14px, 1.5vw, 20px); color: #f1e0ff; }
+@keyframes song-round-verdict-pop {
+  0% { opacity: 0; transform: translate(-50%, 20px) scale(.82); }
+  12%, 76% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -15px) scale(1.04); }
+}
+@media (max-width: 760px) {
+  .song-round__verdict { padding: 10px 14px; bottom: 18px; gap: 8px; }
+  .song-round__verdict-symbol { width: 33px; height: 33px; font-size: 22px; }
+  .song-round__verdict-label { font-size: 19px; }
+}
+@media (prefers-reduced-motion: reduce) { .song-round__verdict { animation: none; } }

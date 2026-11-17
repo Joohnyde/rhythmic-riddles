@@ -15,7 +15,7 @@ import { AudioAssetUrlService } from '../../../domain/game/data-access/audio-ass
 import { TeamScore } from '../../../domain/game/models/team-score.model';
 import { teamIconColor } from '../../../domain/game/models/team-icon.utils';
 import { SongScenario } from '../../../domain/game/state/song-scenario';
-import { SongRoundStore, SongRoundVm } from '../../../domain/game/state/song-round.store';
+import { SongJudgement, SongRoundStore, SongRoundVm } from '../../../domain/game/state/song-round.store';
 import { AudioPlayerComponent } from '../../../shared/ui/audio-player/audio-player.component';
 import { SelectedAlbumArtworkService } from '../../../shared/ui/song-round-presentation/selected-album-artwork.service';
 import { SongRevealedPanelComponent } from '../../../shared/ui/song-round-panels/song-revealed-panel/song-revealed-panel.component';
@@ -57,11 +57,14 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
   readonly scoreChange = signal<ScoreChange | null>(null);
   readonly displayedScores = signal<ReadonlyMap<string, number>>(new Map());
   readonly albumImageFailed = signal(false);
+  readonly verdict = signal<SongJudgement | null>(null);
 
   private readonly router = inject(Router);
   private readonly tickSubscription = new Subscription();
   private celebrationTimeout?: ReturnType<typeof setTimeout>;
   private scoreTimeout?: ReturnType<typeof setTimeout>;
+  private verdictTimeout?: ReturnType<typeof setTimeout>;
+  private lastVerdictSequence = 0;
   private scoreAnimation?: ScoreAnimation;
   private scheduleId: string | null = null;
   private celebratedKey: string | null = null;
@@ -95,6 +98,7 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
     this.tickSubscription.unsubscribe();
     this.cancelCelebration();
     this.cancelScoreChange();
+    this.cancelVerdict();
     this.store.disconnect();
   }
 
@@ -153,11 +157,19 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
       this.celebratedKey = null;
       this.cancelCelebration();
       this.cancelScoreChange();
+      this.cancelVerdict();
       this.knownScores = new Map(vm.teams.map((team) => [team.teamId, team.score]));
       this.scoreSnapshotReady = vm.teams.length > 0;
       this.secondsRemaining.set(Math.ceil(Math.max(0, vm.remaining ?? 0)));
       this.countdownFraction.set(1);
       return;
+    }
+
+    // Backend answer broadcasts are the source of truth for both surfaces.
+    // A distinct sequence is required: one team may submit multiple attempts.
+    if (vm.lastJudgement && vm.lastJudgement.sequence !== this.lastVerdictSequence) {
+      this.lastVerdictSequence = vm.lastJudgement.sequence;
+      this.showVerdict(vm.lastJudgement);
     }
 
     if (vm.teams.length > 0) {
@@ -228,6 +240,18 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
     } else if (this.displayedScores().get(animation.teamId) !== value) {
       this.displayedScores.set(new Map([[animation.teamId, value]]));
     }
+  }
+
+  private showVerdict(judgement: SongJudgement): void {
+    this.cancelVerdict();
+    this.verdict.set(judgement);
+    this.verdictTimeout = setTimeout(() => this.verdict.set(null), 2700);
+  }
+
+  private cancelVerdict(): void {
+    if (this.verdictTimeout) clearTimeout(this.verdictTimeout);
+    this.verdictTimeout = undefined;
+    this.verdict.set(null);
   }
 
   private cancelCelebration(): void {

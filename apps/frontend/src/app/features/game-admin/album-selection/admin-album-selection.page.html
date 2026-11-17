@@ -84,11 +84,43 @@
         </section>
       }
 
+      <!-- Keep the modal mounted even while there is no error: its native
+           top-layer backdrop guarantees the error is visible over album focus. -->
+      <dialog
+        #startFeedbackDialog
+        class="stage1-start-dialog"
+        data-testid="admin-start-error"
+        aria-labelledby="start-feedback-title"
+        aria-describedby="start-feedback-message"
+        (cancel)="dismissStartError()"
+      >
+        @if (startError(); as error) {
+          <div class="stage1-start-dialog-body" role="alert" aria-live="assertive">
+            <span class="stage1-start-dialog-icon" aria-hidden="true">!</span>
+            @if (error === 'tv-not-ready') {
+              <h2 id="start-feedback-title">Waiting for the TV app to be ready</h2>
+              <p id="start-feedback-message" data-testid="admin-tv-not-ready-message">
+                The TV screen is not connected to this room. Connect or reconnect
+                the TV app, then try starting the game again.
+              </p>
+            } @else {
+              <h2 id="start-feedback-title">Could not start the game</h2>
+              <p id="start-feedback-message">The game was not started. Please check the
+                connection and try again.</p>
+            }
+            <button class="btn btn-primary stage1-start-dialog-dismiss" type="button"
+              data-testid="admin-dismiss-start-error" (click)="dismissStartError()">
+              OK, GOT IT
+            </button>
+          </div>
+        }
+      </dialog>
+
       <button
         class="btn btn-primary absolute bottom-6 left-1/2 z-50 min-w-40 -translate-x-1/2 px-9 py-3 text-sm uppercase tracking-[0.14em]"
         data-testid="admin-start-songs-button"
         type="button"
-        [disabled]="!vm.selectedAlbum || vm.inTransit || pickPreparing()"
+        [disabled]="!vm.selectedAlbum || vm.inTransit || pickPreparing() || startPending()"
         (click)="startDialog.open()"
       >
         Play
@@ -100,7 +132,7 @@
         message="You are about to start the game. Are you sure?"
         confirmLabel="YES"
         cancelLabel="NO"
-        [disabled]="!vm.selectedAlbum || vm.inTransit || pickPreparing()"
+        [disabled]="!vm.selectedAlbum || vm.inTransit || pickPreparing() || startPending()"
         (confirmed)="start()"
       />
     }

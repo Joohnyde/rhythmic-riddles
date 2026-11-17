@@ -19,6 +19,14 @@ import { routeForStage } from '../models/game-stage.model';
 import { TeamScore } from '../models/team-score.model';
 import { Team, teamFromScore } from '../models/team.model';
 import { coerceSongScenario, SongScenario } from './song-scenario';
+export interface SongJudgement {
+  readonly teamId: string;
+  readonly teamName: string;
+  readonly correct: boolean;
+  /** Increases on every server answer, including repeat attempts by one team. */
+  readonly sequence: number;
+}
+
 export interface SongRoundState {
   readonly songId: string | null;
   readonly question: string | null;
@@ -32,6 +40,7 @@ export interface SongRoundState {
   readonly scenario: SongScenario;
   readonly teams: readonly TeamScore[];
   readonly bravo: TeamScore | null;
+  readonly lastJudgement: SongJudgement | null;
   readonly inTransit: boolean;
   readonly playbackDelayId: string | null;
   readonly playbackWaiting: boolean;
@@ -61,6 +70,7 @@ function createInitialSongRoundState(): SongRoundState {
     scenario: SongScenario.Loading,
     teams: [],
     bravo: null,
+    lastJudgement: null,
     inTransit: false,
     playbackDelayId: null,
     playbackWaiting: true,
@@ -79,6 +89,7 @@ export class SongRoundStore {
   private playbackEpoch = 0;
   private activeAttemptAt: number | null = null;
   private lastAttemptAt = 0;
+  private judgementSequence = 0;
   private registration?: Promise<void>;
   private acknowledgement: Promise<void> = Promise.resolve();
 
@@ -162,6 +173,7 @@ export class SongRoundStore {
       lastPlayedSong: message.scheduleId,
       teams: message.scores,
       bravo: null,
+      lastJudgement: null,
       scenario: SongScenario.Playing,
       playbackDelayId: null,
       playbackWaiting: true,
@@ -178,6 +190,7 @@ export class SongRoundStore {
       playbackDelayId: null,
       playbackWaiting: true,
       playbackError: null,
+      lastJudgement: null,
       scenario: SongScenario.Playing,
     });
   }
@@ -197,6 +210,14 @@ export class SongRoundStore {
     this.patchState({
       teams,
       bravo: message.correct ? answeredTeam : null,
+      lastJudgement: {
+        teamId: message.teamId,
+        teamName: answeredTeam?.name ?? this.state().answeringTeam?.name ?? 'Team',
+        correct: message.correct,
+        sequence: ++this.judgementSequence,
+      },
+      answeringTeam: null,
+      interruptId: null,
       scenario: message.correct ? SongScenario.Revealed : SongScenario.Playing,
       playbackDelayId: null,
       playbackWaiting: !message.correct,
@@ -228,6 +249,7 @@ export class SongRoundStore {
     const item = this.state().teams.find((team) => team.teamId === message.answeringTeamId);
     this.patchState({
       answeringTeam: item ? teamFromScore(item) : null,
+      lastJudgement: null,
       interruptId: message.interruptId,
       scenario: SongScenario.TeamAnswering,
     });
@@ -261,6 +283,10 @@ export class SongRoundStore {
       playbackDelayId: null,
       playbackWaiting: true,
       playbackError: null,
+      lastJudgement: null,
+      bravo: null,
+      answeringTeam: null,
+      interruptId: null,
     };
     if (message.revealed != null) {
       this.patchState({

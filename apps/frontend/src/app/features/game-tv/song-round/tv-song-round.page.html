@@ -152,6 +152,15 @@
       }
     </div>
   </section>
+  @if (verdict(); as result) {
+    <div class="song-round__verdict" [class.song-round__verdict--correct]="result.correct"
+      [class.song-round__verdict--wrong]="!result.correct"
+      data-testid="tv-answer-verdict" role="status" aria-live="assertive">
+      <span class="song-round__verdict-symbol" aria-hidden="true">{{ result.correct ? '✓' : '✕' }}</span>
+      <span class="song-round__verdict-label">{{ result.correct ? 'CORRECT!' : 'INCORRECT!' }}</span>
+      <span class="song-round__verdict-team">{{ result.teamName }}</span>
+    </div>
+  }
   <div class="song-round__audio-hidden" aria-hidden="true">
     @if (vm.scenario === SongScenario.Playing && vm.songId && vm.remaining !== null) {
       <rr-audio-player

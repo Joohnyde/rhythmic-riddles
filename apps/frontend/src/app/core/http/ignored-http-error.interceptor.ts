@@ -16,7 +16,12 @@ export const ignoredHttpErrorInterceptor: HttpInterceptorFn = (
 ) => {
   return next(request).pipe(
     catchError((error: unknown) => {
+      // Starting a round is a critical state-changing request. Never turn a
+      // rejected start into HTTP 200: the Admin would navigate as if it worked.
+      const isStartRequest = request.method === 'POST' &&
+        /\/api\/v1\/games\/[^/]+\/categories\/[^/?]+\/start(?:\?|$)/.test(request.urlWithParams);
       if (
+        !isStartRequest &&
         error instanceof HttpErrorResponse &&
         TEMPORARILY_IGNORED_STATUS_CODES.has(error.status)
       ) {

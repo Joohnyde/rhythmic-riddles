@@ -38,3 +38,57 @@
     --album-size: clamp(6.25rem, 16vw, 7.5rem);
   }
 }
+
+/* Start is rejected before song-round navigation. The native dialog's
+   top-layer backdrop covers the album focus animation instead of showing
+   a banner in the page's competing stacking contexts. */
+.stage1-start-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(85dvh, 680px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--color-primary-400);
+  border-radius: 22px;
+  background: #170e2c;
+  color: var(--color-primary-100);
+  box-shadow: 0 24px 90px rgb(0 0 0 / 65%), 0 0 48px rgb(181 61 214 / 34%);
+}
+.stage1-start-dialog::backdrop {
+  background: rgb(5 3 14 / 84%);
+  backdrop-filter: blur(9px);
+}
+.stage1-start-dialog-body {
+  padding: clamp(24px, 5vw, 42px);
+  text-align: center;
+  background: radial-gradient(circle at 50% 0%, rgb(215 64 168 / 15%), transparent 70%);
+}
+.stage1-start-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 23px;
+  border: 2px solid #ec6bb7;
+  border-radius: 50%;
+  font-size: 34px;
+  font-weight: 900;
+  color: #ffb3dc;
+  box-shadow: 0 0 28px rgb(242 56 155 / 25%);
+}
+.stage1-start-dialog h2 {
+  margin: 0;
+  color: var(--color-primary-200);
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 850;
+  line-height: 1.18;
+}
+.stage1-start-dialog p {
+  margin: 18px auto 26px;
+  max-width: 430px;
+  color: #ead8f5;
+  font-size: 16px;
+  line-height: 1.55;
+}
+.stage1-start-dialog-dismiss { min-width: 160px; }

@@ -544,6 +544,62 @@ describe('AdminAlbumSelectionPage Stage 1 page contract', () => {
     expect(consoleError).toHaveBeenCalledWith('Stage 1 Admin start failed.', expect.any(Error));
   });
 
+  it('shows the TV-not-ready warning on the album page when Play fails with E004, then allows retry', async () => {
+    vm.set(selectedVm([album('album-a', 'Alpha'), album('album-b', 'Bravo', true)]));
+    fixture.detectChanges();
+    const error = {
+      status: 409,
+      error: { error: 'E004 - App not reachable', message: 'TV app has to be connected to proceed' },
+    };
+    start.mockRejectedValueOnce(error);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    startButton().click();
+    fixture.detectChanges();
+    dialogButton(openDialogContaining('Start the game?'), 'YES').click();
+    await settleMicrotasks();
+    fixture.detectChanges();
+
+    const warning = fixture.nativeElement.querySelector('[data-testid="admin-tv-not-ready-message"]') as HTMLElement | null;
+    expect(warning?.textContent).toContain('TV screen is not connected');
+    expect(warning?.textContent).toContain('try starting the game again');
+    expect(warning?.closest('[role="alert"]')).toBeTruthy();
+    const errorDialog = fixture.nativeElement.querySelector('[data-testid="admin-start-error"]') as HTMLDialogElement;
+    expect(errorDialog.open).toBe(true);
+    expect(errorDialog.textContent).toContain('Waiting for the TV app to be ready');
+    expect(startButton().disabled).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith('Stage 1 Admin start failed.', error);
+
+    // Dismiss the warning, then retry with the same Play -> Yes flow.
+    (fixture.nativeElement.querySelector('[data-testid="admin-dismiss-start-error"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(errorDialog.open).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-tv-not-ready-message"]')).toBeNull();
+    startButton().click();
+    fixture.detectChanges();
+    dialogButton(openDialogContaining('Start the game?'), 'YES').click();
+    await settleMicrotasks();
+    fixture.detectChanges();
+    expect(start).toHaveBeenCalledTimes(2);
+    expect((fixture.nativeElement.querySelector('[data-testid="admin-start-error"]') as HTMLDialogElement).open).toBe(false);
+  });
+
+  it('shows a distinct recoverable error for other start failures', async () => {
+    vm.set(selectedVm([album('album-a', 'Alpha'), album('album-b', 'Bravo', true)]));
+    fixture.detectChanges();
+    start.mockRejectedValueOnce(new Error('Unexpected server error'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    fixture.componentInstance.start();
+    await settleMicrotasks();
+    fixture.detectChanges();
+    const feedbackDialog = fixture.nativeElement.querySelector('[data-testid="admin-start-error"]') as HTMLDialogElement;
+    expect(feedbackDialog.open).toBe(true);
+    expect(feedbackDialog.textContent).toContain('Could not start the game');
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-tv-not-ready-message"]')).toBeNull();
+  });
+
   function createFixture(): void {
     queuedFrames = [];
     fixture = TestBed.createComponent(AdminAlbumSelectionPage);

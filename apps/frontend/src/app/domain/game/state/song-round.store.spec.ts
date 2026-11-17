@@ -58,6 +58,28 @@ describe('SongRoundStore playback synchronization', () => {
     TestBed.resetTestingModule();
   });
 
+  it('exposes confirmed server judgements to both surfaces and resets them for a new song', () => {
+    store.disconnect();
+    store.connect(messages$, 'admin');
+    messages$.next({
+      ...nextSong(),
+      scores: [{ teamId: 'team-one', name: 'Team Sun', score: 10, image: 'sun.png', scheduleId: null }],
+    } as GameServerMessage);
+    messages$.next({ type: 'pause', answeringTeamId: 'team-one', interruptId: 'interruption' } as GameServerMessage);
+    expect(store.vm().answeringTeam?.name).toBe('Team Sun');
+    messages$.next({ type: 'answer', teamId: 'team-one', scheduleId: 'schedule-one', correct: false } as GameServerMessage);
+    const wrong = store.vm().lastJudgement;
+    expect(wrong).toMatchObject({ teamId: 'team-one', teamName: 'Team Sun', correct: false });
+    expect(store.vm().scenario).toBe(SongScenario.Playing);
+    messages$.next({ type: 'pause', answeringTeamId: 'team-one', interruptId: 'interrupt-two' } as GameServerMessage);
+    messages$.next({ type: 'answer', teamId: 'team-one', scheduleId: 'schedule-one', correct: true } as GameServerMessage);
+    expect(store.vm().lastJudgement).toMatchObject({ teamId: 'team-one', correct: true });
+    expect(store.vm().lastJudgement?.sequence).toBeGreaterThan(wrong!.sequence);
+    expect(store.vm().scenario).toBe(SongScenario.Revealed);
+    messages$.next(nextSong('schedule-two'));
+    expect(store.vm().lastJudgement).toBeNull();
+  });
+
   it('coalesces overlapping registrations before playback', async () => {
     const pending = new Subject<PlaybackRegistration>();
     register.mockReturnValue(pending);
