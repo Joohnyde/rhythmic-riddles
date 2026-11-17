@@ -360,7 +360,7 @@ Response:
 
 WS side-effect:
 
-- broadcast `song_next`
+- broadcast `song_next`, including the current album image UUID, name, picker image (`null` for Admin) and `pickerName` (`Admin` for Admin picks)
 - or fresh `welcome` snapshot on stage transition
 
 ## TV playback synchronization

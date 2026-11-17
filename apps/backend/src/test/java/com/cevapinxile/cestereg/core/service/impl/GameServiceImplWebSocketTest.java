@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.cevapinxile.cestereg.api.quiz.dto.response.AlbumArtwork;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CategoryPreview;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CategorySimple;
 import com.cevapinxile.cestereg.api.quiz.dto.response.ChoosingTeam;
@@ -402,6 +403,7 @@ class GameServiceImplWebSocketTest {
         track.setSongId(song);
         final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
         category.setGameId(game);
+        category.setAlbumId(album);
         final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
         schedule.setCategoryId(category);
         schedule.setTrackId(track);
@@ -1107,6 +1109,9 @@ class GameServiceImplWebSocketTest {
       when(schedule.getStartedAt()).thenReturn(startedAt);
       when(schedule.getRevealedAt()).thenReturn(null);
       when(schedule.getTrackId().getSongId().getId()).thenReturn(songId);
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setAlbumId(new AlbumEntity(UUID.randomUUID(), "Album"));
+      when(schedule.getCategoryId()).thenReturn(category);
       when(schedule.getTrackId().getAlbumId().getCustomQuestion()).thenReturn("Who sings this?");
       when(schedule.getTrackId().getCustomAnswer()).thenReturn("Artist - Track");
       lenient().when(schedule.getTrackId().getSongId().getSnippetDuration()).thenReturn(25.0);
@@ -1249,6 +1254,11 @@ class GameServiceImplWebSocketTest {
       assertEquals("Who sings this?", json.get("question"));
       assertEquals("Artist - Track", json.get("answer"));
       assertEquals(scheduleId, json.get("scheduleId"));
+      final AlbumArtwork album = (AlbumArtwork) json.get("album");
+      assertEquals("Album", album.name());
+      assertEquals(schedule.getCategoryId().getAlbumId().getId(), album.image());
+      assertNull(album.picker());
+      assertEquals("Admin", album.pickerName());
       assertEquals(8.0, ((Number) json.get("answerDuration")).doubleValue());
       assertSame(scores, json.get("scores"));
       assertNull(json.get("team"));

@@ -229,6 +229,7 @@ class ScheduleServiceImplWebSocketTest {
         track.setSongId(song);
         final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
         category.setGameId(game);
+        category.setAlbumId(album);
         final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
         schedule.setCategoryId(category);
         schedule.setTrackId(track);
@@ -333,6 +334,9 @@ class ScheduleServiceImplWebSocketTest {
       when(scheduleRepository.findLastPlayed(gameId)).thenReturn(lastPlayed);
       when(lastPlayed.getId()).thenReturn(UUID.randomUUID());
       when(scheduleRepository.findNext(gameId)).thenReturn(Optional.of(nextSong));
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setAlbumId(new AlbumEntity(UUID.randomUUID(), "Album"));
+      when(nextSong.getCategoryId()).thenReturn(category);
       when(nextSong.getTrackId()).thenReturn(track);
       when(nextSong.getId()).thenReturn(scheduleId);
       when(track.getAlbumId()).thenReturn(album);

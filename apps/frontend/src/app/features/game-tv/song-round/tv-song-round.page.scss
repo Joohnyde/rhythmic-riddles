@@ -454,3 +454,11 @@
     animation: none;
   }
 }
+
+@media (max-width: 720px) {
+  .song-round__header rr-song-round-album {
+    width: clamp(65px, 11vw, 85px);
+    --album-picker-size: 26px;
+    --album-picker-offset: -7px;
+  }
+}

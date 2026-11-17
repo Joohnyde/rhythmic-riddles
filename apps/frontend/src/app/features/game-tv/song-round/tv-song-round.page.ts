@@ -6,6 +6,7 @@ import { AudioAssetUrlService } from '../../../domain/game/data-access/audio-ass
 import { TeamScore } from '../../../domain/game/models/team-score.model';
 import { teamIconColor } from '../../../domain/game/models/team-icon.utils';
 import { SongRoundStore, SongRoundVm } from '../../../domain/game/state/song-round.store';
+import { SongRoundAlbumComponent } from '../../../shared/ui/song-round-album/song-round-album.component';
 import { SongScenario } from '../../../domain/game/state/song-scenario';
 import {
   AudioPlayerComponent,
@@ -26,7 +27,7 @@ const SCORE_COUNT_MS = 1800;
 
 @Component({
   selector: 'rr-tv-song-round-page',
-  imports: [AudioPlayerComponent, SongRevealedPanelComponent],
+  imports: [SongRoundAlbumComponent, AudioPlayerComponent, SongRevealedPanelComponent],
   templateUrl: './tv-song-round.page.html',
   styleUrls: ['./tv-song-round-teams.scss', './tv-song-round.page.scss'],
 })

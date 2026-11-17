@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(112px, 11.2vw, 165px);
+  z-index: 2;
+  perspective: 250px;
+  perspective-origin: center;
+}
+
+.album {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 15px;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--primary), var(--secondary) 37%, var(--accent) 68%, var(--warm))
+      border-box;
+  box-shadow:
+    0 0 0.4rem color-mix(in srgb, var(--primary) 44%, transparent),
+    0 0 1.3rem color-mix(in srgb, var(--primary) 35%, transparent);
+  transform: rotateY(30deg);
+  transform-style: preserve-3d;
+  overflow: visible; /* The team icon extends beyond the cover. */
+}
+
+.album-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.album-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface), var(--color-cosmic-800));
+  color: var(--color-primary-200);
+  font-size: clamp(13px, 1.3vw, 18px);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.album-picker {
+  position: absolute;
+  right: var(--album-picker-offset, -9px);
+  bottom: var(--album-picker-offset, -9px);
+  z-index: 4;
+  width: var(--album-picker-size, clamp(29px, 3.1vw, 45px));
+  height: var(--album-picker-size, clamp(29px, 3.1vw, 45px));
+  object-fit: contain;
+  pointer-events: none;
+  transform: translateZ(12px);
+  filter: drop-shadow(0 0 7px rgb(0 0 0 / 94%));
+}
+
+.album-name {
+  margin: 12px 0 0;
+  color: var(--color-primary-200);
+  font-size: clamp(12px, 1.1vw, 16px);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.album-picked-by {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--color-primary-200);
+}

@@ -17,5 +17,11 @@
   ],
   "seek": 1.0,
   "remaining": 14.0,
-  "revealed": false
+  "revealed": false,
+  "album": {
+    "image": "3c8ed2c0-df3d-4639-b6a6-81550e473cca",
+    "name": "Album A",
+    "picker": null,
+    "pickerName": "Admin"
+  }
 }

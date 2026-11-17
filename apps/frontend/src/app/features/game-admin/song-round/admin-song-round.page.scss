@@ -27,6 +27,7 @@
   padding: clamp(24px, 4vh, 48px) clamp(18px, 4vw, 64px) 40px;
 }
 .round-header {
+  position: relative;
   min-height: clamp(145px, 21vh, 215px);
   padding-top: 12px;
 }
@@ -503,5 +504,16 @@
   .round-buzzer,
   .round-verdict {
     animation: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .round-header:has(rr-song-round-album) {
+    min-height: 210px;
+    padding-top: 120px;
+  }
+  .round-header rr-song-round-album {
+    width: 105px;
+    left: 3px;
   }
 }

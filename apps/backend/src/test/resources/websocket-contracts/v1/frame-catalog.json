@@ -13,7 +13,7 @@
       "replaySafe": true,
       "schema": "schema/welcome.schema.json",
       "example": "examples/welcome.json",
-      "notes": "Initial or recovery context snapshot."
+      "notes": "Initial or recovery context snapshot; songs includes album image UUID name picker image (null for Admin) and pickerName."
     },
     {
       "type": "new_team",
@@ -64,7 +64,7 @@
       "replaySafe": false,
       "schema": "schema/song_next.schema.json",
       "example": "examples/song_next.json",
-      "notes": "Next song begins."
+      "notes": "Next song begins with album presentation with pickerName (Admin when picker is null)."
     },
     {
       "type": "song_repeat",

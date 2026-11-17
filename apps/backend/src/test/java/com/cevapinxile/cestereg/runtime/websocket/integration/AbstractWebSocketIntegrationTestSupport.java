@@ -217,6 +217,7 @@ abstract class AbstractWebSocketIntegrationTestSupport {
     final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
     category.setGameId(gameA);
     final ScheduleEntity current = schedule(21.5d, 7.0d, "Current question?", "Current answer");
+    category.setAlbumId(current.getTrackId().getAlbumId());
     current.setCategoryId(category);
     current.setStartedAt(LocalDateTime.now().minusSeconds(1));
     current.setInterruptList(new ArrayList<>());
@@ -364,13 +365,23 @@ abstract class AbstractWebSocketIntegrationTestSupport {
             "question",
             "answer",
             "remaining",
-            "answerDuration");
+            "answerDuration",
+            "album");
         assertValueMatchesContract("scheduleId", frame.get("scheduleId"), "uuid");
         assertValueMatchesContract("songId", frame.get("songId"), "uuid");
         assertValueMatchesContract("question", frame.get("question"), "string");
         assertValueMatchesContract("answer", frame.get("answer"), "string");
         assertValueMatchesContract("remaining", frame.get("remaining"), "number");
         assertValueMatchesContract("answerDuration", frame.get("answerDuration"), "number");
+        assertTrue(frame.get("album") instanceof Map<?, ?>, "album must be an object");
+        final Map<?, ?> album = (Map<?, ?>) frame.get("album");
+        assertExactKeys(album, "image", "name", "picker", "pickerName");
+        assertValueMatchesContract("image", album.get("image"), "uuid");
+        assertValueMatchesContract("name", album.get("name"), "string");
+        assertValueMatchesContract("pickerName", album.get("pickerName"), "string");
+        if (album.get("picker") != null) {
+          assertValueMatchesContract("picker", album.get("picker"), "string");
+        }
       }
       default ->
           throw new AssertionError("No websocket contract registered for type " + expectedType);

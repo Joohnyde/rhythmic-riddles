@@ -47,6 +47,7 @@ describe('AdminSongRoundPage playback timer', () => {
       type: 'welcome',
       stage: 'songs',
       scheduleId,
+      album: { image: 'album-one', name: 'Album', picker: null, pickerName: 'Admin' },
       songId: 'song-one',
       question: 'GUESS THE SONG',
       answer: 'Example Artist — Example Song',
@@ -80,6 +81,7 @@ describe('AdminSongRoundPage playback timer', () => {
   }
 
   it('starts the countdown on the current TV acknowledgement and finishes locally', () => {
+    expect(element('song-round-album')).not.toBeNull();
     expect(element('admin-waiting-for-tv')?.textContent).toContain('Waiting for the TV');
     receive({ type: 'play', scheduleId: 'previous-schedule' });
     expect(element('admin-song-seconds-remaining')).toBeNull();
@@ -146,6 +148,7 @@ describe('AdminSongRoundPage playback timer', () => {
     receive({
       type: 'song_next',
       scheduleId: 'schedule-two',
+      album: { image: 'album-one', name: 'Album', picker: null, pickerName: 'Admin' },
       songId: 'song-two',
       question: 'Name the artist',
       answer: 'Second song',

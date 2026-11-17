@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { GameSession } from '../../../core/session/game-session.service';
 import { teamIconColor } from '../../../domain/game/models/team-icon.utils';
 import { SongRoundStore } from '../../../domain/game/state/song-round.store';
+import { SongRoundAlbumComponent } from '../../../shared/ui/song-round-album/song-round-album.component';
 import { SongScenario } from '../../../domain/game/state/song-scenario';
 import { SeekTimerComponent } from '../../../shared/ui/seek-timer/seek-timer.component';
 import { SongLoadingPanelComponent } from '../../../shared/ui/song-round-panels/song-loading-panel/song-loading-panel.component';
@@ -10,7 +11,7 @@ import { createAnswerFeedback } from '../../../shared/ui/song-round-presentation
 
 @Component({
   selector: 'rr-admin-song-round-page',
-  imports: [SeekTimerComponent, SongLoadingPanelComponent],
+  imports: [SongRoundAlbumComponent, SeekTimerComponent, SongLoadingPanelComponent],
   templateUrl: './admin-song-round.page.html',
   styleUrl: './admin-song-round.page.scss',
 })

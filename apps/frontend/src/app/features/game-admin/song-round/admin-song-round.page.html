@@ -5,6 +5,9 @@
 
   <div class="round-content mx-auto min-h-dvh">
     <header class="round-header text-center">
+      @if (vm.album; as album) {
+        <rr-song-round-album [album]="album" />
+      }
       <p class="round-room">
         ROOM: <span>{{ session.code }}</span>
       </p>

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
+import com.cevapinxile.cestereg.api.quiz.dto.response.AlbumArtwork;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CategorySimple;
 import com.cevapinxile.cestereg.api.quiz.dto.response.ChoosingTeam;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse;
@@ -30,6 +31,7 @@ import com.cevapinxile.cestereg.common.exception.AppNotRegisteredException;
 import com.cevapinxile.cestereg.common.exception.DerivedException;
 import com.cevapinxile.cestereg.common.exception.InvalidArgumentException;
 import com.cevapinxile.cestereg.common.exception.InvalidReferencedObjectException;
+import com.cevapinxile.cestereg.common.exception.MissingArgumentException;
 import com.cevapinxile.cestereg.common.exception.WrongGameStateException;
 import com.cevapinxile.cestereg.core.gateway.BroadcastGateway;
 import com.cevapinxile.cestereg.core.gateway.PresenceGateway;
@@ -120,10 +122,15 @@ public class GameServiceImplTest {
     }
 
     @Test
-    void putDefaultFieldsUsesCustomQuestionAndAnswerWhenPresent() {
+    void putDefaultFieldsUsesCustomQuestionAndAnswerWhenPresent() throws Exception {
       final ScheduleEntity schedule = songSchedule(30.0, 11.0);
       schedule.getTrackId().getAlbumId().setCustomQuestion("Who sings this?");
       schedule.getTrackId().setCustomAnswer("Custom answer");
+      schedule.getCategoryId().setAlbumId(new AlbumEntity(UUID.randomUUID(), "Selected album"));
+      final TeamEntity picker = new TeamEntity(UUID.randomUUID());
+      picker.setImage("team.png");
+      picker.setName("Team Sun");
+      schedule.getCategoryId().setPickedByTeamId(picker);
       final Map<String, Object> json = new HashMap<>();
 
       GameServiceImpl.putDefaultFields(schedule, (HashMap<String, Object>) json);
@@ -133,10 +140,17 @@ public class GameServiceImplTest {
       assertEquals("Custom answer", json.get("answer"));
       assertEquals(schedule.getId(), json.get("scheduleId"));
       assertEquals(11.0, json.get("answerDuration"));
+      assertEquals(
+          new AlbumArtwork(
+              schedule.getCategoryId().getAlbumId().getId(),
+              "Selected album",
+              "team.png",
+              "Team Sun"),
+          json.get("album"));
     }
 
     @Test
-    void putDefaultFieldsFallsBackToDefaultQuestionAndSongToString() {
+    void putDefaultFieldsFallsBackToDefaultQuestionAndSongToString() throws Exception {
       final ScheduleEntity schedule = songSchedule(30.0, 9.0);
       final SongEntity song = schedule.getTrackId().getSongId();
       song.setAuthors("Artist");
@@ -147,6 +161,17 @@ public class GameServiceImplTest {
 
       assertEquals("GUESS THE SONG", json.get("question"));
       assertEquals("Artist - Track", json.get("answer"));
+      assertEquals(
+          new AlbumArtwork(schedule.getCategoryId().getAlbumId().getId(), "Album", null, "Admin"),
+          json.get("album"));
+    }
+
+    @Test
+    void albumArtworkRejectsMissingCategoryOrAlbum() {
+      assertThrows(MissingArgumentException.class, () -> AlbumArtwork.fromCategory(null));
+      assertThrows(
+          InvalidReferencedObjectException.class,
+          () -> AlbumArtwork.fromCategory(new CategoryEntity(UUID.randomUUID())));
     }
 
     @Test
@@ -399,7 +424,8 @@ public class GameServiceImplTest {
               WrongGameStateException.class, () -> gameService.isChangeStageLegal(2, "AKKU"));
 
       assertEquals(
-          "This game is in lobby state. The only allowed state transition is to album selection (stage 1)",
+          "This game is in lobby state. The only allowed state transition is to album selection"
+              + " (stage 1)",
           exception.getMessage());
     }
 
@@ -511,6 +537,9 @@ public class GameServiceImplTest {
       track.setAlbumId(album);
       track.setSongId(song);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(10));
       return schedule;
@@ -708,6 +737,9 @@ public class GameServiceImplTest {
       track.setAlbumId(album);
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(5));
       return schedule;
@@ -1054,6 +1086,9 @@ public class GameServiceImplTest {
       track.setAlbumId(album);
       track.setSongId(song);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(4));
       return schedule;
@@ -1281,7 +1316,8 @@ public class GameServiceImplTest {
               WrongGameStateException.class, () -> gameService.isChangeStageLegal(2, "AKKU"));
 
       assertEquals(
-          "This game is in lobby state. The only allowed state transition is to album selection (stage 1)",
+          "This game is in lobby state. The only allowed state transition is to album selection"
+              + " (stage 1)",
           exception.getMessage());
     }
 
@@ -1365,6 +1401,9 @@ public class GameServiceImplTest {
           new com.cevapinxile.cestereg.persistence.entity.TrackEntity(java.util.UUID.randomUUID());
       track.setAlbumId(album);
       track.setSongId(song);
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(java.time.LocalDateTime.now().minusSeconds(2));
 
@@ -1443,7 +1482,7 @@ public class GameServiceImplTest {
     }
 
     @Test
-    void putDefaultFieldsFallsBackToDefaultsWhenQuestionAndAnswerMissing() {
+    void putDefaultFieldsFallsBackToDefaultsWhenQuestionAndAnswerMissing() throws Exception {
       final ScheduleEntity schedule = schedule(game("AKKU", 2), 12.0, 8.0);
       schedule.getTrackId().getAlbumId().setCustomQuestion(null);
       schedule.getTrackId().setCustomAnswer(null);
@@ -1841,6 +1880,9 @@ public class GameServiceImplTest {
       track.setSongId(song);
       track.setCustomAnswer("Answer");
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(2));
       return schedule;
