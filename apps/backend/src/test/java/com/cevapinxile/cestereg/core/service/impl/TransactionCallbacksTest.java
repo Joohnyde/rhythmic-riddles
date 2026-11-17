@@ -48,9 +48,8 @@ class TransactionCallbacksTest {
 
     TransactionCallbacks.afterCommitOrNow(() -> called.set(true));
     TransactionSynchronizationManager.getSynchronizations()
-        .forEach(
-            synchronization ->
-                synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+        .forEach(synchronization ->
+            synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
 
     assertFalse(called.get());
   }

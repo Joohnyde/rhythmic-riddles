@@ -1,44 +1,180 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
+import { interval, Subscription } from 'rxjs';
 import { GameSession } from '../../../core/session/game-session.service';
-import { SongRoundStore } from '../../../domain/game/state/song-round.store';
+import { AudioAssetUrlService } from '../../../domain/game/data-access/audio-asset-url.service';
+import { TeamScore } from '../../../domain/game/models/team-score.model';
+import { teamIconColor } from '../../../domain/game/models/team-icon.utils';
+import { SongRoundStore, SongRoundVm } from '../../../domain/game/state/song-round.store';
 import { SongScenario } from '../../../domain/game/state/song-scenario';
 import { AudioPlayerComponent } from '../../../shared/ui/audio-player/audio-player.component';
-import { TeamScoreboardComponent } from '../../../shared/ui/team-scoreboard/team-scoreboard.component';
 import { SongRevealedPanelComponent } from '../../../shared/ui/song-round-panels/song-revealed-panel/song-revealed-panel.component';
-import { SongFinishedPanelComponent } from '../../../shared/ui/song-round-panels/song-finished-panel/song-finished-panel.component';
-import { TeamAnsweringPanelComponent } from '../../../shared/ui/song-round-panels/team-answering-panel/team-answering-panel.component';
-import { SystemErrorPanelComponent } from '../../../shared/ui/song-round-panels/system-error-panel/system-error-panel.component';
-import { SongLoadingPanelComponent } from '../../../shared/ui/song-round-panels/song-loading-panel/song-loading-panel.component';
-import { AudioAssetUrlService } from '../../../domain/game/data-access/audio-asset-url.service';
+import { createAnswerFeedback } from '../../../shared/ui/song-round-presentation/song-round-presentation';
+
+interface ScoreAnimation {
+  readonly teamId: string;
+  readonly from: number;
+  readonly to: number;
+  readonly startedAt: number;
+}
+
+const CELEBRATION_MS = 3200;
+const SCORE_CHANGE_MS = 2300;
+const SCORE_COUNT_MS = 1800;
+
 @Component({
   selector: 'rr-tv-song-round-page',
-  imports: [
-    AudioPlayerComponent,
-    TeamScoreboardComponent,
-    SongRevealedPanelComponent,
-    SongFinishedPanelComponent,
-    TeamAnsweringPanelComponent,
-    SystemErrorPanelComponent,
-    SongLoadingPanelComponent,
-  ],
+  imports: [AudioPlayerComponent, SongRevealedPanelComponent],
   templateUrl: './tv-song-round.page.html',
-  styleUrl: './tv-song-round.page.scss',
+  styleUrls: ['./tv-song-round-teams.scss', './tv-song-round.page.scss'],
 })
 export class TvSongRoundPage implements OnInit, OnDestroy {
-  private readonly session = inject(GameSession);
-  private readonly router = inject(Router);
-  readonly audioUrls = inject(AudioAssetUrlService);
+  @ViewChild(AudioPlayerComponent) private player?: AudioPlayerComponent;
+
+  readonly session = inject(GameSession);
   readonly store = inject(SongRoundStore);
+  readonly audioUrls = inject(AudioAssetUrlService);
   readonly SongScenario = SongScenario;
+  readonly verdict = createAnswerFeedback(this.session.messages$, this.store.vm);
+  readonly secondsRemaining = signal(0);
+  readonly countdownFraction = signal(1);
+
+  private readonly router = inject(Router);
+  private readonly teams = computed(() => this.store.vm().teams);
+  private readonly frameTime = signal(Date.now());
+  private readonly scoreAnimation = signal<ScoreAnimation | null>(null);
+  private readonly celebration = signal<{ teamId: string; startedAt: number } | null>(null);
+  private previousRound?: SongRoundVm;
+  private ticks?: Subscription;
+
+  readonly teamColumns = computed(() => {
+    const teams = this.teams();
+    const half = Math.ceil(teams.length / 2);
+    return [teams.slice(0, half), teams.slice(half)] as const;
+  });
+
+  readonly teamDensity = computed(() => {
+    const teamsPerSide = this.teamColumns()[0].length;
+    if (teamsPerSide <= 2) return 'sparse';
+    if (teamsPerSide >= 8) return 'compact';
+    return teamsPerSide >= 6 ? 'medium' : 'normal';
+  });
+
+  readonly scoreChange = computed(() => {
+    const animation = this.scoreAnimation();
+    if (!animation) return null;
+
+    const elapsed = Math.max(0, this.frameTime() - animation.startedAt);
+    if (elapsed >= SCORE_CHANGE_MS) return null;
+
+    const amount = animation.to - animation.from;
+    const progress = Math.min(1, elapsed / SCORE_COUNT_MS);
+    const eased = 1 - (1 - progress) ** 3;
+    return { teamId: animation.teamId, amount, score: Math.round(animation.from + amount * eased) };
+  });
+
+  readonly celebratedTeamId = computed(() => {
+    const celebration = this.celebration();
+    return celebration && this.frameTime() - celebration.startedAt < CELEBRATION_MS
+      ? celebration.teamId
+      : null;
+  });
+
+  constructor() {
+    effect(() => this.updateScoreAnimations(this.store.vm()));
+  }
+
   ngOnInit(): void {
     if (!this.session.code || !this.session.messages$) {
       void this.router.navigate(['']);
       return;
     }
+
     this.store.connect(this.session.messages$, 'tv');
+    this.refreshClock();
+    this.ticks = interval(50).subscribe(() => {
+      this.refreshClock();
+      this.frameTime.set(Date.now());
+    });
   }
+
   ngOnDestroy(): void {
+    this.ticks?.unsubscribe();
     this.store.disconnect();
+  }
+
+  teamColor(image: string): string {
+    return teamIconColor(image) ?? 'var(--primary)';
+  }
+
+  isAnswering(team: TeamScore, vm: SongRoundVm): boolean {
+    return vm.scenario === SongScenario.TeamAnswering && vm.answeringTeam?.id === team.teamId;
+  }
+
+  isCorrect(team: TeamScore, vm: SongRoundVm): boolean {
+    return vm.bravo?.teamId === team.teamId && team.scheduleId === vm.lastPlayedSong;
+  }
+
+  isWrong(team: TeamScore, vm: SongRoundVm): boolean {
+    return (
+      !this.isAnswering(team, vm) &&
+      team.scheduleId !== null &&
+      team.scheduleId === vm.lastPlayedSong &&
+      !this.isCorrect(team, vm)
+    );
+  }
+
+  private updateScoreAnimations(vm: SongRoundVm): void {
+    const previous = this.previousRound;
+    this.previousRound = vm;
+
+    if (!previous || previous.lastPlayedSong !== vm.lastPlayedSong) {
+      this.scoreAnimation.set(null);
+      this.celebration.set(null);
+      return;
+    }
+
+    if (vm.bravo && vm.bravo.teamId !== previous.bravo?.teamId) {
+      this.celebration.set({ teamId: vm.bravo.teamId, startedAt: Date.now() });
+    }
+
+    if (previous.teams === vm.teams) return;
+
+    for (const team of vm.teams) {
+      const priorTeam = previous.teams.find(({ teamId }) => teamId === team.teamId);
+      if (priorTeam && priorTeam.score !== team.score) {
+        this.scoreAnimation.set({
+          teamId: team.teamId,
+          from: priorTeam.score,
+          to: team.score,
+          startedAt: Date.now(),
+        });
+        break;
+      }
+    }
+  }
+
+  private refreshClock(): void {
+    const vm = this.store.vm();
+    const player = this.player;
+    const activePlayer =
+      vm.isPlaying && player?.scheduleId === vm.lastPlayedSong ? player : undefined;
+    const savedRemaining = vm.remaining ?? 0;
+    const duration = activePlayer?.totalDuration ?? (vm.seek ?? 0) + savedRemaining;
+    const remaining = activePlayer
+      ? Math.max(0, duration - activePlayer.audio.getCurrentTime())
+      : savedRemaining;
+
+    this.secondsRemaining.set(Math.ceil(remaining));
+    this.countdownFraction.set(duration > 0 ? remaining / duration : vm.remaining === null ? 1 : 0);
   }
 }

@@ -492,21 +492,19 @@ class WebSocketHandlerTest {
         final CountDownLatch start = new CountDownLatch(1);
 
         final var closeFuture =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  handler.afterConnectionClosed(oldAdmin, CloseStatus.GOING_AWAY);
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              handler.afterConnectionClosed(oldAdmin, CloseStatus.GOING_AWAY);
+              return null;
+            });
         final var reconnectFuture =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  handler.afterConnectionEstablished(freshAdmin);
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              handler.afterConnectionEstablished(freshAdmin);
+              return null;
+            });
 
         await(ready);
         start.countDown();
@@ -542,21 +540,19 @@ class WebSocketHandlerTest {
         final CountDownLatch start = new CountDownLatch(1);
 
         final var left =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  handler.afterConnectionEstablished(first);
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              handler.afterConnectionEstablished(first);
+              return null;
+            });
         final var right =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  handler.afterConnectionEstablished(second);
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              handler.afterConnectionEstablished(second);
+              return null;
+            });
 
         await(ready);
         start.countDown();

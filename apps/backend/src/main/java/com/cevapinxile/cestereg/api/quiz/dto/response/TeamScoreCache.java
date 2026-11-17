@@ -92,7 +92,7 @@ public class TeamScoreCache {
   public TeamScoreCache(List<TeamScoreProjection> projections) {
     if (projections != null) {
       scoreList =
-          projections.stream().map((projection) -> new TeamScore(scoreMap, projection)).toList();
+          projections.stream().map(projection -> new TeamScore(scoreMap, projection)).toList();
     }
   }
 

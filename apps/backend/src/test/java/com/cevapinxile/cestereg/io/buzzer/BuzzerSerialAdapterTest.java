@@ -191,16 +191,15 @@ class BuzzerSerialAdapterTest {
     final byte[] bytes = response.getBytes(StandardCharsets.US_ASCII);
     final AtomicInteger index = new AtomicInteger();
     when(port.readBytes(any(byte[].class), anyInt()))
-        .thenAnswer(
-            invocation -> {
-              final int current = index.getAndIncrement();
-              if (current >= bytes.length) {
-                return 0;
-              }
-              final byte[] target = invocation.getArgument(0);
-              target[0] = bytes[current];
-              return 1;
-            });
+        .thenAnswer(invocation -> {
+          final int current = index.getAndIncrement();
+          if (current >= bytes.length) {
+            return 0;
+          }
+          final byte[] target = invocation.getArgument(0);
+          target[0] = bytes[current];
+          return 1;
+        });
   }
 
   private void connect() {

@@ -159,27 +159,25 @@ class RhytmicRiddlesApplicationTests {
           new CreateTeamRequest("Blocked Team", "616161", "blocked-team.png");
       final TransactionTemplate blocker = new TransactionTemplate(transactionManager);
 
-      blocker.executeWithoutResult(
-          status -> {
-            jdbc.queryForObject(
-                "SELECT id FROM game WHERE code = ? FOR UPDATE", UUID.class, roomCode);
+      blocker.executeWithoutResult(status -> {
+        jdbc.queryForObject("SELECT id FROM game WHERE code = ? FOR UPDATE", UUID.class, roomCode);
 
-            restClient
-                .post()
-                .uri("/api/v1/games/{roomCode}/teams", roomCode)
-                .contentType(APPLICATION_JSON)
-                .body(request)
-                .exchange()
-                .expectStatus()
-                .isEqualTo(423)
-                .expectHeader()
-                .contentTypeCompatibleWith(APPLICATION_JSON)
-                .expectBody()
-                .jsonPath("$.error")
-                .isEqualTo("E010 - Room busy")
-                .jsonPath("$.message")
-                .isEqualTo("Another request is already changing game " + roomCode + ".");
-          });
+        restClient
+            .post()
+            .uri("/api/v1/games/{roomCode}/teams", roomCode)
+            .contentType(APPLICATION_JSON)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isEqualTo(423)
+            .expectHeader()
+            .contentTypeCompatibleWith(APPLICATION_JSON)
+            .expectBody()
+            .jsonPath("$.error")
+            .isEqualTo("E010 - Room busy")
+            .jsonPath("$.message")
+            .isEqualTo("Another request is already changing game " + roomCode + ".");
+      });
 
       assertEquals(
           0,

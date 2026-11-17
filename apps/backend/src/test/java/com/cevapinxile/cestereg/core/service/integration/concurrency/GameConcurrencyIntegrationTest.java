@@ -97,12 +97,12 @@ class GameConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
       final List<Integer> ordinals =
           jdbc.queryForList(
               """
-                  SELECT ordinal_number
-                  FROM category
-                  WHERE id IN (?, ?)
-                    AND ordinal_number IS NOT NULL
-                  ORDER BY ordinal_number
-                  """,
+              SELECT ordinal_number
+              FROM category
+              WHERE id IN (?, ?)
+                AND ordinal_number IS NOT NULL
+              ORDER BY ordinal_number
+              """,
               Integer.class,
               firstCategory,
               secondCategory);

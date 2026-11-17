@@ -43,12 +43,8 @@ function Run-Frontend {
     return
   }
 
-  Write-Host '===> [Frontend] Installing deps (npm ci if lockfile exists, otherwise npm i)'
-  if (Test-Path (Join-Path $dir 'package-lock.json') -PathType Leaf) {
-    Invoke-InDirectory $dir { & npm ci; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
-  } else {
-    Invoke-InDirectory $dir { & npm install; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
-  }
+  Write-Host '===> [Frontend] Installing locked dependencies'
+  Invoke-InDirectory $dir { & npm ci; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
 
   Write-Host '===> [Frontend] Formatting (Prettier write)'
   Invoke-InDirectory $dir { & npm run format; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }

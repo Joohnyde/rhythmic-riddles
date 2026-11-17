@@ -230,23 +230,21 @@ class WebSocketEventAndContractTest {
           .broadcast(eq("ROOM"), anyString());
 
       final Future<?> replay =
-          executor.submit(
-              () -> {
-                try {
-                  service.replaySong(schedule.getId(), "ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.replaySong(schedule.getId(), "ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
       final Future<?> reveal =
-          executor.submit(
-              () -> {
-                try {
-                  service.revealAnswer(schedule.getId(), "ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.revealAnswer(schedule.getId(), "ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
 
       gate.countDown();
       replay.get(5, TimeUnit.SECONDS);
@@ -283,23 +281,21 @@ class WebSocketEventAndContractTest {
           .broadcast(eq("ROOM"), anyString());
 
       final Future<?> reveal =
-          executor.submit(
-              () -> {
-                try {
-                  service.revealAnswer(current.getId(), "ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.revealAnswer(current.getId(), "ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
       final Future<?> progress =
-          executor.submit(
-              () -> {
-                try {
-                  service.progress("ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.progress("ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
 
       gate.countDown();
       reveal.get(5, TimeUnit.SECONDS);
@@ -311,18 +307,17 @@ class WebSocketEventAndContractTest {
               .anyMatch(frame -> "song_reveal".equals(frame.get("type")) && frame.size() == 1));
       assertTrue(
           frames.stream()
-              .anyMatch(
-                  frame -> {
-                    if (!"song_next".equals(frame.get("type"))) {
-                      return false;
-                    }
-                    return frame.containsKey("songId")
-                        && frame.containsKey("scheduleId")
-                        && frame.containsKey("question")
-                        && frame.containsKey("answer")
-                        && frame.containsKey("answerDuration")
-                        && frame.containsKey("remaining");
-                  }));
+              .anyMatch(frame -> {
+                if (!"song_next".equals(frame.get("type"))) {
+                  return false;
+                }
+                return frame.containsKey("songId")
+                    && frame.containsKey("scheduleId")
+                    && frame.containsKey("question")
+                    && frame.containsKey("answer")
+                    && frame.containsKey("answerDuration")
+                    && frame.containsKey("remaining");
+              }));
     }
 
     private static void await(final CountDownLatch latch) {
@@ -420,21 +415,19 @@ class WebSocketEventAndContractTest {
             .broadcast(eq("ROOM"), anyString());
 
         final var replay =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.replaySong(schedule.getId(), "ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.replaySong(schedule.getId(), "ROOM");
+              return null;
+            });
         final var reveal =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.revealAnswer(schedule.getId(), "ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.revealAnswer(schedule.getId(), "ROOM");
+              return null;
+            });
 
         await(ready);
         start.countDown();
@@ -444,11 +437,10 @@ class WebSocketEventAndContractTest {
         assertEquals(2, frames.size());
         assertTrue(
             frames.stream()
-                .anyMatch(
-                    f ->
-                        "song_repeat".equals(f.get("type"))
-                            && f.containsKey("remaining")
-                            && f.size() == 2));
+                .anyMatch(f ->
+                    "song_repeat".equals(f.get("type"))
+                        && f.containsKey("remaining")
+                        && f.size() == 2));
         assertTrue(
             frames.stream().anyMatch(f -> "song_reveal".equals(f.get("type")) && f.size() == 1));
         frames.clear();
@@ -488,21 +480,19 @@ class WebSocketEventAndContractTest {
             .broadcast(eq("ROOM"), anyString());
 
         final var reveal =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.revealAnswer(current.getId(), "ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.revealAnswer(current.getId(), "ROOM");
+              return null;
+            });
         final var progress =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.progress("ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.progress("ROOM");
+              return null;
+            });
 
         await(ready);
         start.countDown();
@@ -514,15 +504,14 @@ class WebSocketEventAndContractTest {
             frames.stream().anyMatch(f -> "song_reveal".equals(f.get("type")) && f.size() == 1));
         assertTrue(
             frames.stream()
-                .anyMatch(
-                    f ->
-                        "song_next".equals(f.get("type"))
-                            && f.containsKey("songId")
-                            && f.containsKey("scheduleId")
-                            && f.containsKey("question")
-                            && f.containsKey("answer")
-                            && f.containsKey("answerDuration")
-                            && f.containsKey("remaining")));
+                .anyMatch(f ->
+                    "song_next".equals(f.get("type"))
+                        && f.containsKey("songId")
+                        && f.containsKey("scheduleId")
+                        && f.containsKey("question")
+                        && f.containsKey("answer")
+                        && f.containsKey("answerDuration")
+                        && f.containsKey("remaining")));
         frames.clear();
         reset(
             broadcastGateway,

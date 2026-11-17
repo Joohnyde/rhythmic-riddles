@@ -89,7 +89,7 @@ public class GameServiceImpl implements GameService {
     String question = lastPlayedSong.getTrackId().getAlbumId().getCustomQuestion();
     String answer = lastPlayedSong.getTrackId().getCustomAnswer();
     if (question == null) {
-      question = "Prepoznaj ovu pjesmu!"; // TODO: Translate
+      question = "GUESS THE SONG"; // TODO: Translate
     }
     if (answer == null) {
       answer = lastPlayedSong.getTrackId().getSongId().toString();

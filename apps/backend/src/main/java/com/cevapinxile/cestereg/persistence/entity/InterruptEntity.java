@@ -54,48 +54,50 @@ import java.util.UUID;
       name = "InterruptEntity.findLastPause",
       query =
           """
-              SELECT i
-              FROM   InterruptEntity i
-              WHERE  i.teamId IS NULL
-                     AND i.arrivedAt > :startTimestamp
-                     AND i.scheduleId.id = :scheduleId
-              ORDER  BY i.arrivedAt DESC
-              LIMIT  1
-              """),
+          SELECT i
+          FROM   InterruptEntity i
+          WHERE  i.teamId IS NULL
+                 AND i.arrivedAt > :startTimestamp
+                 AND i.scheduleId.id = :scheduleId
+          ORDER  BY i.arrivedAt DESC
+          LIMIT  1
+          """),
   @NamedQuery(
       name = "InterruptEntity.findLastAnswer",
       query =
           """
-              SELECT i
-              FROM   InterruptEntity i
-              WHERE  i.teamId IS NOT NULL
-                     AND i.arrivedAt > :startTimestamp
-                     AND i.scheduleId.id = :scheduleId
-              ORDER  BY i.arrivedAt DESC
-              LIMIT  1
-              """),
+          SELECT i
+          FROM   InterruptEntity i
+          WHERE  i.teamId IS NOT NULL
+                 AND i.arrivedAt > :startTimestamp
+                 AND i.scheduleId.id = :scheduleId
+          ORDER  BY i.arrivedAt DESC
+          LIMIT  1
+          """),
   @NamedQuery(
       name = "InterruptEntity.didTeamAnswer",
       query =
           """
-              SELECT    TRUE
-              FROM      InterruptEntity i
-              LEFT JOIN i.scheduleId s
-              LEFT JOIN s.categoryId c
-              WHERE     i.teamId.id = :teamId
-              AND       c.ordinalNumber IS NOT NULL
-              AND       s.startedAt IS NOT NULL
-              ORDER BY  c.ordinalNumber DESC,
-                        s.ordinalNumber DESC LIMIT 1"""),
+          SELECT    TRUE
+          FROM      InterruptEntity i
+          LEFT JOIN i.scheduleId s
+          LEFT JOIN s.categoryId c
+          WHERE     i.teamId.id = :teamId
+          AND       c.ordinalNumber IS NOT NULL
+          AND       s.startedAt IS NOT NULL
+          ORDER BY  c.ordinalNumber DESC,
+                    s.ordinalNumber DESC LIMIT 1\
+          """),
   @NamedQuery(
       name = "InterruptEntity.resolveErrors",
       query =
           """
-              UPDATE InterruptEntity i
-              SET    i.resolvedAt = :resolvedAt
-              WHERE  i.teamId IS NULL
-                AND i.scheduleId.id = :scheduleId
-                AND i.resolvedAt IS NULL"""),
+          UPDATE InterruptEntity i
+          SET    i.resolvedAt = :resolvedAt
+          WHERE  i.teamId IS NULL
+            AND i.scheduleId.id = :scheduleId
+            AND i.resolvedAt IS NULL\
+          """),
   @NamedQuery(
       name = "InterruptEntity.findCorrectAnswer",
       query =
@@ -104,15 +106,16 @@ import java.util.UUID;
       name = "InterruptEntity.findPreviousScenarioId",
       query =
           """
-              SELECT i.scoreOrScenarioId
-              FROM   InterruptEntity i
-              WHERE  i.teamId IS NULL
-                AND i.scheduleId.id = :scheduleId
-                AND i.resolvedAt IS NULL
-                AND i.scoreOrScenarioId IS NOT NULL
-                AND i.scoreOrScenarioId != 3
-              ORDER BY i.arrivedAt DESC
-              LIMIT  1""")
+          SELECT i.scoreOrScenarioId
+          FROM   InterruptEntity i
+          WHERE  i.teamId IS NULL
+            AND i.scheduleId.id = :scheduleId
+            AND i.resolvedAt IS NULL
+            AND i.scoreOrScenarioId IS NOT NULL
+            AND i.scoreOrScenarioId != 3
+          ORDER BY i.arrivedAt DESC
+          LIMIT  1\
+          """)
 })
 public class InterruptEntity implements Serializable {
 

@@ -173,12 +173,11 @@ class WebSocketSchemaGovernanceMetaTest extends AbstractWebSocketIntegrationTest
           .filter(path -> path.getFileName().toString().endsWith(suffix))
           .filter(path -> !path.getFileName().toString().startsWith("_"))
           .sorted(Comparator.comparing(path -> path.getFileName().toString()))
-          .forEach(
-              path -> {
-                String name = path.getFileName().toString();
-                name = name.substring(0, name.length() - suffix.length());
-                names.add(name);
-              });
+          .forEach(path -> {
+            String name = path.getFileName().toString();
+            name = name.substring(0, name.length() - suffix.length());
+            names.add(name);
+          });
     }
     names.sort(Comparator.comparingInt(PUBLISHED_FRAME_TYPES::indexOf));
     return names;
