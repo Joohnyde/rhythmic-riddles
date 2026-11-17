@@ -32,7 +32,8 @@ recovery). Do not turn every protocol assertion into a duplicate full gameplay w
 The six journeys in `specs/product/full-product-game-journeys.spec.ts` are the full-product layer. They
 use separate Admin/TV contexts and real UI, HTTP, PostgreSQL, game-state and WebSocket behavior. A
 profile-gated endpoint substitutes only the unavailable RF/serial device and calls the same
-`BuzzerService` boundary as production.
+`BuzzerService` boundary as production. Product journeys use a deterministic TV media clock
+instead of native audio; HTTP playback acknowledgement and WebSocket synchronization remain real.
 
 ## Required services
 

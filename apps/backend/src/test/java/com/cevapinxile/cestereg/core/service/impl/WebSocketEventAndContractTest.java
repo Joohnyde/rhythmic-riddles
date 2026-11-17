@@ -135,6 +135,12 @@ class WebSocketEventAndContractTest {
 
         final Map<?, ?> parsed = capture();
         assertEquals("song_next", parsed.get("type"));
+        final Map<?, ?> album = (Map<?, ?>) parsed.get("album");
+        assertEquals(next.getCategoryId().getAlbumId().getId().toString(), album.get("image"));
+        assertEquals("Album", album.get("name"));
+        assertTrue(album.containsKey("picker"));
+        assertNull(album.get("picker"));
+        assertEquals("Admin", album.get("pickerName"));
         assertEquals(next.getTrackId().getSongId().getId().toString(), parsed.get("songId"));
         assertEquals("Question?", parsed.get("question"));
         assertEquals("Answer", parsed.get("answer"));
@@ -170,6 +176,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer("Answer");
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       return schedule;
@@ -352,6 +361,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer("Answer");
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       return schedule;
@@ -554,6 +566,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer("Answer");
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       return schedule;
@@ -1263,6 +1278,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer(answer);
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(5));
       schedule.setInterruptList(new ArrayList<>());

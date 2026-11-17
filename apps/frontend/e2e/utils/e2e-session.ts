@@ -1,4 +1,4 @@
-import { Browser, BrowserContextOptions, Page } from '@playwright/test';
+import { Browser, BrowserContext, BrowserContextOptions, Page } from '@playwright/test';
 import { LoginPage } from '../pages/login-page';
 import { Role } from './env';
 import {
@@ -14,8 +14,10 @@ export async function connectRole(
   role: Role,
   roomCode: string,
   contextOptions: BrowserContextOptions = {},
+  initializeContext?: (context: BrowserContext) => Promise<void>,
 ): Promise<ConnectedClient> {
   const context = await browser.newContext(contextOptions);
+  await initializeContext?.(context);
   const page = await context.newPage();
   const frames = captureReceivedWebSocketFrames(page);
   const login = new LoginPage(page);
@@ -30,11 +32,12 @@ export async function connectAdminAndTv(
   browser: Browser,
   roomCode: string,
   contextOptions: BrowserContextOptions = {},
+  initializeTvContext?: (context: BrowserContext) => Promise<void>,
 ): Promise<{ admin: ConnectedClient; tv: ConnectedClient; close: () => Promise<void> }> {
   // Parallel connection keeps time-sensitive song-state fixtures inside the legal 9.6s buzz window.
   const [admin, tv] = await Promise.all([
     connectRole(browser, 'admin', roomCode, contextOptions),
-    connectRole(browser, 'tv', roomCode, contextOptions),
+    connectRole(browser, 'tv', roomCode, contextOptions, initializeTvContext),
   ]);
   return {
     admin,

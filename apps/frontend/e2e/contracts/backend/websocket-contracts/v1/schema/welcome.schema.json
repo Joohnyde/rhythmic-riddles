@@ -155,7 +155,8 @@
         "answer",
         "scheduleId",
         "answerDuration",
-        "scores"
+        "scores",
+        "album"
       ],
       "properties": {
         "type": {
@@ -215,6 +216,28 @@
         },
         "error": {
           "type": "boolean"
+        },
+        "album": {
+          "type": "object",
+          "required": ["image", "name", "picker", "pickerName"],
+          "properties": {
+            "image": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+            },
+            "name": {
+              "type": "string"
+            },
+            "picker": {
+              "type": ["string", "null"],
+              "description": "Selecting team image reference; null means Admin picked."
+            },
+            "pickerName": {
+              "type": "string",
+              "description": "Selecting team name, or Admin when picker is null."
+            }
+          },
+          "additionalProperties": false
         }
       },
       "dependentRequired": {

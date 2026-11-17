@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { connectAdminAndTv, connectRole } from '../../utils/e2e-session';
-import { lastFrameOfType } from '../../utils/ws-capture';
+import { productMediaInitializer } from '../../utils/product-media';
+import {
+  backendReceivedApplicationFrames,
+  countBackendWsFramesOfType,
+  lastFrameOfType,
+} from '../../utils/ws-capture';
 import {
   addTeamThroughUi,
   buzz,
@@ -119,9 +124,15 @@ test.describe.serial('Full product journeys', () => {
       await session.admin.getByTestId('admin-answer-correct-button').click();
       expect((await failedAnswer).status()).toBe(503);
 
-      recoveredTv = await connectRole(browser, 'tv', session.roomCode, {
-        viewport: { width: 1440, height: 900 },
-      });
+      recoveredTv = await connectRole(
+        browser,
+        'tv',
+        session.roomCode,
+        {
+          viewport: { width: 1440, height: 900 },
+        },
+        productMediaInitializer,
+      );
       await expect(recoveredTv.page.getByTestId('answering-team-name')).toHaveText(teamA.name);
       await expectScore(recoveredTv.page, teamA, 0);
       await expect(session.admin.getByTestId('answering-team-name')).toHaveText(teamA.name);
@@ -153,9 +164,15 @@ test.describe.serial('Full product journeys', () => {
       await expect(session.admin.getByTestId('system-error-panel')).toBeVisible();
       await expect(session.admin.getByTestId('admin-resolve-error-button')).toBeEnabled();
 
-      recoveredTv = await connectRole(browser, 'tv', session.roomCode, {
-        viewport: { width: 1440, height: 900 },
-      });
+      recoveredTv = await connectRole(
+        browser,
+        'tv',
+        session.roomCode,
+        {
+          viewport: { width: 1440, height: 900 },
+        },
+        productMediaInitializer,
+      );
       await expect(recoveredTv.page.getByTestId('system-error-panel')).toBeVisible();
 
       await session.admin.getByTestId('admin-resolve-error-button').click();
@@ -199,9 +216,14 @@ test.describe.serial('Full product journeys', () => {
 
       await session.tv.close();
       await session.adminContext.close();
-      recovered = await connectAdminAndTv(browser, session.roomCode, {
-        viewport: { width: 1440, height: 900 },
-      });
+      recovered = await connectAdminAndTv(
+        browser,
+        session.roomCode,
+        {
+          viewport: { width: 1440, height: 900 },
+        },
+        productMediaInitializer,
+      );
       await expect(
         recovered.admin.page.getByTestId(`admin-album-focus-card-${selected.id}`),
       ).toHaveAttribute('data-selected', 'true');
@@ -250,34 +272,34 @@ async function answerCorrectAndNext(
     return;
   }
 
-  const previousSong =
-    lastFrameOfType(session.tv.frames, 'song_next') ??
-    lastFrameOfType(session.tv.frames, 'welcome');
-  const previousSongId = previousSong?.json?.songId;
-  const previousScheduleId = previousSong?.json?.scheduleId;
-  expect(typeof previousSongId).toBe('string');
-  expect(typeof previousScheduleId).toBe('string');
-
-  // Start listening before Next Song so a fast media response cannot be missed.
-  const snippetResponse = session.tv.page.waitForResponse((response) =>
-    response.url().includes('/assets/v1/audio/snippets/'),
+  const previousSong = backendReceivedApplicationFrames(session.tv.frames).findLast(
+    ({ json }) =>
+      json?.type === 'song_next' || (json?.type === 'welcome' && json.stage === 'songs'),
   );
+  const previousScheduleId = previousSong?.json?.scheduleId;
+  expect(typeof previousScheduleId).toBe('string');
+  // An album starts with a `welcome` snapshot; the last `song_next` may still
+  // belong to the previous album. Only inspect frames received after this click.
+  const songNextCountBefore = countBackendWsFramesOfType(session.tv.frames, 'song_next');
+
   await next(session.admin);
-  const response = await snippetResponse;
-  expect(response.ok()).toBeTruthy();
   await expect
-    .poll(() => {
-      const scheduleId = lastFrameOfType(session.tv.frames, 'song_next')?.json?.scheduleId;
-      return typeof scheduleId === 'string' && scheduleId !== previousScheduleId;
-    })
-    .toBe(true);
+    .poll(() => countBackendWsFramesOfType(session.tv.frames, 'song_next'))
+    .toBeGreaterThan(songNextCountBefore);
 
   const nextSong = lastFrameOfType(session.tv.frames, 'song_next')?.json;
   expect(typeof nextSong?.songId).toBe('string');
-  expect(nextSong?.songId).not.toBe(previousSongId);
-  expect(new URL(response.url()).pathname).toBe(`/assets/v1/audio/snippets/${nextSong?.songId}`);
+  // Fixture tracks share E2E_SONG; scheduleId identifies the next round.
+  expect(nextSong?.scheduleId).not.toBe(previousScheduleId);
+  const album = nextSong?.album as { name: string };
+  for (const page of [session.admin, session.tv.page]) {
+    await expect(page.getByTestId('song-round-album').locator('..')).toContainText(album.name);
+  }
+  // The media element is owned by AudioPlayerService, not attached to the DOM.
+  // A cached snippet need not produce another HTTP response; acknowledgement and
+  // decreasing countdowns below prove that the new playback actually started.
   await expect
-    .poll(() => lastFrameOfType(session.admin.frames, 'play')?.json?.scheduleId)
+    .poll(() => lastFrameOfType(session.adminFrames, 'play')?.json?.scheduleId)
     .toBe(nextSong?.scheduleId);
   await expect(session.tv.page.getByTestId('tv-snippet-audio')).toBeVisible();
   await expect(session.admin.getByTestId('admin-waiting-for-tv')).toBeHidden();

@@ -91,7 +91,9 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
             + scheduleId
             + "\",\"songId\":\""
             + songId
-            + "\",\"question\":\"Prepoznaj ovu pjesmu!\",\"answer\":\"Answer\",\"remaining\":15.0,\"answerDuration\":8.0}");
+            + "\",\"question\":\"Prepoznaj ovu"
+            + " pjesmu!\",\"answer\":\"Answer\",\"remaining\":15.0,\"answerDuration\":8.0,\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"}}");
     assertSchemaValid("song_repeat", "{\"type\":\"song_repeat\",\"remaining\":15.0}");
     assertSchemaValid("song_reveal", "{\"type\":\"song_reveal\"}");
     assertSchemaValid(
@@ -156,7 +158,8 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
         "welcome", "{\"type\":\"welcome\",\"stage\":\"albums\",\"albums\":[" + album + "]}");
     assertSchemaValid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\""
             + songId
             + "\",\"question\":\"Question\",\"answer\":\"Answer\",\"scheduleId\":\""
             + scheduleId
@@ -165,7 +168,8 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
             + "],\"seek\":1.0,\"remaining\":14.0}");
     assertSchemaValid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\""
             + songId
             + "\",\"question\":\"Question\",\"answer\":\"Answer\",\"scheduleId\":\""
             + scheduleId
@@ -176,14 +180,16 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
             + "\"}");
     assertSchemaValid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\""
             + songId
             + "\",\"question\":\"Question\",\"answer\":\"Answer\",\"scheduleId\":\""
             + scheduleId
             + "\",\"answerDuration\":8.0,\"scores\":[],\"error\":true}");
     assertSchemaValid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\""
             + songId
             + "\",\"question\":\"Question\",\"answer\":\"Answer\",\"scheduleId\":\""
             + scheduleId
@@ -336,14 +342,16 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
         "welcome", "{\"type\":\"welcome\",\"stage\":\"lobby\",\"teams\":[],\"roomCode\":\"AKKU\"}");
     assertSchemaInvalid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\""
             + songId
             + "\",\"question\":\"Q\",\"answer\":\"A\",\"scheduleId\":\""
             + scheduleId
             + "\",\"scores\":[]}");
     assertSchemaInvalid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\""
             + songId
             + "\",\"question\":\"Q\",\"answer\":\"A\",\"scheduleId\":\""
             + scheduleId
@@ -352,7 +360,8 @@ class WebSocketJsonSchemaContractIntegrationTest extends AbstractWebSocketIntegr
             + "}");
     assertSchemaInvalid(
         "welcome",
-        "{\"type\":\"welcome\",\"stage\":\"songs\",\"songId\":\"not-a-uuid\",\"question\":\"Q\",\"answer\":\"A\",\"scheduleId\":\""
+        "{\"type\":\"welcome\",\"stage\":\"songs\",\"album\":{\"image\":\"3c8ed2c0-df3d-4639-b6a6-81550e473cca\",\"name\":\"Album"
+            + " A\",\"picker\":null,\"pickerName\":\"Admin\"},\"songId\":\"not-a-uuid\",\"question\":\"Q\",\"answer\":\"A\",\"scheduleId\":\""
             + scheduleId
             + "\",\"answerDuration\":8,\"scores\":[]}");
     assertSchemaInvalid(

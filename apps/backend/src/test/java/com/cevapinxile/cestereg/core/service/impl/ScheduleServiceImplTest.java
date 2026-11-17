@@ -192,6 +192,7 @@ public class ScheduleServiceImplTest {
       track.setSongId(song);
       final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
       category.setGameId(game);
+      category.setAlbumId(album);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
       schedule.setCategoryId(category);
       schedule.setTrackId(track);
@@ -392,6 +393,9 @@ public class ScheduleServiceImplTest {
       track.setAlbumId(album);
       track.setSongId(song);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setAlbumId(album);
+      schedule.setCategoryId(category);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(5));
       return schedule;
@@ -574,6 +578,7 @@ public class ScheduleServiceImplTest {
       track.setSongId(song);
       final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
       category.setGameId(game);
+      category.setAlbumId(album);
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
       schedule.setCategoryId(category);
       schedule.setTrackId(track);
@@ -753,6 +758,9 @@ public class ScheduleServiceImplTest {
       track.setSongId(song);
       track.setCustomAnswer("Answer");
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setAlbumId(album);
+      schedule.setCategoryId(category);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(2));
       return schedule;
@@ -841,6 +849,9 @@ public class ScheduleServiceImplTest {
       track.setSongId(song);
       track.setCustomAnswer("Answer");
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity category = new CategoryEntity(UUID.randomUUID());
+      category.setAlbumId(album);
+      schedule.setCategoryId(category);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(2));
       return schedule;

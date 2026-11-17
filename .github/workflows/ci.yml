@@ -355,7 +355,7 @@ jobs:
 
       - name: Install PlatformIO
         run: |
-          python -m pip install "platformio==${PLATFORMIO_VERSION}"
+          python -m pip install --require-hashes -r hardware/firmware/requirements.txt
           pio --version
 
       - name: Run firmware unit tests

@@ -16,6 +16,7 @@ const welcome = {
   type: 'welcome',
   stage: 'songs',
   scheduleId: 'one',
+  album: { image: 'album-one', name: 'Album', picker: null, pickerName: 'Admin' },
   songId: 'song-one',
   question: 'GUESS THE SONG',
   answer: 'First song',
@@ -88,6 +89,7 @@ describe('TvSongRoundPage playback', () => {
 
   it('preserves both score columns and starts the next snippet from a song_next frame', async () => {
     receive({ ...welcome, bravo: team.teamId, revealed: true });
+    expect(element('song-round-album')?.textContent).toBeDefined();
     expect(audio.load).toHaveBeenLastCalledWith(expect.stringContaining('/answers/song-one'));
     expect(element('tv-song-answer')?.textContent).toContain('First song');
     expect(element('tv-song-bravo-team')?.textContent).toContain(team.name);
@@ -103,6 +105,7 @@ describe('TvSongRoundPage playback', () => {
     receive({
       type: 'song_next',
       scheduleId: 'two',
+      album: { image: 'album-one', name: 'Album', picker: null, pickerName: 'Admin' },
       songId: 'song-two',
       question: 'Name the artist',
       answer: 'Second song',
