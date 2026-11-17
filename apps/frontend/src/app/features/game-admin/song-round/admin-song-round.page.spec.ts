@@ -48,7 +48,7 @@ describe('AdminSongRoundPage playback timer', () => {
       stage: 'songs',
       scheduleId,
       songId: 'song-one',
-      question: 'Prepoznaj ovu pjesmu!',
+      question: 'GUESS THE SONG',
       answer: 'Example Artist — Example Song',
       seek: 0,
       remaining: 20,
@@ -90,7 +90,7 @@ describe('AdminSongRoundPage playback timer', () => {
     expect(element('admin-playing-song-name')?.textContent).toContain(
       'Example Artist — Example Song',
     );
-    expect(element('scoreboard-team-score-team-one')?.textContent?.trim()).toBe('10');
+    expect((fixture.nativeElement as HTMLElement).querySelector('rr-team-scoreboard')).toBeNull();
     expect(element('admin-song-seconds-remaining')?.textContent).toContain('20.000');
     expect(element('admin-song-timer-progress')?.style.backgroundColor).toBe('rgb(69, 189, 142)');
 
@@ -132,7 +132,6 @@ describe('AdminSongRoundPage playback timer', () => {
 
     receive({ type: 'play', scheduleId });
     expect(element('admin-song-seconds-remaining')?.textContent).toContain('18.750');
-    expect(element('scoreboard-team-score-team-one')?.textContent?.trim()).toBe('0');
   });
 
   it('reveals a confirmed correct answer and clears the verdict on the next song', () => {

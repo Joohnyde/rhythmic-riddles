@@ -80,7 +80,9 @@
         <div class="song-round__answer" role="status" data-testid="tv-song-answer">
           <p class="song-round__answer-title">{{ vm.answer }}</p>
           @if (vm.bravo) {
-            <p class="song-round__answer-subtitle">Correct answer!</p>
+            <p class="song-round__answer-subtitle" data-testid="tv-song-bravo-team">
+              Bravo, {{ vm.bravo.name }}!
+            </p>
           }
         </div>
       } @else {
@@ -167,6 +169,7 @@
         [playbackDelayId]="vm.playbackDelayId"
         (playbackRequested)="store.requestPlayback($event)"
         (playbackStarted)="store.acknowledgePlayback()"
+        (progress)="updatePlaybackProgress($event)"
         (playbackFailed)="store.playbackFailed()"
         [seek]="vm.seek ?? 0"
         [remaining]="vm.remaining"

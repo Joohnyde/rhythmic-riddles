@@ -228,13 +228,3 @@
     </div>
   }
 </main>
-
-@if (vm.canShowScoreboard) {
-  <aside class="round-scoreboard" aria-label="Team scores">
-    <rr-team-scoreboard
-      [teams]="vm.teams"
-      [bravo]="vm.bravo"
-      [currentScheduleId]="vm.lastPlayedSong"
-    />
-  </aside>
-}

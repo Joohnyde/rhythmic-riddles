@@ -1,13 +1,4 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
 import { GameSession } from '../../../core/session/game-session.service';
@@ -16,10 +7,12 @@ import { TeamScore } from '../../../domain/game/models/team-score.model';
 import { teamIconColor } from '../../../domain/game/models/team-icon.utils';
 import { SongRoundStore, SongRoundVm } from '../../../domain/game/state/song-round.store';
 import { SongScenario } from '../../../domain/game/state/song-scenario';
-import { AudioPlayerComponent } from '../../../shared/ui/audio-player/audio-player.component';
+import {
+  AudioPlayerComponent,
+  type AudioPlaybackProgress,
+} from '../../../shared/ui/audio-player/audio-player.component';
 import { SongRevealedPanelComponent } from '../../../shared/ui/song-round-panels/song-revealed-panel/song-revealed-panel.component';
 import { createAnswerFeedback } from '../../../shared/ui/song-round-presentation/song-round-presentation';
-
 interface ScoreAnimation {
   readonly teamId: string;
   readonly from: number;
@@ -38,8 +31,6 @@ const SCORE_COUNT_MS = 1800;
   styleUrls: ['./tv-song-round-teams.scss', './tv-song-round.page.scss'],
 })
 export class TvSongRoundPage implements OnInit, OnDestroy {
-  @ViewChild(AudioPlayerComponent) private player?: AudioPlayerComponent;
-
   readonly session = inject(GameSession);
   readonly store = inject(SongRoundStore);
   readonly audioUrls = inject(AudioAssetUrlService);
@@ -90,7 +81,11 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
   });
 
   constructor() {
-    effect(() => this.updateScoreAnimations(this.store.vm()));
+    effect(() => {
+      const vm = this.store.vm();
+      this.updateScoreAnimations(vm);
+      this.resetClock(vm);
+    });
   }
 
   ngOnInit(): void {
@@ -100,11 +95,7 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
     }
 
     this.store.connect(this.session.messages$, 'tv');
-    this.refreshClock();
-    this.ticks = interval(50).subscribe(() => {
-      this.refreshClock();
-      this.frameTime.set(Date.now());
-    });
+    this.ticks = interval(50).subscribe(() => this.frameTime.set(Date.now()));
   }
 
   ngOnDestroy(): void {
@@ -163,18 +154,20 @@ export class TvSongRoundPage implements OnInit, OnDestroy {
     }
   }
 
-  private refreshClock(): void {
+  updatePlaybackProgress(progress: AudioPlaybackProgress): void {
     const vm = this.store.vm();
-    const player = this.player;
-    const activePlayer =
-      vm.isPlaying && player?.scheduleId === vm.lastPlayedSong ? player : undefined;
-    const savedRemaining = vm.remaining ?? 0;
-    const duration = activePlayer?.totalDuration ?? (vm.seek ?? 0) + savedRemaining;
-    const remaining = activePlayer
-      ? Math.max(0, duration - activePlayer.audio.getCurrentTime())
-      : savedRemaining;
+    if (!vm.isPlaying || progress.scheduleId !== vm.lastPlayedSong) return;
+    this.updateClock(progress.remaining, progress.duration);
+  }
 
+  private resetClock(vm: SongRoundVm): void {
+    const remaining = vm.remaining ?? 0;
+    const duration = (vm.seek ?? 0) + remaining;
+    this.updateClock(remaining, duration, vm.remaining === null);
+  }
+
+  private updateClock(remaining: number, duration: number, pending = false): void {
     this.secondsRemaining.set(Math.ceil(remaining));
-    this.countdownFraction.set(duration > 0 ? remaining / duration : vm.remaining === null ? 1 : 0);
+    this.countdownFraction.set(duration > 0 ? remaining / duration : pending ? 1 : 0);
   }
 }

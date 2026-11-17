@@ -603,7 +603,7 @@ function parseSceneTransform(transform: string): {
   readonly scale: number;
 } {
   const match = transform.match(
-    /^translate3d\((-?[\d.]+)px, (-?[\d.]+)px, 0\) scale\((-?[\d.]+)\)$/,
+    /^translate3d\((-?[\d.]+)px, (-?[\d.]+)px, 0(?:px)?\) scale\((-?[\d.]+)\)$/,
   );
   if (!match) throw new Error(`Unexpected Stage 1 focus transform: ${transform}`);
   const [, x, y, scale] = match;
