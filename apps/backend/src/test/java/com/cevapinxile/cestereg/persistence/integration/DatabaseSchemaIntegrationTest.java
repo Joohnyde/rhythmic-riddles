@@ -39,23 +39,23 @@ class DatabaseSchemaIntegrationTest extends PostgresJpaIntegrationTest {
         2,
         jdbc.queryForObject(
             """
-                SELECT COUNT(*)
-                FROM pg_indexes
-                WHERE schemaname = 'public'
-                  AND indexname IN (
-                    'uq_category_game_ordinal',
-                    'uq_interrupt_schedule_active_team'
-                  )
-                """,
+            SELECT COUNT(*)
+            FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND indexname IN (
+                'uq_category_game_ordinal',
+                'uq_interrupt_schedule_active_team'
+              )
+            """,
             Integer.class));
     assertEquals(
         2,
         jdbc.queryForObject(
             """
-                SELECT COUNT(*)
-                FROM pg_constraint
-                WHERE conname IN ('ck_game_stage', 'ck_game_positive_limits')
-                """,
+            SELECT COUNT(*)
+            FROM pg_constraint
+            WHERE conname IN ('ck_game_stage', 'ck_game_positive_limits')
+            """,
             Integer.class));
   }
 
@@ -72,19 +72,19 @@ class DatabaseSchemaIntegrationTest extends PostgresJpaIntegrationTest {
         3,
         jdbc.queryForObject(
             """
-        SELECT COUNT(*) FROM pg_indexes
-        WHERE schemaname = 'public'
-          AND indexname IN ('idx_playback_delay_schedule', 'idx_playback_delay_attempt', 'uq_playback_delay_open')
-        """,
+            SELECT COUNT(*) FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND indexname IN ('idx_playback_delay_schedule', 'idx_playback_delay_attempt', 'uq_playback_delay_open')
+            """,
             Integer.class));
     assertEquals(
         1,
         jdbc.queryForObject(
             """
-        SELECT COUNT(*) FROM pg_constraint
-        WHERE conname = 'fk_playback_delay_schedule'
-          AND contype = 'f'
-        """,
+            SELECT COUNT(*) FROM pg_constraint
+            WHERE conname = 'fk_playback_delay_schedule'
+              AND contype = 'f'
+            """,
             Integer.class));
   }
 

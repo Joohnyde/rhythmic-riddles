@@ -45,10 +45,9 @@ class E2eGameFixtureControllerErrorContractTest {
     mockMvc
         .perform(post(BASE_URL).contentType("application/json").content(minimalJson()))
         .andExpect(status().isBadRequest())
-        .andExpect(
-            result ->
-                assertThat(result.getResolvedException())
-                    .isInstanceOf(MethodArgumentNotValidException.class));
+        .andExpect(result ->
+            assertThat(result.getResolvedException())
+                .isInstanceOf(MethodArgumentNotValidException.class));
 
     verifyNoInteractions(service);
   }
@@ -72,50 +71,50 @@ class E2eGameFixtureControllerErrorContractTest {
 
   private static String validMinimalJson() {
     return """
-      {
-        "id": "11111111-1111-1111-1111-111111111111",
-        "roomCode": "AKKU",
-        "maxSongs": 1,
-        "maxAlbums": 1,
-        "stage": 0,
-        "teams": [
-          {
-            "id": "22222222-2222-2222-2222-222222222222",
-            "buttonCode": "A",
-            "name": "Team A"
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "roomCode": "AKKU",
+      "maxSongs": 1,
+      "maxAlbums": 1,
+      "stage": 0,
+      "teams": [
+        {
+          "id": "22222222-2222-2222-2222-222222222222",
+          "buttonCode": "A",
+          "name": "Team A"
+        }
+      ],
+      "categories": [
+        {
+          "id": "33333333-3333-3333-3333-333333333333",
+          "done": false,
+          "album": {
+            "id": "44444444-4444-4444-4444-444444444444",
+            "name": "Album A",
+            "tracks": [
+              {
+                "customAnswer": "Song A"
+              }
+            ]
           }
-        ],
-        "categories": [
-          {
-            "id": "33333333-3333-3333-3333-333333333333",
-            "done": false,
-            "album": {
-              "id": "44444444-4444-4444-4444-444444444444",
-              "name": "Album A",
-              "tracks": [
-                {
-                  "customAnswer": "Song A"
-                }
-              ]
-            }
-          }
-        ]
-      }
-      """;
+        }
+      ]
+    }
+    """;
   }
 
   private static String minimalJson() {
     return """
-        {
-          "id": "%s",
-          "roomCode": "AKKU",
-          "maxSongs": 1,
-          "maxAlbums": 10,
-          "stage": 2,
-          "teams": [],
-          "categories": []
-        }
-        """
+    {
+      "id": "%s",
+      "roomCode": "AKKU",
+      "maxSongs": 1,
+      "maxAlbums": 10,
+      "stage": 2,
+      "teams": [],
+      "categories": []
+    }
+    """
         .formatted(UUID.randomUUID());
   }
 }

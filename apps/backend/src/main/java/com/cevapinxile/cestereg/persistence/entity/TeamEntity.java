@@ -50,10 +50,10 @@ import java.util.UUID;
       name = "TeamEntity.findByGameId",
       query =
           """
-              SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse(t.id, t.name, t.image)
-              FROM   TeamEntity t
-              WHERE  t.gameId.code = :roomCode
-              """)
+          SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse(t.id, t.name, t.image)
+          FROM   TeamEntity t
+          WHERE  t.gameId.code = :roomCode
+          """)
 })
 public class TeamEntity implements Serializable {
 

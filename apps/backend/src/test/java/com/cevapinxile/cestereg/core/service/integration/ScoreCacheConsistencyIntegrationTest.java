@@ -118,15 +118,14 @@ class ScoreCacheConsistencyIntegrationTest extends PostgresJpaIntegrationTest {
     assertEquals(0, teamService.getTeamPoints(teamId, roomCode));
 
     final TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-    transaction.executeWithoutResult(
-        status -> {
-          try {
-            interruptService.answer(answerId, new AnswerRequest(true), roomCode);
-          } catch (final Exception exception) {
-            throw new IllegalStateException(exception);
-          }
-          status.setRollbackOnly();
-        });
+    transaction.executeWithoutResult(status -> {
+      try {
+        interruptService.answer(answerId, new AnswerRequest(true), roomCode);
+      } catch (final Exception exception) {
+        throw new IllegalStateException(exception);
+      }
+      status.setRollbackOnly();
+    });
 
     verify(broadcastGateway, never()).broadcast(eq(roomCode), anyString());
     assertNull(

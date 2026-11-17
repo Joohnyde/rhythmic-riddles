@@ -40,11 +40,10 @@ class WebSocketConcurrencyIntegrationTest extends AbstractWebSocketIntegrationTe
         final SocketProbe probe = new SocketProbe();
         probes.add(probe);
         futures.add(
-            executor.submit(
-                () -> {
-                  start.await(2, TimeUnit.SECONDS);
-                  return connectPossiblyRejected(0, ROOM_A, probe);
-                }));
+            executor.submit(() -> {
+              start.await(2, TimeUnit.SECONDS);
+              return connectPossiblyRejected(0, ROOM_A, probe);
+            }));
       }
 
       start.countDown();
@@ -97,18 +96,17 @@ class WebSocketConcurrencyIntegrationTest extends AbstractWebSocketIntegrationTe
       final List<Future<?>> futures = new ArrayList<>();
       for (int i = 0; i < attempts; i++) {
         futures.add(
-            executor.submit(
-                () -> {
-                  final SocketProbe tv = new SocketProbe();
-                  try {
-                    start.await(2, TimeUnit.SECONDS);
-                    connectPossiblyRejected(1, ROOM_A, tv);
-                    tv.pollFrame(100);
-                    tv.close(CloseStatus.GOING_AWAY);
-                  } catch (Throwable ex) {
-                    failures.add(ex);
-                  }
-                }));
+            executor.submit(() -> {
+              final SocketProbe tv = new SocketProbe();
+              try {
+                start.await(2, TimeUnit.SECONDS);
+                connectPossiblyRejected(1, ROOM_A, tv);
+                tv.pollFrame(100);
+                tv.close(CloseStatus.GOING_AWAY);
+              } catch (Throwable ex) {
+                failures.add(ex);
+              }
+            }));
       }
 
       start.countDown();
@@ -200,13 +198,12 @@ class WebSocketConcurrencyIntegrationTest extends AbstractWebSocketIntegrationTe
         final SocketProbe duplicate = new SocketProbe();
         duplicates.add(duplicate);
         futures.add(
-            executor.submit(
-                () -> {
-                  if (connectPossiblyRejected(socketPosition, ROOM_A, duplicate)) {
-                    acceptedDuplicates.incrementAndGet();
-                  }
-                  duplicate.pollFrame(100);
-                }));
+            executor.submit(() -> {
+              if (connectPossiblyRejected(socketPosition, ROOM_A, duplicate)) {
+                acceptedDuplicates.incrementAndGet();
+              }
+              duplicate.pollFrame(100);
+            }));
       }
 
       for (Future<?> future : futures) {

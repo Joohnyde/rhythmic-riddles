@@ -55,10 +55,10 @@ class PlaybackDelayRepositoryIntegrationTest extends PostgresJpaIntegrationTest 
         0,
         jdbc.queryForObject(
             """
-        SELECT COUNT(*) FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'playback_delay'
-          AND column_name = 'delay'
-        """,
+            SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'playback_delay'
+              AND column_name = 'delay'
+            """,
             Integer.class));
   }
 

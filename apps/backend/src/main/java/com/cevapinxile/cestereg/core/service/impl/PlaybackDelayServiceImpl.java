@@ -59,10 +59,9 @@ public class PlaybackDelayServiceImpl implements PlaybackDelayService {
     final ScheduleEntity schedule =
         scheduleRepository
             .findById(scheduleId)
-            .orElseThrow(
-                () ->
-                    new InvalidReferencedObjectException(
-                        "Schedule with id " + scheduleId + " does not exist"));
+            .orElseThrow(() ->
+                new InvalidReferencedObjectException(
+                    "Schedule with id " + scheduleId + " does not exist"));
     validateCurrentSchedule(schedule, game, roomCode);
 
     // Include acknowledged attempts: a delayed older registration must not reopen a delay.
@@ -135,10 +134,9 @@ public class PlaybackDelayServiceImpl implements PlaybackDelayService {
     final PlaybackDelayEntity delay =
         playbackDelayRepository
             .findById(delayId)
-            .orElseThrow(
-                () ->
-                    new InvalidReferencedObjectException(
-                        "Playback attempt with id " + delayId + " does not exist"));
+            .orElseThrow(() ->
+                new InvalidReferencedObjectException(
+                    "Playback attempt with id " + delayId + " does not exist"));
     final ScheduleEntity schedule = delay.getScheduleId();
     validateCurrentSchedule(schedule, game, roomCode);
     if (delay.getSentAt().isBefore(schedule.getStartedAt())) {

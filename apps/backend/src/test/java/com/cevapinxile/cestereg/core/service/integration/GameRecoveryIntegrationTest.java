@@ -115,12 +115,12 @@ class GameRecoveryIntegrationTest extends PostgresJpaIntegrationTest {
         1,
         jdbc.queryForObject(
             """
-                SELECT COUNT(*)
-                FROM interrupt
-                WHERE schedule_id = ?
-                  AND team_id IS NULL
-                  AND resolved_at IS NULL
-                """,
+            SELECT COUNT(*)
+            FROM interrupt
+            WHERE schedule_id = ?
+              AND team_id IS NULL
+              AND resolved_at IS NULL
+            """,
             Integer.class,
             round.scheduleId()));
 

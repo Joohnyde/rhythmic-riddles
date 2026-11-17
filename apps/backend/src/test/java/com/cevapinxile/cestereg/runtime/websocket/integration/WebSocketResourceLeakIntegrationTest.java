@@ -119,17 +119,16 @@ class WebSocketResourceLeakIntegrationTest extends AbstractWebSocketIntegrationT
     for (int i = 0; i < tasks; i++) {
       final int index = i;
       futures.add(
-          executor.submit(
-              () -> {
-                final SocketProbe probe = new SocketProbe();
-                try {
-                  connectPossiblyRejected(index % 2, ROOM_A, probe);
-                  probe.pollFrame(100);
-                  probe.close(index % 3 == 0 ? CloseStatus.GOING_AWAY : CloseStatus.NORMAL);
-                } catch (Exception ex) {
-                  throw new IllegalStateException(ex);
-                }
-              }));
+          executor.submit(() -> {
+            final SocketProbe probe = new SocketProbe();
+            try {
+              connectPossiblyRejected(index % 2, ROOM_A, probe);
+              probe.pollFrame(100);
+              probe.close(index % 3 == 0 ? CloseStatus.GOING_AWAY : CloseStatus.NORMAL);
+            } catch (Exception ex) {
+              throw new IllegalStateException(ex);
+            }
+          }));
     }
 
     for (Future<?> future : futures) {

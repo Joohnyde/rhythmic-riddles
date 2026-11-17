@@ -1,0 +1,266 @@
+.song-round__teams {
+  display: grid;
+  grid-template-rows: repeat(var(--team-count, 5), minmax(0, 1fr));
+  gap: var(--team-row-gap);
+  align-content: center;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.song-round__team {
+  position: relative;
+  z-index: 0;
+  justify-self: start;
+  width: var(--team-card-width);
+  height: 100%;
+  max-height: var(--team-card-max-height);
+  align-self: center;
+  min-width: 0;
+  border: 1.5px solid transparent;
+  border-radius: var(--team-frame-radius);
+  color: var(--team-color, #ac3df5);
+  background:
+    linear-gradient(110deg, rgb(8 4 22 / 94%), rgb(4 1 12 / 91%)) padding-box,
+    linear-gradient(
+        110deg,
+        var(--team-color, var(--primary)),
+        color-mix(in srgb, var(--team-color, var(--primary)) 65%, var(--primary)) 110%
+      )
+      border-box;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 5%),
+    0 0 17px color-mix(in srgb, var(--team-color, #ac3df5) 42%, transparent),
+    inset 0 0 23px rgb(10 4 18 / 54%);
+  transition:
+    width 370ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 280ms ease,
+    opacity 280ms ease,
+    filter 280ms ease,
+    box-shadow 350ms ease,
+    border-color 350ms ease,
+    background 350ms ease;
+}
+
+/* Keep scores, labels and icons in front of the rising green liquid. */
+.song-round__team-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: var(--team-inner-gap);
+  height: 100%;
+  align-items: center;
+  padding: 0 var(--team-inline-padding);
+}
+
+.song-round__team-icon {
+  flex: none;
+  width: min(var(--team-icon-size), 78%);
+  height: min(var(--team-icon-size), 78%);
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--team-color, #ac3df5) 46%, transparent));
+}
+
+.song-round__team-name {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+  font-size: var(--team-name-font-size);
+  font-weight: 900;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: -0.03em;
+}
+
+.song-round__team-score {
+  flex: none;
+  min-width: 4ch;
+  text-align: right;
+  font-size: var(--team-score-font-size);
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+/* 4-digit totals fit without overflowing the frame or shrinking the team icon. */
+.song-round__team-score--four-digits {
+  font-size: calc(var(--team-score-font-size) * var(--score-four-digit-scale));
+}
+
+.song-round__team--answering {
+  z-index: 3;
+  width: calc(var(--team-card-width) + var(--team-answer-extension));
+  box-shadow:
+    0 0 8px var(--team-color),
+    0 0 26px color-mix(in srgb, var(--team-color) 74%, transparent),
+    0 0 43px color-mix(in srgb, var(--team-color) 31%, transparent),
+    inset 0 0 21px color-mix(in srgb, var(--team-color) 12%, transparent);
+  animation: song-round-answering 1.65s ease-in-out infinite alternate;
+}
+
+.song-round__teams--right .song-round__team {
+  justify-self: end;
+}
+
+.song-round__team--wrong:not(.song-round__team--answering) {
+  color: #929292;
+  border-color: #727272;
+  background: linear-gradient(110deg, rgb(69 69 69 / 93%), rgb(48 48 48 / 93%));
+  box-shadow:
+    inset 0 0 23px rgb(255 255 255 / 5%),
+    0 0 10px rgb(0 0 0 / 43%);
+  opacity: 0.72;
+
+  .song-round__team-icon {
+    filter: grayscale(1);
+    opacity: 0.48;
+  }
+}
+
+.song-round__team--celebrating.song-round__team--correct {
+  z-index: 5;
+  width: calc(var(--team-card-width) + var(--team-answer-extension));
+  border-color: var(--color-success-300);
+  box-shadow:
+    0 0 9px var(--success),
+    0 0 21px color-mix(in srgb, var(--success) 85%, transparent),
+    0 0 43px color-mix(in srgb, var(--success) 55%, transparent),
+    inset 0 0 24px color-mix(in srgb, var(--success) 18%, transparent);
+  animation: song-round-correct 700ms ease-in-out infinite alternate;
+}
+
+/* Diagonal green flood from bottom-left to top-right, below the icon/text.
+   Hold the fully filled frame throughout the celebration. The frame itself
+   keeps visible overflow so its glow and diagonal shine can extend outward. */
+.song-round__team--celebrating.song-round__team--correct::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 2px;
+  border-radius: calc(var(--team-frame-radius) - 2px);
+  pointer-events: none;
+  background: linear-gradient(
+    35deg,
+    color-mix(in srgb, var(--success) 88%, #073815),
+    color-mix(in srgb, var(--color-success-300) 88%, #095522)
+  );
+  box-shadow: inset 0 0 19px rgb(199 255 207 / 24%);
+  animation: song-round-success-wipe 3200ms cubic-bezier(0.2, 0.75, 0.26, 1) both;
+}
+
+.song-round__team--celebrating.song-round__team--correct::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -12%;
+  bottom: -12%;
+  left: -25%;
+  width: 35%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(208 255 226 / 55%), transparent);
+  filter: blur(5px);
+  transform: translateX(-100%) skewX(-26deg);
+  animation: song-round-success-shine 3200ms ease-out both;
+}
+
+.song-round__team--celebrating.song-round__team--correct .song-round__team-name,
+.song-round__team--celebrating.song-round__team--correct .song-round__team-score {
+  text-shadow: 0 1px 4px rgb(0 0 0 / 75%);
+}
+
+.song-round__score-delta {
+  position: absolute;
+  z-index: 6;
+  right: 18px;
+  top: -17px;
+  padding: 3px 11px;
+  border: 1px solid var(--color-success-300);
+  border-radius: 999px;
+  background: var(--color-success-950);
+  color: var(--color-success-200);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--success) 44%, transparent);
+  font-family: Arial, sans-serif;
+  font-weight: 850;
+  font-size: clamp(14px, 1.5vw, 23px);
+  line-height: 1.2;
+  pointer-events: none;
+  animation: song-round-score-popup 2.25s ease-out both;
+}
+
+.song-round__score-delta--negative {
+  border-color: var(--danger);
+  background: var(--color-danger-950);
+  color: var(--color-danger-200);
+  box-shadow: 0 0 14px rgb(255 45 77 / 35%);
+}
+
+@keyframes song-round-answering {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.22);
+  }
+}
+
+@keyframes song-round-correct {
+  from {
+    filter: brightness(1);
+  }
+  to {
+    filter: brightness(1.28);
+  }
+}
+
+@keyframes song-round-success-wipe {
+  0% {
+    clip-path: polygon(0 100%, 0 100%, 0 100%, 0 100%);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  15% {
+    clip-path: polygon(0 68%, 0 100%, 25% 100%, 0 68%);
+  }
+  27% {
+    clip-path: polygon(0 0, 0 100%, 78% 100%, 34% 0);
+  }
+  39%,
+  100% {
+    clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+    opacity: 1;
+  }
+}
+
+@keyframes song-round-success-shine {
+  0% {
+    transform: translateX(-100%) skewX(-26deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.8;
+  }
+  38%,
+  100% {
+    transform: translateX(500%) skewX(-26deg);
+    opacity: 0;
+  }
+}
+
+@keyframes song-round-score-popup {
+  0% {
+    opacity: 0;
+    transform: translateY(17px) scale(0.75);
+  }
+  14%,
+  74% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(1.08);
+  }
+}

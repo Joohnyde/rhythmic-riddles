@@ -83,7 +83,7 @@ test.describe('TV playback acknowledgement', () => {
         const [admin] = await Promise.all([adminPromise, tvPromise]);
         try {
           await expect.poll(() => registrations).toBe(1);
-          await expect(admin.page.locator('rr-song-loading-panel')).toBeVisible();
+          await expect(admin.page.getByTestId('admin-waiting-for-tv')).toBeVisible();
           expect(countBackendWsFramesOfType(admin.frames, 'play')).toBe(0);
           expect(acknowledgements).toBe(0);
 
@@ -100,17 +100,17 @@ test.describe('TV playback acknowledgement', () => {
           await tvPage.waitForTimeout(180);
           expect(acknowledgements).toBe(0);
           expect(countBackendWsFramesOfType(admin.frames, 'play')).toBe(0);
-          await expect(admin.page.locator('rr-song-loading-panel')).toBeVisible();
+          await expect(admin.page.getByTestId('admin-waiting-for-tv')).toBeVisible();
           await tvPage.evaluate(() => Object.assign(window, { __advanceAudio: true }));
           await expect.poll(() => acknowledgements).toBe(1);
           expect(registeredAt).toBeGreaterThan(0);
           expect(acknowledgedAt).toBe(registeredAt);
           await expectBackendWsFrameType(admin.frames, 'play');
-          await expect(admin.page.locator('rr-seek-timer')).toBeVisible();
+          await expect(admin.page.getByTestId('admin-song-seconds-remaining')).toBeVisible();
           expect(countBackendWsFramesOfType(tvFrames, 'play')).toBe(0);
 
           // No TV-completion endpoint/message exists: the Admin owns completion.
-          await expect(admin.page.locator('rr-song-finished-panel')).toBeVisible({
+          await expect(admin.page.getByTestId('song-finished-panel')).toBeVisible({
             timeout: 16000,
           });
           expect(countBackendWsFramesOfType(admin.frames, 'play')).toBe(1);

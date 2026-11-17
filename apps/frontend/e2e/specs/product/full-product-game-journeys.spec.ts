@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { connectAdminAndTv, connectRole } from '../../utils/e2e-session';
+import { lastFrameOfType } from '../../utils/ws-capture';
 import {
   addTeamThroughUi,
   buzz,
@@ -250,10 +251,57 @@ async function answerCorrectAndNext(
   await buzz(request, team, session.admin, session.tv.page);
   await session.admin.getByTestId('admin-answer-correct-button').click();
   await expectScore(session.admin, team, expectedScore);
-  await next(session.admin);
-  if (expectsNextSong) {
-    await expect(session.tv.page.getByTestId('tv-snippet-audio')).toBeVisible();
+  if (!expectsNextSong) {
+    await next(session.admin);
+    return;
   }
+
+  const previousSong =
+    lastFrameOfType(session.tv.frames, 'song_next') ??
+    lastFrameOfType(session.tv.frames, 'welcome');
+  const previousSongId = previousSong?.json?.songId;
+  const previousScheduleId = previousSong?.json?.scheduleId;
+  expect(typeof previousSongId).toBe('string');
+  expect(typeof previousScheduleId).toBe('string');
+
+  // Start listening before Next Song so a fast media response cannot be missed.
+  const snippetResponse = session.tv.page.waitForResponse((response) =>
+    response.url().includes('/assets/v1/audio/snippets/'),
+  );
+  await next(session.admin);
+  const response = await snippetResponse;
+  expect(response.ok()).toBeTruthy();
+  await expect
+    .poll(() => {
+      const scheduleId = lastFrameOfType(session.tv.frames, 'song_next')?.json?.scheduleId;
+      return typeof scheduleId === 'string' && scheduleId !== previousScheduleId;
+    })
+    .toBe(true);
+
+  const nextSong = lastFrameOfType(session.tv.frames, 'song_next')?.json;
+  expect(typeof nextSong?.songId).toBe('string');
+  expect(nextSong?.songId).not.toBe(previousSongId);
+  expect(new URL(response.url()).pathname).toBe(`/assets/v1/audio/snippets/${nextSong?.songId}`);
+  await expect
+    .poll(() => lastFrameOfType(session.admin.frames, 'play')?.json?.scheduleId)
+    .toBe(nextSong?.scheduleId);
+  await expect(session.tv.page.getByTestId('tv-snippet-audio')).toBeVisible();
+  await expect(session.admin.getByTestId('admin-waiting-for-tv')).toBeHidden();
+
+  const tvClock = session.tv.page.getByTestId('tv-song-clock');
+  const adminClock = session.admin.getByTestId('admin-song-seconds-remaining');
+  await expect(tvClock).toBeVisible();
+  await expect(adminClock).toBeVisible();
+  const tvRemaining = Number((await tvClock.innerText()).trim());
+  const adminRemaining = Number.parseFloat(await adminClock.innerText());
+  expect(tvRemaining).toBeGreaterThan(0);
+  expect(adminRemaining).toBeGreaterThan(0);
+  await expect
+    .poll(async () => Number((await tvClock.innerText()).trim()))
+    .toBeLessThan(tvRemaining);
+  await expect
+    .poll(async () => Number.parseFloat(await adminClock.innerText()))
+    .toBeLessThan(adminRemaining);
 }
 
 async function pickerText(page: ProductSession['admin']): Promise<string> {

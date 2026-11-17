@@ -43,25 +43,27 @@ import java.util.UUID;
       name = "ScheduleEntity.findLastPlayed",
       query =
           """
-              SELECT s
-              FROM   CategoryEntity c
-              LEFT JOIN c.scheduleList s
-                ON s.startedAt IS NOT NULL
-              WHERE  c.gameId.id = :gameId
-                AND c.ordinalNumber IS NOT NULL
-              ORDER  BY c.ordinalNumber DESC,
-                        s.ordinalNumber DESC
-              LIMIT  1 """),
+          SELECT s
+          FROM   CategoryEntity c
+          LEFT JOIN c.scheduleList s
+            ON s.startedAt IS NOT NULL
+          WHERE  c.gameId.id = :gameId
+            AND c.ordinalNumber IS NOT NULL
+          ORDER  BY c.ordinalNumber DESC,
+                    s.ordinalNumber DESC
+          LIMIT  1\
+          """),
   @NamedQuery(
       name = "ScheduleEntity.findNext",
       query =
           """
-              SELECT s
-              FROM   ScheduleEntity s
-              WHERE  s.categoryId.gameId.id = :gameId
-                AND s.startedAt IS NULL
-              ORDER  BY s.ordinalNumber ASC
-              LIMIT  1 """)
+          SELECT s
+          FROM   ScheduleEntity s
+          WHERE  s.categoryId.gameId.id = :gameId
+            AND s.startedAt IS NULL
+          ORDER  BY s.ordinalNumber ASC
+          LIMIT  1\
+          """)
 })
 public class ScheduleEntity implements Serializable {
 

@@ -29,6 +29,6 @@ fi
 docker exec cestereg-dev bash -lc '
 set -euo pipefail
 cd apps/frontend
-npm install --prefer-offline
+npm ci --prefer-offline
 npm start
 ' & wait $!

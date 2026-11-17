@@ -145,7 +145,7 @@ public class GameServiceImplTest {
 
       GameServiceImpl.putDefaultFields(schedule, json);
 
-      assertEquals("Prepoznaj ovu pjesmu!", json.get("question"));
+      assertEquals("GUESS THE SONG", json.get("question"));
       assertEquals("Artist - Track", json.get("answer"));
     }
 
@@ -1451,7 +1451,7 @@ public class GameServiceImplTest {
 
       GameServiceImpl.putDefaultFields(schedule, payload);
 
-      assertEquals("Prepoznaj ovu pjesmu!", payload.get("question"));
+      assertEquals("GUESS THE SONG", payload.get("question"));
       assertEquals(schedule.getTrackId().getSongId().toString(), payload.get("answer"));
       assertEquals(schedule.getTrackId().getSongId().getId(), payload.get("songId"));
       assertEquals(schedule.getId(), payload.get("scheduleId"));

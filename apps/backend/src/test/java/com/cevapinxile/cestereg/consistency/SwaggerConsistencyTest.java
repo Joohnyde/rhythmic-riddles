@@ -430,10 +430,9 @@ public class SwaggerConsistencyTest {
       }
     } else if (annotation.isNormalAnnotationExpr()) {
       getNamedAnnotationValue(annotation, "value")
-          .ifPresent(
-              ignored -> {
-                // not used in your codebase at the moment
-              });
+          .ifPresent(ignored -> {
+            // not used in your codebase at the moment
+          });
     }
   }
 

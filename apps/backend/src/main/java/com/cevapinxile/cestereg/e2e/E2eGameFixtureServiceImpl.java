@@ -65,39 +65,34 @@ public class E2eGameFixtureServiceImpl implements E2eGameFixtureService {
 
     request
         .categories()
-        .forEach(
-            category -> {
-              final CategoryEntity newCategory = new CategoryEntity(category, newGame);
+        .forEach(category -> {
+          final CategoryEntity newCategory = new CategoryEntity(category, newGame);
 
-              final AlbumEntity newAlbum = albumRepository.saveAndFlush(newCategory.getAlbumId());
-              categoryRepository.saveAndFlush(newCategory);
+          final AlbumEntity newAlbum = albumRepository.saveAndFlush(newCategory.getAlbumId());
+          categoryRepository.saveAndFlush(newCategory);
 
-              category
-                  .album()
-                  .tracks()
-                  .forEach(
-                      track -> {
-                        final TrackEntity newTrack =
-                            trackRepository.saveAndFlush(new TrackEntity(track, newAlbum));
-                        final E2eGameFixtureRequest.Schedule schedule = track.schedule();
-                        if (schedule != null) {
-                          final ScheduleEntity newSchedule =
-                              scheduleRepository.saveAndFlush(
-                                  new ScheduleEntity(schedule, newCategory, newTrack));
-                          if (schedule.interrupts() != null) {
-                            interruptRepository.saveAllAndFlush(
-                                schedule.interrupts().stream()
-                                    .map(
-                                        interrupt ->
-                                            new InterruptEntity(
-                                                interrupt,
-                                                newSchedule,
-                                                persistedTeams.get(interrupt.teamId())))
-                                    .toList());
-                          }
-                        }
-                      });
-            });
+          category
+              .album()
+              .tracks()
+              .forEach(track -> {
+                final TrackEntity newTrack =
+                    trackRepository.saveAndFlush(new TrackEntity(track, newAlbum));
+                final E2eGameFixtureRequest.Schedule schedule = track.schedule();
+                if (schedule != null) {
+                  final ScheduleEntity newSchedule =
+                      scheduleRepository.saveAndFlush(
+                          new ScheduleEntity(schedule, newCategory, newTrack));
+                  if (schedule.interrupts() != null) {
+                    interruptRepository.saveAllAndFlush(
+                        schedule.interrupts().stream()
+                            .map(interrupt ->
+                                new InterruptEntity(
+                                    interrupt, newSchedule, persistedTeams.get(interrupt.teamId())))
+                            .toList());
+                  }
+                }
+              });
+        });
   }
 
   @Override
@@ -107,10 +102,9 @@ public class E2eGameFixtureServiceImpl implements E2eGameFixtureService {
     final GameEntity game =
         gameRepository
             .findByCode(roomCode)
-            .orElseThrow(
-                () ->
-                    new E2eGameFixtureValidationException(
-                        java.util.List.of("room must exist before attaching a catalog")));
+            .orElseThrow(() ->
+                new E2eGameFixtureValidationException(
+                    java.util.List.of("room must exist before attaching a catalog")));
     if (game.getStage() != 0) {
       throw new E2eGameFixtureValidationException(
           java.util.List.of("catalog can only be attached while the room is in the lobby"));

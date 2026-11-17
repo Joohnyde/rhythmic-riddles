@@ -45,12 +45,8 @@ run_frontend() {
     return 0
   fi
 
-  echo "===> [Frontend] Installing deps (npm ci if lockfile exists, otherwise npm i)"
-  if [[ -f "${dir}/package-lock.json" ]]; then
-    (cd "${dir}" && npm ci)
-  else
-    (cd "${dir}" && npm install)
-  fi
+  echo "===> [Frontend] Installing locked dependencies"
+  (cd "${dir}" && npm ci)
 
   echo "===> [Frontend] Formatting (Prettier write)"
   (cd "${dir}" && npm run format)

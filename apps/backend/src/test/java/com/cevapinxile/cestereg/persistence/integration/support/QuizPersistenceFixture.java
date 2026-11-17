@@ -129,10 +129,10 @@ public final class QuizPersistenceFixture {
     final UUID id = UUID.randomUUID();
     jdbc.update(
         """
-            INSERT INTO interrupt
-              (id, schedule_id, arrived_at, resolved_at, is_correct, score_or_scenario_id, team_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
+        INSERT INTO interrupt
+          (id, schedule_id, arrived_at, resolved_at, is_correct, score_or_scenario_id, team_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
         id,
         scheduleId,
         arrivedAt,

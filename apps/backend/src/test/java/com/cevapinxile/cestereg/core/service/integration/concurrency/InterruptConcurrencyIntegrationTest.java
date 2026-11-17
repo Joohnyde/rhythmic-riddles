@@ -125,22 +125,20 @@ class InterruptConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
 
     try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
       final Future<?> teamTransaction =
-          executor.submit(
-              () ->
-                  holdRoomLock(
-                      roomCode,
-                      teamTransactionOwnsRoom,
-                      releaseTeamTransaction,
-                      () ->
-                          fixture.interrupt(
-                              scheduleId, teamId, NOW.minusSeconds(2), null, null, null)));
+          executor.submit(() ->
+              holdRoomLock(
+                  roomCode,
+                  teamTransactionOwnsRoom,
+                  releaseTeamTransaction,
+                  () ->
+                      fixture.interrupt(
+                          scheduleId, teamId, NOW.minusSeconds(2), null, null, null)));
       assertTrue(teamTransactionOwnsRoom.await(5, TimeUnit.SECONDS));
       final Future<InvocationResult> systemResult =
-          executor.submit(
-              () -> {
-                systemStarted.countDown();
-                return invoke(() -> interruptService.interrupt(roomCode, null));
-              });
+          executor.submit(() -> {
+            systemStarted.countDown();
+            return invoke(() -> interruptService.interrupt(roomCode, null));
+          });
       assertTrue(systemStarted.await(5, TimeUnit.SECONDS));
       try {
         systemResult.get(250, TimeUnit.MILLISECONDS);
@@ -170,14 +168,12 @@ class InterruptConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
 
     try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
       final Future<?> systemTransaction =
-          executor.submit(
-              () ->
-                  holdRoomLock(
-                      roomCode,
-                      systemTransactionOwnsRoom,
-                      releaseSystemTransaction,
-                      () ->
-                          fixture.interrupt(scheduleId, null, NOW.minusSeconds(2), null, null, 1)));
+          executor.submit(() ->
+              holdRoomLock(
+                  roomCode,
+                  systemTransactionOwnsRoom,
+                  releaseSystemTransaction,
+                  () -> fixture.interrupt(scheduleId, null, NOW.minusSeconds(2), null, null, 1)));
       assertTrue(systemTransactionOwnsRoom.await(5, TimeUnit.SECONDS));
       final Future<InvocationResult> teamResult =
           executor.submit(() -> invoke(() -> interruptService.interrupt(roomCode, teamId)));
@@ -201,23 +197,21 @@ class InterruptConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
       final CountDownLatch releaseLock,
       final ThrowingRunnable mutation) {
     final TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-    transaction.executeWithoutResult(
-        status -> {
-          jdbc.queryForObject(
-              "SELECT id FROM game WHERE code = ? FOR UPDATE", UUID.class, roomCode);
-          try {
-            mutation.run();
-            lockAcquired.countDown();
-            if (!releaseLock.await(5, TimeUnit.SECONDS)) {
-              throw new IllegalStateException("room lock release timed out");
-            }
-          } catch (final InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(interrupted);
-          } catch (final Exception exception) {
-            throw new IllegalStateException(exception);
-          }
-        });
+    transaction.executeWithoutResult(status -> {
+      jdbc.queryForObject("SELECT id FROM game WHERE code = ? FOR UPDATE", UUID.class, roomCode);
+      try {
+        mutation.run();
+        lockAcquired.countDown();
+        if (!releaseLock.await(5, TimeUnit.SECONDS)) {
+          throw new IllegalStateException("room lock release timed out");
+        }
+      } catch (final InterruptedException interrupted) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(interrupted);
+      } catch (final Exception exception) {
+        throw new IllegalStateException(exception);
+      }
+    });
   }
 
   private UUID playingSchedule(final UUID gameId, final UUID teamId, final int discriminator) {
@@ -274,12 +268,12 @@ class InterruptConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
   private int activeTeamInterruptCount(final UUID scheduleId) {
     return jdbc.queryForObject(
         """
-            SELECT COUNT(*)
-            FROM interrupt
-            WHERE schedule_id = ?
-              AND team_id IS NOT NULL
-              AND resolved_at IS NULL
-            """,
+        SELECT COUNT(*)
+        FROM interrupt
+        WHERE schedule_id = ?
+          AND team_id IS NOT NULL
+          AND resolved_at IS NULL
+        """,
         Integer.class,
         scheduleId);
   }
@@ -287,12 +281,12 @@ class InterruptConcurrencyIntegrationTest extends PostgresJpaIntegrationTest {
   private int activeSystemInterruptCount(final UUID scheduleId) {
     return jdbc.queryForObject(
         """
-            SELECT COUNT(*)
-            FROM interrupt
-            WHERE schedule_id = ?
-              AND team_id IS NULL
-              AND resolved_at IS NULL
-            """,
+        SELECT COUNT(*)
+        FROM interrupt
+        WHERE schedule_id = ?
+          AND team_id IS NULL
+          AND resolved_at IS NULL
+        """,
         Integer.class,
         scheduleId);
   }
