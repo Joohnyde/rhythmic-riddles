@@ -2,7 +2,16 @@ import { TeamScore } from '../models/team-score.model';
 import { Team } from '../models/team.model';
 import { DefaultMessage, WelcomeMessage } from './default.messages';
 
+export interface AlbumArtwork {
+  image: string;
+  name: string;
+  /** Selecting team's image reference; null means Admin picked. */
+  picker: string | null;
+  pickerName: string;
+}
+
 export interface S2RoundSnapshotMessage extends WelcomeMessage<'welcome' | 'song_next'> {
+  album: AlbumArtwork;
   songId: string;
   question: string;
   answer: string;

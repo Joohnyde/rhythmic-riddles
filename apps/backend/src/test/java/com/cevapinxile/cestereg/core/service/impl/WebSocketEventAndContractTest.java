@@ -135,6 +135,12 @@ class WebSocketEventAndContractTest {
 
         final Map<?, ?> parsed = capture();
         assertEquals("song_next", parsed.get("type"));
+        final Map<?, ?> album = (Map<?, ?>) parsed.get("album");
+        assertEquals(next.getCategoryId().getAlbumId().getId().toString(), album.get("image"));
+        assertEquals("Album", album.get("name"));
+        assertTrue(album.containsKey("picker"));
+        assertNull(album.get("picker"));
+        assertEquals("Admin", album.get("pickerName"));
         assertEquals(next.getTrackId().getSongId().getId().toString(), parsed.get("songId"));
         assertEquals("Question?", parsed.get("question"));
         assertEquals("Answer", parsed.get("answer"));
@@ -170,6 +176,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer("Answer");
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       return schedule;
@@ -230,23 +239,21 @@ class WebSocketEventAndContractTest {
           .broadcast(eq("ROOM"), anyString());
 
       final Future<?> replay =
-          executor.submit(
-              () -> {
-                try {
-                  service.replaySong(schedule.getId(), "ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.replaySong(schedule.getId(), "ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
       final Future<?> reveal =
-          executor.submit(
-              () -> {
-                try {
-                  service.revealAnswer(schedule.getId(), "ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.revealAnswer(schedule.getId(), "ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
 
       gate.countDown();
       replay.get(5, TimeUnit.SECONDS);
@@ -283,23 +290,21 @@ class WebSocketEventAndContractTest {
           .broadcast(eq("ROOM"), anyString());
 
       final Future<?> reveal =
-          executor.submit(
-              () -> {
-                try {
-                  service.revealAnswer(current.getId(), "ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.revealAnswer(current.getId(), "ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
       final Future<?> progress =
-          executor.submit(
-              () -> {
-                try {
-                  service.progress("ROOM");
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.progress("ROOM");
+            } catch (Exception ex) {
+              throw new RuntimeException(ex);
+            }
+          });
 
       gate.countDown();
       reveal.get(5, TimeUnit.SECONDS);
@@ -311,18 +316,17 @@ class WebSocketEventAndContractTest {
               .anyMatch(frame -> "song_reveal".equals(frame.get("type")) && frame.size() == 1));
       assertTrue(
           frames.stream()
-              .anyMatch(
-                  frame -> {
-                    if (!"song_next".equals(frame.get("type"))) {
-                      return false;
-                    }
-                    return frame.containsKey("songId")
-                        && frame.containsKey("scheduleId")
-                        && frame.containsKey("question")
-                        && frame.containsKey("answer")
-                        && frame.containsKey("answerDuration")
-                        && frame.containsKey("remaining");
-                  }));
+              .anyMatch(frame -> {
+                if (!"song_next".equals(frame.get("type"))) {
+                  return false;
+                }
+                return frame.containsKey("songId")
+                    && frame.containsKey("scheduleId")
+                    && frame.containsKey("question")
+                    && frame.containsKey("answer")
+                    && frame.containsKey("answerDuration")
+                    && frame.containsKey("remaining");
+              }));
     }
 
     private static void await(final CountDownLatch latch) {
@@ -357,6 +361,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer("Answer");
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       return schedule;
@@ -420,21 +427,19 @@ class WebSocketEventAndContractTest {
             .broadcast(eq("ROOM"), anyString());
 
         final var replay =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.replaySong(schedule.getId(), "ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.replaySong(schedule.getId(), "ROOM");
+              return null;
+            });
         final var reveal =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.revealAnswer(schedule.getId(), "ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.revealAnswer(schedule.getId(), "ROOM");
+              return null;
+            });
 
         await(ready);
         start.countDown();
@@ -444,11 +449,10 @@ class WebSocketEventAndContractTest {
         assertEquals(2, frames.size());
         assertTrue(
             frames.stream()
-                .anyMatch(
-                    f ->
-                        "song_repeat".equals(f.get("type"))
-                            && f.containsKey("remaining")
-                            && f.size() == 2));
+                .anyMatch(f ->
+                    "song_repeat".equals(f.get("type"))
+                        && f.containsKey("remaining")
+                        && f.size() == 2));
         assertTrue(
             frames.stream().anyMatch(f -> "song_reveal".equals(f.get("type")) && f.size() == 1));
         frames.clear();
@@ -488,21 +492,19 @@ class WebSocketEventAndContractTest {
             .broadcast(eq("ROOM"), anyString());
 
         final var reveal =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.revealAnswer(current.getId(), "ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.revealAnswer(current.getId(), "ROOM");
+              return null;
+            });
         final var progress =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  service.progress("ROOM");
-                  return null;
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              service.progress("ROOM");
+              return null;
+            });
 
         await(ready);
         start.countDown();
@@ -514,15 +516,14 @@ class WebSocketEventAndContractTest {
             frames.stream().anyMatch(f -> "song_reveal".equals(f.get("type")) && f.size() == 1));
         assertTrue(
             frames.stream()
-                .anyMatch(
-                    f ->
-                        "song_next".equals(f.get("type"))
-                            && f.containsKey("songId")
-                            && f.containsKey("scheduleId")
-                            && f.containsKey("question")
-                            && f.containsKey("answer")
-                            && f.containsKey("answerDuration")
-                            && f.containsKey("remaining")));
+                .anyMatch(f ->
+                    "song_next".equals(f.get("type"))
+                        && f.containsKey("songId")
+                        && f.containsKey("scheduleId")
+                        && f.containsKey("question")
+                        && f.containsKey("answer")
+                        && f.containsKey("answerDuration")
+                        && f.containsKey("remaining")));
         frames.clear();
         reset(
             broadcastGateway,
@@ -565,6 +566,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer("Answer");
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(3));
       return schedule;
@@ -1274,6 +1278,9 @@ class WebSocketEventAndContractTest {
       track.setCustomAnswer(answer);
 
       final ScheduleEntity schedule = new ScheduleEntity(UUID.randomUUID());
+      final CategoryEntity scheduledCategory = new CategoryEntity(UUID.randomUUID());
+      scheduledCategory.setAlbumId(track.getAlbumId());
+      schedule.setCategoryId(scheduledCategory);
       schedule.setTrackId(track);
       schedule.setStartedAt(LocalDateTime.now().minusSeconds(5));
       schedule.setInterruptList(new ArrayList<>());

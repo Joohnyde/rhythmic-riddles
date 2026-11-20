@@ -238,6 +238,12 @@ Basic example:
     "answer": "Answer",
     "scheduleId": "b510f158-34f4-4102-ac8f-6088a3b6d7b9",
     "answerDuration": 8.0,
+    "album": {
+        "image": "3c8ed2c0-df3d-4639-b6a6-81550e473cca",
+        "name": "Album A",
+        "picker": null,
+        "pickerName": "Admin"
+    },
     "scores": [
         {
             "teamId": "e94c5243-6954-452b-8fd2-f94210fcc13b",
@@ -257,6 +263,7 @@ Basic example:
 | ---------------- | ----------- | ------------------------------------------------------------- |
 | `type`           | string      | Always `welcome`                                              |
 | `stage`          | string      | Current stage, here `songs`                                   |
+| `album`          | object      | Current album presentation; see below                         |
 | `songId`         | UUID string | Current song id                                               |
 | `question`       | string      | Question shown for this song                                  |
 | `answer`         | string      | Correct answer, already known to frontend for reveal/recovery |
@@ -352,6 +359,22 @@ This is different from a normal team buzz:
 - system pause/error → interrupt's answeringTeamId is `null`
 
 System pause can happen after unexpected disconnects or other backend safety conditions.
+
+### Song album presentation
+
+Songs-stage `welcome` and every `song_next` include a required `album` object:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `image` | UUID string | Album id; load the cover from `/assets/v1/image/albums/{image}` (no extension). |
+| `name` | string | Album display name. |
+| `picker` | string or null | Selecting team's image reference, not its id. Null means Admin selected the album. |
+| `pickerName` | string | Selecting team name, or `Admin` when `picker` is null. |
+
+Both clients restore the cover and picker from the round store on reconnect. The
+picker name comes directly from `album.pickerName`; no team lookup is needed. No browser
+storage or previous album-selection page is needed. `song_repeat` retains the
+current album; `song_next` replaces it and preserves the existing scores.
 
 ## `welcome` in winner stage
 
@@ -467,6 +490,12 @@ Broadcast when the next song starts.
 ```json
 {
     "type": "song_next",
+    "album": {
+        "image": "3c8ed2c0-df3d-4639-b6a6-81550e473cca",
+        "name": "Album A",
+        "picker": "team.png",
+        "pickerName": "Team A"
+    },
     "songId": "57ce7e23-229b-48a2-89d1-810bb74b0001",
     "question": "Prepoznaj ovu pjesmu!",
     "answer": "Song Name",
@@ -479,6 +508,7 @@ Broadcast when the next song starts.
 | Field            | Type        | Meaning                                                  |
 | ---------------- | ----------- | -------------------------------------------------------- |
 | `type`           | string      | Always `song_next`                                       |
+| `album`          | object      | Album presentation; same shape as songs-stage welcome     |
 | `songId`         | UUID string | Song to play                                             |
 | `question`       | string      | Question to show                                         |
 | `answer`         | string      | Correct answer                                           |

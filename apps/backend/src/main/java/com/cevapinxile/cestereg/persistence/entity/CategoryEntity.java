@@ -39,11 +39,11 @@ import java.util.UUID;
       name = "CategoryEntity.findByGameId",
       query =
           """
-              SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CategorySimple(c)
-              FROM   CategoryEntity c
-              WHERE  c.gameId.id = :gameId
-              ORDER BY c.id
-              """),
+          SELECT NEW com.cevapinxile.cestereg.api.quiz.dto.response.CategorySimple(c)
+          FROM   CategoryEntity c
+          WHERE  c.gameId.id = :gameId
+          ORDER BY c.id
+          """),
   @NamedQuery(
       name = "CategoryEntity.findNextId",
       query =
@@ -52,12 +52,12 @@ import java.util.UUID;
       name = "CategoryEntity.findLastCategory",
       query =
           """
-              SELECT   NEW com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory(c)
-              FROM     CategoryEntity c
-              WHERE    c.gameId.id = :gameId
-              AND      c.ordinalNumber IS NOT NULL
-              ORDER BY c.ordinalNumber DESC LIMIT 1
-              """)
+          SELECT   NEW com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory(c)
+          FROM     CategoryEntity c
+          WHERE    c.gameId.id = :gameId
+          AND      c.ordinalNumber IS NOT NULL
+          ORDER BY c.ordinalNumber DESC LIMIT 1
+          """)
 })
 public class CategoryEntity implements Serializable {
 

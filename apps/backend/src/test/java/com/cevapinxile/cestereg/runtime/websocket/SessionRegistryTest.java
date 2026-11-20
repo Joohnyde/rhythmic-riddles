@@ -99,19 +99,17 @@ class SessionRegistryTest {
       final CountDownLatch start = new CountDownLatch(1);
 
       final Future<Boolean> replacementAccepted =
-          executor.submit(
-              () -> {
-                ready.countDown();
-                await(start);
-                return registry.setSession(freshAdmin);
-              });
+          executor.submit(() -> {
+            ready.countDown();
+            await(start);
+            return registry.setSession(freshAdmin);
+          });
       final Future<Boolean> staleRemoved =
-          executor.submit(
-              () -> {
-                ready.countDown();
-                await(start);
-                return registry.removeSession(oldAdmin);
-              });
+          executor.submit(() -> {
+            ready.countDown();
+            await(start);
+            return registry.removeSession(oldAdmin);
+          });
 
       await(ready);
       start.countDown();
@@ -402,19 +400,17 @@ class SessionRegistryTest {
         final CountDownLatch start = new CountDownLatch(1);
 
         final Future<Boolean> remove =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  return registry.removeSession(oldAdmin);
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              return registry.removeSession(oldAdmin);
+            });
         final Future<Boolean> replace =
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  await(start);
-                  return registry.setSession(freshAdmin);
-                });
+            executor.submit(() -> {
+              ready.countDown();
+              await(start);
+              return registry.setSession(freshAdmin);
+            });
 
         await(ready);
         start.countDown();

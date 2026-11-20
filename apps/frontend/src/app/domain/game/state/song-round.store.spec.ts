@@ -21,6 +21,7 @@ describe('SongRoundStore playback synchronization', () => {
     ({
       type: 'song_next',
       stage: 'songs',
+      album: { image: 'album-one', name: 'Album', picker: null, pickerName: 'Admin' },
       songId: 'song-one',
       question: 'Question',
       answer: 'Answer',
@@ -56,6 +57,33 @@ describe('SongRoundStore playback synchronization', () => {
   afterEach(() => {
     store.disconnect();
     TestBed.resetTestingModule();
+  });
+
+  it('replaces album presentation from welcome and next-song snapshots', () => {
+    const album = {
+      image: 'first-album',
+      name: 'Rock',
+      picker: 'team.png',
+      pickerName: 'Team Sun',
+    };
+    messages$.next({
+      ...nextSong(),
+      type: 'welcome',
+      stage: 'songs',
+      scores: [],
+      album,
+    } as GameServerMessage);
+    expect(store.vm().album).toEqual(album);
+    messages$.next({
+      ...nextSong('schedule-two'),
+      album: { image: 'second-album', name: 'Jazz', picker: null, pickerName: 'Admin' },
+    } as GameServerMessage);
+    expect(store.vm().album).toEqual({
+      image: 'second-album',
+      name: 'Jazz',
+      picker: null,
+      pickerName: 'Admin',
+    });
   });
 
   it('coalesces overlapping registrations before playback', async () => {

@@ -5,6 +5,7 @@
 package com.cevapinxile.cestereg.core.service.impl;
 
 import com.cevapinxile.cestereg.api.quiz.dto.request.CreateGameRequest;
+import com.cevapinxile.cestereg.api.quiz.dto.response.AlbumArtwork;
 import com.cevapinxile.cestereg.api.quiz.dto.response.ChoosingTeam;
 import com.cevapinxile.cestereg.api.quiz.dto.response.CreateTeamResponse;
 import com.cevapinxile.cestereg.api.quiz.dto.response.LastCategory;
@@ -79,21 +80,25 @@ public class GameServiceImpl implements GameService {
    * Populates fields required by the frontend in all scenarios.
    *
    * <p>These fields form a stable payload contract so the client can render without
-   * scenario-specific null checks. The method should be called for any stage 2 response.
+   * scenario-specific reconstruction. Used by songs-stage welcome and song_next payloads.
    *
    * @param json target JSON object to populate
    * @param lastPlayedSong schedule entry representing the current/last played song
+   * @throws DerivedException if the scheduled category or its album is missing
    */
   public static void putDefaultFields(
-      final ScheduleEntity lastPlayedSong, final HashMap<String, Object> json) {
+      final ScheduleEntity lastPlayedSong, final HashMap<String, Object> json)
+      throws DerivedException {
     String question = lastPlayedSong.getTrackId().getAlbumId().getCustomQuestion();
     String answer = lastPlayedSong.getTrackId().getCustomAnswer();
+    final AlbumArtwork albumArtwork = AlbumArtwork.fromCategory(lastPlayedSong.getCategoryId());
     if (question == null) {
-      question = "Prepoznaj ovu pjesmu!"; // TODO: Translate
+      question = "GUESS THE SONG";
     }
     if (answer == null) {
       answer = lastPlayedSong.getTrackId().getSongId().toString();
     }
+    json.put("album", albumArtwork);
     json.put("songId", lastPlayedSong.getTrackId().getSongId().getId());
     json.put("question", question);
     json.put("answer", answer);
@@ -151,7 +156,7 @@ public class GameServiceImpl implements GameService {
         final ScheduleEntity lastPlayedSong = scheduleRepository.findLastPlayed(game.getId());
         validateRecoverableSongState(game, lastPlayedSong);
         /* Default fields
-        songId, question, answer, answerDuration, lastScheduledId, teams and their scores */
+        album, songId, question, answer, answerDuration and scheduleId */
         GameServiceImpl.putDefaultFields(lastPlayedSong, json);
         /* Logically a default field, but depends on teamService + roomCode.
         Kept outside putDefaultFields to avoid polluting its signature.*/

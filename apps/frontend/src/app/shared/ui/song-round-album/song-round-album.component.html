@@ -1,0 +1,21 @@
+<div class="album" data-testid="song-round-album">
+  @if (!imageFailed()) {
+    <img
+      class="album-image"
+      [src]="imageUrl(album.image)"
+      [alt]="album.name"
+      (error)="imageFailed.set(true)"
+    />
+  } @else {
+    <span class="album-placeholder" role="img" [attr.aria-label]="album.name">ALBUM</span>
+  }
+  @if (album.picker) {
+    <img
+      class="album-picker"
+      [src]="album.picker"
+      [alt]="album.pickerName + ' selected this category'"
+    />
+  }
+</div>
+<p class="album-name">{{ album.name }}</p>
+<p class="album-picked-by">Picked by {{ album.pickerName }}</p>

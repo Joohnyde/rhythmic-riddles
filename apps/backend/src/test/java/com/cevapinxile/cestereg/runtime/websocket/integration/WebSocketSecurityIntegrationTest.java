@@ -181,24 +181,23 @@ class WebSocketSecurityIntegrationTest extends AbstractWebSocketIntegrationTestS
     for (int worker = 0; worker < 6; worker++) {
       final int workerId = worker;
       futures.add(
-          executor.submit(
-              () -> {
-                try {
-                  for (int i = 0; i < 25; i++) {
-                    final SocketProbe target = workerId % 2 == 0 ? admin : tv;
-                    synchronized (target) {
-                      target.send(
-                          "{\"type\":\"client_spam\",\"worker\":"
-                              + workerId
-                              + ",\"sequence\":"
-                              + i
-                              + "}");
-                    }
-                  }
-                } catch (Exception ex) {
-                  throw new IllegalStateException(ex);
+          executor.submit(() -> {
+            try {
+              for (int i = 0; i < 25; i++) {
+                final SocketProbe target = workerId % 2 == 0 ? admin : tv;
+                synchronized (target) {
+                  target.send(
+                      "{\"type\":\"client_spam\",\"worker\":"
+                          + workerId
+                          + ",\"sequence\":"
+                          + i
+                          + "}");
                 }
-              }));
+              }
+            } catch (Exception ex) {
+              throw new IllegalStateException(ex);
+            }
+          }));
     }
 
     for (Future<?> future : futures) {

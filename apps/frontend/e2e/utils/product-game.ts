@@ -2,8 +2,10 @@ import { APIRequestContext, Browser, BrowserContext, expect, Page } from '@playw
 import { LoginPage } from '../pages/login-page';
 import { createRoom } from './api-client';
 import { connectRole, ConnectedClient } from './e2e-session';
+import { productMediaInitializer } from './product-media';
 import { BACKEND_URL } from './env';
 import { deleteGameFixture } from './fixture-api';
+import { captureWebSocketFrames, CapturedWsFrame } from './ws-capture';
 
 export type ProductTeam = { id: string; name: string; buttonCode: string };
 export type ProductCatalog = { id: string; name: string }[];
@@ -21,6 +23,7 @@ export type ProductSession = {
   roomCode: string;
   catalog: ProductCatalog;
   admin: Page;
+  adminFrames: CapturedWsFrame[];
   adminContext: BrowserContext;
   tv: ConnectedClient;
   close(): Promise<void>;
@@ -39,16 +42,24 @@ export async function createProductSession(
 
   const adminContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const admin = await adminContext.newPage();
+  const adminFrames = captureWebSocketFrames(admin);
   const login = new LoginPage(admin);
   await login.open('admin');
   await login.login('admin', roomCode);
   await login.expectConnected('admin');
-  const tv = await connectRole(browser, 'tv', roomCode, { viewport: { width: 1440, height: 900 } });
+  const tv = await connectRole(
+    browser,
+    'tv',
+    roomCode,
+    { viewport: { width: 1440, height: 900 } },
+    productMediaInitializer,
+  );
 
   return {
     roomCode,
     catalog,
     admin,
+    adminFrames,
     adminContext,
     tv,
     close: async () => {
@@ -153,6 +164,7 @@ export async function pickAndStartAlbum(
   await startDialog.getByRole('button', { name: 'YES' }).click();
   await expect(admin.getByTestId('admin-song-round-page')).toBeVisible();
   await expect(tv.getByTestId('tv-song-round-page')).toBeVisible();
+  await expect(admin.getByTestId('admin-waiting-for-tv')).toBeHidden();
 }
 
 export async function buzz(

@@ -1,118 +1,233 @@
-<main class="page shell" data-testid="admin-song-round-page">
+<main class="round-page" data-testid="admin-song-round-page">
   @let vm = store.vm();
+  <div class="round-background pointer-events-none absolute inset-0" aria-hidden="true"></div>
+  <div class="round-overlay pointer-events-none absolute inset-0" aria-hidden="true"></div>
 
-  <header class="header">
-    <div>
-      <p class="kicker">Stage 2</p>
-      <h1 class="title" data-testid="admin-song-question">{{ vm.question || 'Song round' }}</h1>
-    </div>
-  </header>
+  <div class="round-content mx-auto min-h-dvh">
+    <header class="round-header text-center">
+      @if (vm.album; as album) {
+        <rr-song-round-album [album]="album" />
+      }
+      <p class="round-room">
+        ROOM: <span>{{ session.code }}</span>
+      </p>
+      <h1 data-testid="admin-song-question">{{ vm.question }}</h1>
+    </header>
 
-  <section class="grid two">
-    <div>
+    @if (vm.playbackError) {
+      <p class="round-error" role="alert">{{ vm.playbackError }}</p>
+    }
+
+    <section
+      class="round-main"
+      [class.round-main--playing]="vm.scenario === SongScenario.Playing"
+      aria-label="Song round controls"
+    >
       @switch (vm.scenario) {
-        @case (SongScenario.Revealed) {
-          <rr-song-revealed-panel [answer]="vm.answer" [bravo]="vm.bravo" />
-
-          <div class="card actions">
-            <button
-              data-testid="admin-next-song-after-reveal-button"
-              [disabled]="vm.inTransit"
-              (click)="store.nextSong()"
-            >
-              Dalje
-            </button>
-          </div>
-        }
-
-        @case (SongScenario.FinishedUnrevealed) {
-          <rr-song-finished-panel />
-
-          <div class="card actions">
-            <button
-              data-testid="admin-repeat-song-button"
-              [disabled]="vm.inTransit"
-              (click)="store.advanceGame(true)"
-            >
-              Refresh
-            </button>
-
-            <button
-              data-testid="admin-reveal-answer-button"
-              [disabled]="vm.inTransit"
-              (click)="store.advanceGame(false)"
-            >
-              Reveal
-            </button>
-          </div>
-        }
-
-        @case (SongScenario.TeamAnswering) {
-          <rr-team-answering-panel [team]="vm.answeringTeam" />
-
-          <div class="card actions">
-            <button
-              class="success"
-              data-testid="admin-answer-correct-button"
-              [disabled]="vm.inTransit"
-              (click)="store.teamAnswered(true)"
-            >
-              Tacno
-            </button>
-
-            <button
-              class="danger"
-              data-testid="admin-answer-wrong-button"
-              [disabled]="vm.inTransit"
-              (click)="store.teamAnswered(false)"
-            >
-              Netacno
-            </button>
-          </div>
-        }
-
-        @case (SongScenario.SystemError) {
-          <rr-system-error-panel />
-
-          <div class="card actions">
-            <button
-              data-testid="admin-resolve-error-button"
-              [disabled]="vm.inTransit"
-              (click)="store.resolveError()"
-            >
-              Nastavi
-            </button>
-          </div>
-        }
-
         @case (SongScenario.Playing) {
-          @if (vm.remaining !== null) {
-            @if (vm.playbackWaiting) {
-              <rr-song-loading-panel />
-            } @else {
+          @if (vm.playbackWaiting || vm.remaining === null) {
+            <div
+              class="round-panel round-waiting"
+              data-testid="admin-waiting-for-tv"
+              role="status"
+              aria-live="polite"
+            >
+              <span class="round-waiting-icon" aria-hidden="true">♫</span>
+              <p class="round-eyebrow">READY WHEN THE TV IS</p>
+              <h2>Waiting for the TV to be ready</h2>
+              <p class="round-description">
+                The Admin is connected. Open or reconnect the TV screen for this room. The song and
+                countdown will begin once TV playback starts.
+              </p>
+              @if (vm.answer) {
+                <p class="round-next-song">
+                  UP NEXT <strong>{{ vm.answer }}</strong>
+                </p>
+              }
+              <div class="round-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+            </div>
+          } @else {
+            @let duration = (vm.seek ?? 0) + vm.remaining;
+            <div class="round-panel round-playing" data-testid="admin-now-playing">
+              <p class="round-eyebrow">NOW PLAYING</p>
+              <h2 class="round-song-title" data-testid="admin-playing-song-name">
+                {{ vm.answer || 'Song details unavailable' }}
+              </h2>
+              <div class="round-playing-visual" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span
+                ><span></span>
+              </div>
               <rr-seek-timer
-                [duration]="(vm.seek ?? 0) + vm.remaining"
+                #timer
+                class="round-timer-driver"
+                aria-hidden="true"
+                [duration]="duration"
                 [seek]="vm.seek ?? 0"
-                [showDebug]="true"
+                [tickIntervalMs]="25"
                 (completed)="store.onTrackFinished()"
                 (stateOut)="store.savePlaybackState($event)"
               />
-            }
+              @let remaining = formatRemaining(timer.remainingTime());
+              @let fraction = timer.progress();
+              <div class="round-countdown" aria-label="Seconds remaining">
+                <strong class="round-countdown-number" data-testid="admin-song-seconds-remaining">
+                  {{ remaining }}<span>s</span>
+                </strong>
+                <div
+                  class="round-timer-track"
+                  role="progressbar"
+                  aria-label="Song time remaining"
+                  [attr.aria-valuenow]="remaining"
+                  [attr.aria-valuemin]="0"
+                  [attr.aria-valuemax]="duration"
+                >
+                  <div
+                    class="round-timer-fill"
+                    data-testid="admin-song-timer-progress"
+                    [style.width.%]="fraction * 100"
+                    [style.background-color]="timerColor(fraction)"
+                  ></div>
+                </div>
+              </div>
+            </div>
           }
         }
-
+        @case (SongScenario.TeamAnswering) {
+          <div class="round-panel round-answering" data-testid="admin-team-answering">
+            <div class="round-answer-song" data-testid="admin-answering-song-name">
+              <strong>{{ vm.answer || 'Song details unavailable' }}</strong>
+            </div>
+            <div class="round-buzzer" aria-hidden="true"><span>!</span></div>
+            <p class="round-eyebrow">BUZZER PRESSED · TIMER PAUSED</p>
+            <h2 class="round-answering-heading">
+              <span class="round-answering-identity">
+                @if (vm.answeringTeam?.image) {
+                  <img
+                    class="round-answering-icon"
+                    [src]="vm.answeringTeam.image"
+                    [alt]="(vm.answeringTeam.name || 'Team') + ' icon'"
+                  />
+                }
+                <span
+                  class="round-answering-team"
+                  data-testid="answering-team-name"
+                  [style.color]="answeringTeamColor(vm.answeringTeam?.image)"
+                  >{{ vm.answeringTeam?.name || 'A team' }}</span
+                >
+              </span>
+              <span class="round-answering-suffix">is answering now</span>
+            </h2>
+            <p class="round-description">
+              Listen to their answer, then confirm whether it is correct.
+            </p>
+            <div class="round-actions">
+              <button
+                class="btn btn-primary round-action-button"
+                data-testid="admin-answer-correct-button"
+                type="button"
+                [disabled]="vm.inTransit || !vm.interruptId"
+                (click)="store.teamAnswered(true)"
+              >
+                ✓ CORRECT
+              </button>
+              <button
+                class="btn btn-secondary round-action-button"
+                data-testid="admin-answer-wrong-button"
+                type="button"
+                [disabled]="vm.inTransit || !vm.interruptId"
+                (click)="store.teamAnswered(false)"
+              >
+                ✕ INCORRECT
+              </button>
+            </div>
+          </div>
+        }
+        @case (SongScenario.Revealed) {
+          <div class="round-panel round-revealed" data-testid="song-revealed-panel">
+            <p class="round-eyebrow">SONG REVEALED</p>
+            <h2 class="round-song-title" data-testid="song-answer">{{ vm.answer }}</h2>
+            @if (vm.bravo) {
+              <p class="round-success">{{ vm.bravo.name }} got it right!</p>
+            }
+            <div class="round-actions">
+              <button
+                class="btn btn-primary round-action-button"
+                data-testid="admin-next-song-after-reveal-button"
+                type="button"
+                [disabled]="vm.inTransit"
+                (click)="store.nextSong()"
+              >
+                NEXT SONG
+              </button>
+            </div>
+          </div>
+        }
+        @case (SongScenario.FinishedUnrevealed) {
+          <div class="round-panel round-finished" data-testid="song-finished-panel">
+            <p class="round-eyebrow">ROUND FINISHED</p>
+            <h2>Time's up!</h2>
+            <p class="round-description">Replay the snippet or reveal the answer.</p>
+            <div class="round-actions">
+              <button
+                class="btn btn-secondary round-action-button"
+                data-testid="admin-repeat-song-button"
+                type="button"
+                [disabled]="vm.inTransit"
+                (click)="store.advanceGame(true)"
+              >
+                REPLAY
+              </button>
+              <button
+                class="btn btn-primary round-action-button"
+                data-testid="admin-reveal-answer-button"
+                type="button"
+                [disabled]="vm.inTransit"
+                (click)="store.advanceGame(false)"
+              >
+                REVEAL ANSWER
+              </button>
+            </div>
+          </div>
+        }
+        @case (SongScenario.SystemError) {
+          <div class="round-panel round-paused" data-testid="system-error-panel">
+            <p class="round-eyebrow">PLAYBACK PAUSED</p>
+            <h2>Playback interrupted</h2>
+            <p class="round-description">Resolve the playback issue before continuing the round.</p>
+            <div class="round-actions">
+              <button
+                class="btn btn-primary round-action-button"
+                data-testid="admin-resolve-error-button"
+                type="button"
+                [disabled]="vm.inTransit"
+                (click)="store.resolveError()"
+              >
+                CONTINUE
+              </button>
+            </div>
+          </div>
+        }
         @default {
-          <rr-song-loading-panel />
+          <rr-song-loading-panel class="round-panel round-loading" />
         }
       }
-    </div>
+    </section>
+  </div>
 
-    @if (vm.teams.length && vm.lastPlayedSong) {
-      <rr-team-scoreboard
-        [teams]="vm.teams"
-        [bravo]="vm.bravo"
-        [currentScheduleId]="vm.lastPlayedSong"
-      />
-    }
-  </section>
+  @if (verdict(); as result) {
+    <div
+      class="round-verdict"
+      [class.round-verdict-correct]="result.correct"
+      [class.round-verdict-wrong]="!result.correct"
+      data-testid="admin-answer-verdict"
+      role="status"
+      aria-live="assertive"
+    >
+      <span class="round-verdict-icon" aria-hidden="true">{{ result.correct ? '✓' : '✕' }}</span>
+      <div>
+        <strong>{{ result.correct ? 'CORRECT!' : 'INCORRECT!' }}</strong>
+        <p>{{ result.teamName }}</p>
+      </div>
+    </div>
+  }
 </main>

@@ -7,6 +7,7 @@ import { ScheduleApiService } from '../data-access/schedule-api.service';
 import { DefaultMessage } from '../messages/default.messages';
 import { GameServerMessage } from '../messages/game-server-message.types';
 import {
+  AlbumArtwork,
   S2AnswerMessage,
   S2ErrorSolvedMessage,
   S2PauseMessage,
@@ -21,6 +22,7 @@ import { Team, teamFromScore } from '../models/team.model';
 import { coerceSongScenario, SongScenario } from './song-scenario';
 
 export interface SongRoundState {
+  readonly album: AlbumArtwork | null;
   readonly songId: string | null;
   readonly question: string | null;
   readonly answer: string | null;
@@ -45,13 +47,13 @@ export interface SongRoundVm extends SongRoundState {
   readonly isFinishedUnrevealed: boolean;
   readonly isTeamAnswering: boolean;
   readonly isSystemError: boolean;
-  readonly canShowScoreboard: boolean;
   readonly canRevealAnswer: boolean;
   readonly canResolveError: boolean;
 }
 
 function createInitialSongRoundState(): SongRoundState {
   return {
+    album: null,
     songId: null,
     question: null,
     answer: null,
@@ -95,7 +97,6 @@ export class SongRoundStore {
       isFinishedUnrevealed: state.scenario === SongScenario.FinishedUnrevealed,
       isTeamAnswering: state.scenario === SongScenario.TeamAnswering,
       isSystemError: state.scenario === SongScenario.SystemError,
-      canShowScoreboard: state.teams.length > 0 && state.lastPlayedSong !== null,
       canRevealAnswer: state.scenario === SongScenario.FinishedUnrevealed && !state.inTransit,
       canResolveError: state.scenario === SongScenario.SystemError && !state.inTransit,
     };
@@ -159,6 +160,7 @@ export class SongRoundStore {
   private handleSongNext(message: S2WelcomeMessage): void {
     this.invalidatePlayback();
     this.patchState({
+      album: message.album,
       songId: message.songId,
       question: message.question,
       answer: message.answer,
@@ -262,6 +264,7 @@ export class SongRoundStore {
     }
 
     const base: Partial<SongRoundState> = {
+      album: message.album,
       songId: message.songId,
       question: message.question,
       answer: message.answer,

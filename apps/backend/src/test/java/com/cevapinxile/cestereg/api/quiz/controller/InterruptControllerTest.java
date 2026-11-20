@@ -462,15 +462,14 @@ class InterruptControllerTest extends ControllerTestSupport {
       mockMvc
           .perform(delete("/api/v1/games/{roomCode}/interrupts", "AKKU"))
           .andExpect(status().isMethodNotAllowed())
-          .andDo(
-              result -> {
-                System.out.println("Mastika");
-                System.out.println("status = " + result.getResponse().getStatus());
-                System.out.println(
-                    "handler = " + result.getResponse().getHeader("X-Exception-Handler"));
-                System.out.println("body = " + result.getResponse().getContentAsString());
-                System.out.println("resolved = " + result.getResolvedException());
-              });
+          .andDo(result -> {
+            System.out.println("Mastika");
+            System.out.println("status = " + result.getResponse().getStatus());
+            System.out.println(
+                "handler = " + result.getResponse().getHeader("X-Exception-Handler"));
+            System.out.println("body = " + result.getResponse().getContentAsString());
+            System.out.println("resolved = " + result.getResolvedException());
+          });
       verifyNoInteractions(interruptService);
     }
 

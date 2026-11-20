@@ -13,6 +13,12 @@ import {
 import { Subscription, filter, interval, take } from 'rxjs';
 import { AudioPlayerService } from './audio-player.service';
 
+export interface AudioPlaybackProgress {
+  readonly scheduleId: string | null;
+  readonly duration: number;
+  readonly remaining: number;
+}
+
 /** Renders and plays audio; persistence and playback acknowledgement belong to the round store. */
 @Component({
   selector: 'rr-audio-player',
@@ -30,6 +36,7 @@ export class AudioPlayerComponent implements OnInit, OnChanges, OnDestroy {
   @Output() playbackStarted = new EventEmitter<void>();
   @Output() playbackFailed = new EventEmitter<void>();
   @Output() completed = new EventEmitter<void>();
+  @Output() progress = new EventEmitter<AudioPlaybackProgress>();
   @Output() stateOut = new EventEmitter<{
     seek: number;
     remaining: number;
@@ -58,7 +65,7 @@ export class AudioPlayerComponent implements OnInit, OnChanges, OnDestroy {
     if (this.seek > 0) {
       this.audio.seek(this.seek);
     }
-
+    this.publishProgress();
     this.sub.add(
       this.audio.playing$.subscribe(() => {
         if (this.progressConfirmed || this.finished) return;
@@ -110,6 +117,7 @@ export class AudioPlayerComponent implements OnInit, OnChanges, OnDestroy {
       this.remainingDisplay = this.remaining;
       this.audio.load(this.src);
       this.audio.seek(this.seek ?? 0);
+      this.publishProgress();
       if (this.scheduleId && !this.playbackDelayId) {
         this.playbackRequested.emit(this.scheduleId);
       } else {
@@ -128,13 +136,20 @@ export class AudioPlayerComponent implements OnInit, OnChanges, OnDestroy {
 
   private startCountdown(): void {
     this.stopCountdown();
-    this.countdownSub = interval(100).subscribe(() => {
-      const remainingNow = Math.max(this.totalDuration - this.audio.getCurrentTime(), 0);
-      this.remainingDisplay = Number(remainingNow.toFixed(1));
-      this.loaderPercent = this.totalDuration > 0 ? (remainingNow / this.totalDuration) * 100 : 0;
-      if (remainingNow <= 0) this.finishPlayback();
-      this.cdr.markForCheck();
+    this.countdownSub = interval(100).subscribe(() => this.publishProgress());
+  }
+
+  private publishProgress(): void {
+    const remainingNow = Math.max(this.totalDuration - this.audio.getCurrentTime(), 0);
+    this.remainingDisplay = Number(remainingNow.toFixed(1));
+    this.loaderPercent = this.totalDuration > 0 ? (remainingNow / this.totalDuration) * 100 : 0;
+    this.progress.emit({
+      scheduleId: this.scheduleId,
+      duration: this.totalDuration,
+      remaining: remainingNow,
     });
+    if (this.started && remainingNow <= 0) this.finishPlayback();
+    this.cdr.markForCheck();
   }
 
   private finishPlayback(): void {

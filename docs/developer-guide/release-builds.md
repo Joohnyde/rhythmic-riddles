@@ -140,7 +140,7 @@ The `production` Spring profile enables “desktop UX” behavior and production
 
 - **Bind server to localhost** (`127.0.0.1`) via `application-production.yml`.
 - **Actuator** bound to localhost on a dedicated port and exposes only limited endpoints.
-- **Ephemeral splash screen & browser launch** on app start (`StartupSplashServer`).
+- **Desktop startup splash:** `StartupSplash` displays a borderless Java Swing window before Spring initializes, both in development and in packaged builds (when a desktop display is available). It renders static PNG artwork with native Swing animations and quietly shows the last few Spring startup log lines. It closes when `SpringApplication.run` returns; on failure a native error dialog is shown. Console logging remains unchanged. The existing production-only `BrowserLauncher` still opens the Spring-served Angular application on `ApplicationReadyEvent`. No splash HTTP server, WebSocket, polling, or extra CLI flags are involved.
 - **SPA routing support** (`ProductionSpaRoutingConfig`, production-only) so deep links in the Angular app work when served from Spring Boot.
 - **OpenAPI and Swagger disabled** in the shipped desktop runtime; they remain development tools.
 

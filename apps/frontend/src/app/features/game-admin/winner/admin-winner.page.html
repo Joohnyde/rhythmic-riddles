@@ -8,8 +8,7 @@
   <section class="grid">
     @for (score of vm.scores; track score.teamId) {
       <article class="card header" [attr.data-testid]="'admin-winner-team-row-' + score.teamId">
-        <strong>{{ score.name }}</strong
-        ><span>{{ score.score }}</span>
+        <strong>{{ score.name }}</strong><span>{{ score.score }}</span>
       </article>
     }
   </section>

@@ -43,12 +43,12 @@ import java.util.UUID;
       name = "PlaybackDelayEntity.findLatestBySchedule",
       query =
           """
-                  SELECT p
-                  FROM PlaybackDelayEntity p
-                  WHERE p.scheduleId.id = :scheduleId
-                  ORDER BY p.clientAttemptAt DESC NULLS LAST, p.sentAt DESC
-                  LIMIT 1
-              """)
+              SELECT p
+              FROM PlaybackDelayEntity p
+              WHERE p.scheduleId.id = :scheduleId
+              ORDER BY p.clientAttemptAt DESC NULLS LAST, p.sentAt DESC
+              LIMIT 1
+          """)
 })
 public class PlaybackDelayEntity implements Serializable {
 
