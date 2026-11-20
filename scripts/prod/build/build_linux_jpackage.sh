@@ -86,6 +86,20 @@ fi
 echo "[3/5] Create portable app-image (no Java required)…"
 cd "${ROOT}"
 
+RUNTIME_ARG=()
+if [[ -n "${JAVA_HOME:-}" && -d "${JAVA_HOME}" ]]; then
+  DETECTED_JH="${JAVA_HOME}"
+elif command -v java >/dev/null 2>&1; then
+  DETECTED_JH="$(java -XshowSettings:properties -version 2>&1 | awk -F= '/java\.home/{gsub(/[ \t]+/, "", $2); print $2}')"
+else
+  DETECTED_JH=""
+fi
+
+if [[ -n "${DETECTED_JH}" && -d "${DETECTED_JH}" && ! -d "${DETECTED_JH}/jmods" ]]; then
+  echo "[INFO] No jmods directory detected at ${DETECTED_JH}/jmods; using --runtime-image ${DETECTED_JH}"
+  RUNTIME_ARG=(--runtime-image "${DETECTED_JH}")
+fi
+
 # IMPORTANT:
 # For Spring Boot fat jars, main class is usually not your @SpringBootApplication,
 # so we let jpackage use -jar by specifying --main-jar and setting main-class to empty is not allowed.
@@ -98,6 +112,7 @@ jpackage \
   --main-jar "${APP_NAME}.jar" \
   --dest "${OUT}" \
   "${ICON_ARG[@]}" \
+  "${RUNTIME_ARG[@]}" \
   --arguments "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}" \
   --arguments "--app.assets.base-dir=\$APPDIR/resources/data"
 
