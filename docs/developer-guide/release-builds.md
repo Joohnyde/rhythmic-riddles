@@ -140,7 +140,7 @@ The `production` Spring profile enables “desktop UX” behavior and production
 
 - **Bind server to localhost** (`127.0.0.1`) via `application-production.yml`.
 - **Actuator** bound to localhost on a dedicated port and exposes only limited endpoints.
-- **Browser auto-launch** on app start (`BrowserLauncher`, production-only).
+- **Ephemeral splash screen & browser launch** on app start (`StartupSplashServer`).
 - **SPA routing support** (`ProductionSpaRoutingConfig`, production-only) so deep links in the Angular app work when served from Spring Boot.
 - **OpenAPI and Swagger disabled** in the shipped desktop runtime; they remain development tools.
 
