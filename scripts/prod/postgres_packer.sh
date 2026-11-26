@@ -35,6 +35,12 @@ fi
 
 REAL_PSQL="/usr/lib/postgresql/${VER}/bin/psql"
 if [[ ! -x "${REAL_PSQL}" ]]; then
+  CANDIDATE="$(command -v psql 2>/dev/null || true)"
+  if [[ -n "${CANDIDATE}" && -x "${CANDIDATE}" ]] && file -b "${CANDIDATE}" | grep -q "ELF"; then
+    REAL_PSQL="${CANDIDATE}"
+  fi
+fi
+if [[ ! -x "${REAL_PSQL}" ]]; then
   echo "[ERROR] Real psql not found/executable: ${REAL_PSQL}"
   echo "        (Note: 'psql' in PATH is often a wrapper. We need the real binary.)"
   exit 1
