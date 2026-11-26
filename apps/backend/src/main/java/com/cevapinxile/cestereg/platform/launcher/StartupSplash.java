@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.io.PrintStream;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import javax.swing.ImageIcon;
@@ -19,25 +17,31 @@ import javax.swing.SwingUtilities;
 public final class StartupSplash {
 
   private final JWindow window;
-  private final JTextArea logs = new JTextArea();  
+  private final JTextArea logs = new JTextArea();
   private final PrintStream consoleOut = System.out;
   private final PrintStream consoleErr = System.err;
-  private final SplashLogPrintStream splashOut = new SplashLogPrintStream(consoleOut, this::showLog);
-  private final SplashLogPrintStream splashErr = new SplashLogPrintStream(consoleErr, this::showLog);
+  private final SplashLogPrintStream splashOut =
+      new SplashLogPrintStream(consoleOut, this::showLog);
+  private final SplashLogPrintStream splashErr =
+      new SplashLogPrintStream(consoleErr, this::showLog);
   private volatile boolean closed;
 
   private StartupSplash() {
     final JLabel background = new JLabel(icon("starting.png"));
     final JLabel animation = new JLabel(icon("animation.gif"));
-    animation.setBounds(364, 77, 166, 317);
-    logs.setBounds(26, 499, 848, 55);
+    final int width = background.getPreferredSize().width;
+    final int height = background.getPreferredSize().height;
+    animation.setHorizontalAlignment(JLabel.LEFT);
+    animation.setVerticalAlignment(JLabel.TOP);
+    animation.setBounds(0, 0, width, height);
+    logs.setBounds(24, height - 70, width - 48, 54);
     logs.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
-    logs.setForeground(new Color(190, 177, 208));
+    logs.setForeground(new Color(255, 255, 255, 110));
     logs.setEditable(false);
     logs.setOpaque(false);
     background.setLayout(null);
-    background.add(animation);
     background.add(logs);
+    background.add(animation);
 
     window = new JWindow();
     window.setContentPane(background);
@@ -47,7 +51,8 @@ public final class StartupSplash {
   }
 
   private static ImageIcon icon(String name) {
-    return new ImageIcon(Objects.requireNonNull(StartupSplash.class.getResource("/splash/" + name)));
+    return new ImageIcon(
+        Objects.requireNonNull(StartupSplash.class.getResource("/splash/" + name)));
   }
 
   public static StartupSplash show() {
@@ -55,9 +60,11 @@ public final class StartupSplash {
       return null;
     }
     try {
-      final StartupSplash splash = SwingUtilities.isEventDispatchThread()
-          ? new StartupSplash()
-          : CompletableFuture.supplyAsync(StartupSplash::new, SwingUtilities::invokeLater).join();
+      final StartupSplash splash =
+          SwingUtilities.isEventDispatchThread()
+              ? new StartupSplash()
+              : CompletableFuture.supplyAsync(StartupSplash::new, SwingUtilities::invokeLater)
+                  .join();
       System.setOut(splash.splashOut);
       System.setErr(splash.splashErr);
       return splash;
@@ -66,7 +73,6 @@ public final class StartupSplash {
     }
   }
 
-
   private void showLog(String text) {
     SwingUtilities.invokeLater(() -> {
       if (!closed && text != null && !text.isEmpty()) {
@@ -74,7 +80,7 @@ public final class StartupSplash {
       }
     });
   }
-  
+
   public void close() {
     closed = true;
     splashOut.stopCapturing();
@@ -90,8 +96,11 @@ public final class StartupSplash {
 
   public void failed(Throwable failure) {
     close();
-    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null,
-        failure.getMessage() == null ? "See the application logs." : failure.getMessage(),
-        "Rhythmic Riddles — Startup Failed", JOptionPane.ERROR_MESSAGE));
+    SwingUtilities.invokeLater(() ->
+        JOptionPane.showMessageDialog(
+            null,
+            failure.getMessage() == null ? "See the application logs." : failure.getMessage(),
+            "Rhythmic Riddles — Startup Failed",
+            JOptionPane.ERROR_MESSAGE));
   }
 }
