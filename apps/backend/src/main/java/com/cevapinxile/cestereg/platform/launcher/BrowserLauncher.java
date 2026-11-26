@@ -5,6 +5,7 @@
 package com.cevapinxile.cestereg.platform.launcher;
 
 import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,6 +31,11 @@ public class BrowserLauncher {
 
   @EventListener(ApplicationReadyEvent.class)
   public void openBrowser() {
+    // Avoid launching desktop processes in headless environments (e.g. CI).
+    if (GraphicsEnvironment.isHeadless()) {
+      return;
+    }
+
     final String url = buildUrl();
 
     // 1) Try Java Desktop first (works on many desktop sessions)
@@ -37,7 +43,7 @@ public class BrowserLauncher {
       return;
     }
 
-    // 2) OS-specific fallbacks (works when Desktop is not supported / headless / service)
+    // 2) OS-specific fallbacks when Desktop browsing is not supported
     try {
       openWithOsCommand(url);
     } catch (IOException ignored) {
