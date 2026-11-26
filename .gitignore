@@ -125,6 +125,9 @@ tmp/
 !apps/frontend/
 !apps/frontend/public/
 !apps/frontend/public/**
+# Packaged native splash artwork
+!apps/backend/src/main/resources/splash/starting.png
+!apps/backend/src/main/resources/splash/animation.gif
 
 ############################################
 # Docker

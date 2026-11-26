@@ -11,7 +11,7 @@ class RhytmicRiddlesApplicationStartupTest {
   @Test
   void nativeSplashAssetsArePackaged() {
     assertNotNull(StartupSplash.class.getResource("/splash/starting.png"));
-    assertNotNull(StartupSplash.class.getResource("/splash/orbit.png"));
+    assertNotNull(StartupSplash.class.getResource("/splash/animation.gif"));
   }
 
   @Test

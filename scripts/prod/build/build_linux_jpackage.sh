@@ -113,6 +113,22 @@ rmdir "${RESOURCES}" 2>/dev/null || true
 
 test -f "$PAYLOAD_DIR/data/README.md" || { echo "BAD: assets not copied"; exit 1; }
 
+# Launch the bundled JVM directly; the Linux jpackage launcher scans the package database.
+test -x "${APP_IMAGE}/lib/runtime/bin/java" || { echo "BAD: bundled Java executable missing"; exit 1; }
+cat > "${APP_IMAGE}/bin/${APP_NAME}" <<EOF
+#!/bin/sh
+set -eu
+APP_ROOT="\$(dirname -- "\$(dirname -- "\$(readlink -f -- "\$0")")")"
+APP_DIR="\$APP_ROOT/lib/app"
+exec "\$APP_ROOT/lib/runtime/bin/java" \\
+  "-Djpackage.app-version=${APP_VERSION}" \\
+  -jar "\$APP_DIR/${APP_NAME}.jar" \\
+  "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}" \\
+  --app.assets.base-dir="\$APP_DIR/resources/data" \\
+  "\$@"
+EOF
+chmod +x "${APP_IMAGE}/bin/${APP_NAME}"
+
 echo "[INFO] App-image created at: ${OUT}/${APP_NAME}"
 
 echo "[4/5] (Optional) Create .deb installer…"
