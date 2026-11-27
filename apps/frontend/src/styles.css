@@ -552,6 +552,12 @@ input:disabled {
   box-shadow: 0 0 0 3px rgb(181 61 214 / 0.15);
 }
 
+.home-background {
+  @apply absolute inset-0 bg-center bg-no-repeat;
+  background-image: url('/images/background.jpg');
+  background-size: 100% 100%;
+}
+
 .page {
   min-height: 100vh;
   padding: clamp(1rem, 3vw, 3rem);

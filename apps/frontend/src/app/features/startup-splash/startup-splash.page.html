@@ -1,0 +1,23 @@
+<main
+  class="relative grid min-h-dvh grid-rows-[1fr_auto_1fr] justify-items-center gap-2 overflow-hidden bg-black text-foreground"
+  data-testid="startup-splash"
+>
+  <div class="home-background" aria-hidden="true"></div>
+
+  <div class="relative z-10 row-start-2">
+    <rr-brand-logo />
+  </div>
+  <div class="relative z-10 row-start-3 flex flex-col items-center gap-1 self-start">
+    <div class="grid size-16 place-items-center" data-testid="splash-animation" aria-hidden="true">
+      <div
+        class="size-10 animate-spin rounded-full border-4 border-primary-soft-border border-t-primary border-r-accent motion-reduce:animate-none"
+      ></div>
+    </div>
+    <p
+      class="text-center text-sm font-semibold uppercase tracking-[0.16em] text-foreground-secondary"
+      role="status"
+    >
+      Starting Rhythmic Riddles…
+    </p>
+  </div>
+</main>

@@ -140,7 +140,7 @@ The `production` Spring profile enables “desktop UX” behavior and production
 
 - **Bind server to localhost** (`127.0.0.1`) via `application-production.yml`.
 - **Actuator** bound to localhost on a dedicated port and exposes only limited endpoints.
-- **Browser auto-launch** on app start (`BrowserLauncher`, production-only).
+- **Desktop startup splash:** `StartupSplash` displays a borderless Java Swing window before Spring initializes, whenever a desktop display and generated artwork are available. It displays a full-color PNG and a small full-color PNG frame strip using a Swing timer and quietly shows the last few Spring startup log lines. It closes when `SpringApplication.run` returns; on failure a native error dialog is shown. Console logging remains unchanged. The existing production-only `BrowserLauncher` still opens the Spring-served Angular application on `ApplicationReadyEvent`. Packages configured with the JVM `-splash:` option use the same generated PNG; Linux's fast direct-Java launcher can use the Swing window alone. No splash HTTP server, WebSocket, polling, or extra application CLI flags are involved.
 - **SPA routing support** (`ProductionSpaRoutingConfig`, production-only) so deep links in the Angular app work when served from Spring Boot.
 - **OpenAPI and Swagger disabled** in the shipped desktop runtime; they remain development tools.
 
@@ -195,10 +195,17 @@ The production Maven profile performs these steps:
 1. Installs Node + npm for a reproducible build (via `frontend-maven-plugin`)
 2. Runs `npm ci`
 3. Runs the Angular production build
-4. Copies Angular output into the backend jar under:
+4. Runs the frontend `postbuild` hook to generate the native splash.
+5. Copies Angular output into the backend jar under:
     - `target/classes/static`
 
 This is what makes the backend jar self-contained (it serves the SPA directly).
+
+### Startup splash artwork
+
+The `/startup-splash` Angular page uses the shared home background, logo, and theme. `npm run build` generates `starting.png` and a small centered, looping `animation.gif` in `apps/backend/src/main/resources/splash/` via its `postbuild` hook. The production Maven profile already invokes that build, so native packaging picks up both resources automatically. Normal backend runs reuse the existing images; neither they nor `npm start` regenerate them. On a fresh checkout without the images, Java skips the splash.
+
+To generate the artwork locally, run `npm ci` and `npm run generate:splash` (or `npm run build`) from `apps/frontend`. Both build Angular first and capture the artwork once through `postbuild`. The generator uses Playwright request interception to load the built page directly from disk and encodes the small GIF using the build-time `gifenc` dependency. On Linux, install Chromium system dependencies once with `npx playwright install-deps chromium` if needed. The generated images should not be committed.
 
 ### Why SPA routing config is required
 

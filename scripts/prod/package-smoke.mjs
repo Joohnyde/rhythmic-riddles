@@ -94,6 +94,7 @@ async function start() {
       SERVER_PORT: String(appPort),
       MANAGEMENT_SERVER_PORT: String(managementPort),
       SPRING_MAIN_BANNER_MODE: 'off',
+      JAVA_TOOL_OPTIONS: `${process.env.JAVA_TOOL_OPTIONS ?? ''} -Djava.awt.headless=true`.trim(),
     },
   });
   child.stdout.on('data', (chunk) => {
